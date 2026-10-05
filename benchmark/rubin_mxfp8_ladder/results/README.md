@@ -12,3 +12,8 @@
 Regenerate: `python ncu_table.py --ncu <ncu> --dir <reports> --timing results_hecate.jsonl --out ncu_hecate`
 then `python make_report.py --timing results_hecate.jsonl --ncu ncu_hecate.csv --out REPORT.md
 --extra-timing board=results_board_w2u1g-lc-0030.jsonl`.
+
+## PerfSim (gr100) companion
+PIC-Smart simulations of the same five rungs at B=1, H=1/1, S=4096, no mask live outside the repo:
+`/home/scratch.vagarwalla_gpu/perfsim_ladder/RESULTS.md` (sim cycles, SOL, per-SM MMA SOL, perf-inspector links;
+traces, config and submit scripts alongside).  Captured with `bench_ladder.py --ncu-run --batch 1 --heads 1 1`.

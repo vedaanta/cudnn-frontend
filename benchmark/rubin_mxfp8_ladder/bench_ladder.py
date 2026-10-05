@@ -318,8 +318,12 @@ def main():
     ap.add_argument("--ncu-run", action="store_true", help="warmup launches then exactly ONE execute, then exit (for ncu)")
     ap.add_argument("--tag", default="")
     ap.add_argument("--sched", choices=["natural", "lpt", "lpt_l2"], default="natural", help="persistent-scheduler policy knob")
+    ap.add_argument("--batch", type=int, default=1)
+    ap.add_argument("--heads", type=int, nargs=2, default=[32, 2], metavar=("H_Q", "H_KV"))
     args = ap.parse_args()
     _env_from_rung(args.rung)
+    global B, HQ, HKV
+    B, HQ, HKV = args.batch, args.heads[0], args.heads[1]
 
     import torch
 
