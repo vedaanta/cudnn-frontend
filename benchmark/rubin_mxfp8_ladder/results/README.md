@@ -114,3 +114,14 @@ rows of G/H (chain-free) are the view that decides between a controlled warpgrou
 GOTCHA (hit twice): any new env knob MUST be added to the cache-suffix list in `bench_ladder.py` (`_env_from_rung`),
 or variants silently share F's plan cache and run whichever kernel compiled first for that plan key; the jsonl now
 records the kernel module's flag values (`kmod`) so a run proves which path it executed.
+
+## PerfSim PICs of G and H (gr100, B=1 H=1 S=4096 none; `perfsim_ladder/RESULTS.md`)
+| rung | sim cycles | top SOL | mainloop MMA util | SMEM wavefronts (LST) | ADU |
+|---|---|---|---|---|---|
+| F | 48638 | TPC 52.6 %, SM 44.6 %, LST 32.7 % | 44.3 % | 32.7 % | 13.8 % |
+| G | 51847 (+6.6 %) | TPC 56.4 %, SM 46.6 %, LST 45.2 % | 42.4 % | 45.2 % | 19.5 % |
+| H | 56684 (+16.5 %) | **LST 68.7 %**, TPC 55.0 %, SM 45.3 % | 37.8 % | 68.7 % | 21.7 % |
+Reading: putting P in SMEM (H, and PREF on F) loads the shared-memory port to ~70 % (eight 16-byte stores per row per
+step plus the SS operand reads of P for the PV and again for the row-sum), where the tensor core's own Q/K/V/P operand
+fetches queue behind it; that is the mechanism behind H's and PREF's slowdown independent of the chain logic.  G's
+extra LST (45 %) is the doubled mbarrier traffic and the two K boxes.  PIC files: `perfsim_output/gr100_ladder_{G,H}_b1h1s4k_none_r1/perfsim/pic_analysis/run.A.dir.0/*/pic-analysis/pi/web/full.pfm`.
