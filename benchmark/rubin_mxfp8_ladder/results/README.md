@@ -75,3 +75,18 @@ before the PVs.  Numerics identical to G/F (`H_results_h.jsonl`: 2k none/causal 
   instruction) points at intra-warp dependency latency across the LDTM -> FFMA -> CVT -> MUFU -> pack -> store sequence
   with only two softmax warps per SMSP.  The PerfSim PICs of G and H (`perfsim_output/gr100_ladder_{G,H}_b1h1s4k_none_r1`)
   give the per-warp timelines needed to confirm which wait it is.
+
+## Correction-chain probes on F (board 0030, 32k, interleaved)
+Question: is PV gated by the correction's arrive on `bmm2_ready` (vote on alpha, then arrive) or by the softmax's own
+P store + arrive?  `rescale_stats.py` emulates the kernel's lazy-threshold rule on the bench inputs: at threshold 4 NO
+warp ever rescales (`F_rescale_emulation_8k.txt`), so the correction's mainloop work is exactly one vote and one arrive.
+- `LADDER_CORR_EARLY=1` (correction skips its bmm2_done wait + wait::st when no rescale): none 2946 -> 2912 us (-1.1 %),
+  causal LPT 1493 -> 1487 (-0.4 %).  Exact.
+- `LADDER_CORR_NORESCALE=1` (hack: never waits/rescales): -1.1 % / -1.7 %.
+- `LADDER_CORR_NORESCALE=2` (correction does not arrive at all; softmax lanes arrive twice on chunk a; exact when no step
+  rescales): none 2899 (-1.6 %), causal LPT 1473 (-1.6 %).  `F_results_corr*.jsonl`.
+Reading: taking the correction completely off the PV chain is worth 1.6 %, so on most steps the LAST arrival is the
+softmax's own (P_a stored ~650-700 clk after bmm1_done: LDTM ~300, alpha ~30, scale-shift ~70, exp/pack ~200, STTM +
+wait::st).  The exact production form of the shortcut is the per-warp agreement: both lanes of a row compute the same
+alpha and vote; no-rescale step -> softmax arrives twice, correction silent; rescale step -> softmax once, correction
+rescales then arrives (count per phase unchanged, no new barrier).

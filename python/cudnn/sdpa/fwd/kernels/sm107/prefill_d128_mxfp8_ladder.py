@@ -231,6 +231,17 @@ LADDER_SD_SWMAX = int(_os.environ.get("LADDER_SD_SWMAX", "0"))
 # chain.  Prefetch is forced to the top of the half.  Slot reuse is gated by the per-half
 # mb_bmm2_done (waited by the softmax before overwriting the slot two halves later).
 LADDER_PSMEM = int(_os.environ.get("LADDER_PSMEM", "0"))
+# Correction-chain probes on the classic (F) path:
+#   LADDER_CORR_EARLY=1     the correction skips its bmm2_done wait + wait::st when the warp vote says no
+#                           rescale, arriving on bmm2_ready right after the vote (phase-safe, see the branch)
+#   LADDER_CORR_NORESCALE=1 TIMING-ONLY HACK: the correction never rescales and arrives right after the
+#                           vote -- upper bound of taking the correction off the PV chain (wrong numerics
+#                           on rescale steps)
+LADDER_CORR_EARLY = int(_os.environ.get("LADDER_CORR_EARLY", "0"))
+LADDER_CORR_NORESCALE = int(_os.environ.get("LADDER_CORR_NORESCALE", "0"))
+#   LADDER_CORR_NORESCALE=2 the correction does NOT arrive on bmm2_ready at all; the softmax lanes arrive
+#                           twice on chunk a instead (count unchanged) = correction fully off the PV chain.
+#                           Exact whenever no step rescales (true for the bench inputs at threshold 4).
 if LADDER_PSMEM and not (LADDER_SDOUBLE and LADDER_F16EXP and LADDER_CORRFAST):
     raise ValueError("LADDER_PSMEM=1 requires LADDER_SDOUBLE=1, LADDER_F16EXP=1 and LADDER_CORRFAST=1")
 if LADDER_PSMEM and LADDER_SD_LATE_ARRIVE:
@@ -2585,6 +2596,8 @@ def _softmax_kv_body(
         nvvm.tcgen05_st("32x32b", nvvm.make_tmem_ptr(p_addr_a, cutlass.Float32), p_a_fp16)
     nvvm.tcgen05_wait(kind=nvvm.Tcgen05Wait.STORE)
     bars.mb_bmm2_ready[sub_tile_id * CFG.N_BMM2_CHUNKS + 0].arrive(leader_cta_id=leader_cta_id, cta_group=CFG.CTA_MMA)
+    if cutlass.const_expr(LADDER_CORR_NORESCALE == 2):
+        bars.mb_bmm2_ready[sub_tile_id * CFG.N_BMM2_CHUNKS + 0].arrive(leader_cta_id=leader_cta_id, cta_group=CFG.CTA_MMA)
 
     if cutlass.const_expr(LADDER_F16EXP):
         p_words_b = _ladder_f16_exp_chunk(reg_S_b, CHUNK)
@@ -3268,8 +3281,9 @@ def _correction_warp_group(
                 sd_d0_phase = sd_d0_phase ^ 1
         else:
             if bounds.right > bounds.left:
-                for qs in cutlass.range_constexpr(CFG.TILES_Q):
-                    bars.mb_bmm2_ready[qs * CFG.N_BMM2_CHUNKS + 0].arrive(leader_cta_id=leader_cta_id, cta_group=CFG.CTA_MMA)
+                if cutlass.const_expr(LADDER_CORR_NORESCALE != 2):
+                    for qs in cutlass.range_constexpr(CFG.TILES_Q):
+                        bars.mb_bmm2_ready[qs * CFG.N_BMM2_CHUNKS + 0].arrive(leader_cta_id=leader_cta_id, cta_group=CFG.CTA_MMA)
                 for qs in cutlass.range_constexpr(CFG.TILES_Q):
                     bars.mb_stat_full[qs].wait(stat_full_phase, spin=SPIN_RING_WAITS)
                     bars.mb_stat_empty[qs].arrive()
@@ -3306,24 +3320,34 @@ def _correction_warp_group(
 
                     bars.mb_stat_empty[qs].arrive()
 
-                    bars.mb_bmm2_done[qs].wait(bmm2_done_phase, spin=SPIN_RING_WAITS)
+                    if cutlass.const_expr(LADDER_CORR_NORESCALE):
+                        pass  # timing-only hack: no bmm2_done wait, no rescale, no wait::st
+                    elif cutlass.const_expr(LADDER_CORR_EARLY):
+                        # Only a rescale needs PV(k-1) retired; without one O is untouched and the arrive can go out
+                        # now.  Phase-safe: this warp's arrive for step k+1 still follows the softmax's alpha publish
+                        # of k+1, which follows its P arrivals of k; the bmm2_done parity stays right because that
+                        # barrier can never be more than one completion ahead of this wait.
+                        if ~all_alpha_one:
+                            bars.mb_bmm2_done[qs].wait(bmm2_done_phase, spin=SPIN_RING_WAITS)
+                            for chunk_idx in cutlass.range_constexpr(N_CHUNKS_O_RESCALE):
+                                o_addr = tmem_base_iter + cutlass.Int32(tmem_O_off + chunk_idx * O_CHUNK)
+                                o_chunk = nvvm.tcgen05_ld("32x32b", nvvm.make_tmem_ptr(o_addr, cutlass.Float32), num=O_CHUNK)
+                                o_scaled = vec_scale_pair(o_chunk, alpha, O_CHUNK)
+                                nvvm.tcgen05_st("32x32b", nvvm.make_tmem_ptr(o_addr, cutlass.Float32), o_scaled)
+                            nvvm.tcgen05_wait(kind=nvvm.Tcgen05Wait.STORE)
+                    else:
+                        bars.mb_bmm2_done[qs].wait(bmm2_done_phase, spin=SPIN_RING_WAITS)
+                        # vec_scale_pair emits mul_packed_f32x2; N_CHUNKS_O_RESCALE covers O AND the 16 row-sum columns.
+                        if ~all_alpha_one:
+                            for chunk_idx in cutlass.range_constexpr(N_CHUNKS_O_RESCALE):
+                                o_addr = tmem_base_iter + cutlass.Int32(tmem_O_off + chunk_idx * O_CHUNK)
+                                o_chunk = nvvm.tcgen05_ld("32x32b", nvvm.make_tmem_ptr(o_addr, cutlass.Float32), num=O_CHUNK)
+                                o_scaled = vec_scale_pair(o_chunk, alpha, O_CHUNK)
+                                nvvm.tcgen05_st("32x32b", nvvm.make_tmem_ptr(o_addr, cutlass.Float32), o_scaled)
+                        nvvm.tcgen05_wait(kind=nvvm.Tcgen05Wait.STORE)
 
-                    # vec_scale_pair emits mul_packed_f32x2; without it the DSL lowers to scalar FMUL inside this runtime-if.
-                    # N_CHUNKS_O_RESCALE (not N_CHUNKS_O): the span covers O AND the
-                    # 16 row-sum columns behind it.
-                    if ~all_alpha_one:
-                        for chunk_idx in cutlass.range_constexpr(N_CHUNKS_O_RESCALE):
-                            o_addr = tmem_base_iter + cutlass.Int32(tmem_O_off + chunk_idx * O_CHUNK)
-                            o_chunk = nvvm.tcgen05_ld(
-                                "32x32b",
-                                nvvm.make_tmem_ptr(o_addr, cutlass.Float32),
-                                num=O_CHUNK,
-                            )
-                            o_scaled = vec_scale_pair(o_chunk, alpha, O_CHUNK)
-                            nvvm.tcgen05_st("32x32b", nvvm.make_tmem_ptr(o_addr, cutlass.Float32), o_scaled)
-                    nvvm.tcgen05_wait(kind=nvvm.Tcgen05Wait.STORE)
-
-                    bars.mb_bmm2_ready[qs * CFG.N_BMM2_CHUNKS + 0].arrive(leader_cta_id=leader_cta_id, cta_group=CFG.CTA_MMA)
+                    if cutlass.const_expr(LADDER_CORR_NORESCALE != 2):
+                        bars.mb_bmm2_ready[qs * CFG.N_BMM2_CHUNKS + 0].arrive(leader_cta_id=leader_cta_id, cta_group=CFG.CTA_MMA)
 
                 stat_full_phase = stat_full_phase ^ 1
                 bmm2_done_phase = bmm2_done_phase ^ 1

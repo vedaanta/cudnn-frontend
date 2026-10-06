@@ -1,0 +1,4 @@
+S=8192 causal thresh=4.0 tile=128: warp-steps with a rescale 0 / live warp-steps 266240 = 0.00%
+S=8192 causal thresh=4.0 tile=64: warp-steps with a rescale 0 / live warp-steps 528384 = 0.00%
+S=8192 none thresh=4.0 tile=128: warp-steps with a rescale 0 / live warp-steps 524288 = 0.00%
+S=8192 none thresh=4.0 tile=64: warp-steps with a rescale 0 / live warp-steps 1048576 = 0.00%
