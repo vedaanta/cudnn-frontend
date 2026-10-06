@@ -16,6 +16,7 @@ RUNG_LABEL = OrderedDict(
     D="C + 1/ln2 folded outside",
     E="D + paged KV, page 64",
     F="C + correction fast path (alpha via SMEM)",
+    G="F + S half-buffer double-buffering (BMM1 overlaps softmax)",
 )
 SEQS = [8192, 16384, 32768]
 

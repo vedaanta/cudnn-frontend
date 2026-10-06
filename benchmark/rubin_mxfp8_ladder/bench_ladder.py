@@ -8,6 +8,8 @@ One rung per process (the one-off kernel reads its levers from env at import):
   C  B + f16 exponent (MUFU.EX2.F16x2 + f16x2->fp8 P cast)      one-off kernel, LADDER_F16EXP=1
   D  C + softmax scale folded outside (Q pre-scaled by s*log2e) one-off kernel, LADDER_NOSCALE=1
   E  D + paged KV cache, page_size 64 (HND pools, random table)  one-off kernel, LADDER_PAGED64=1
+  F  C + correction fast path (alpha via SMEM)                   one-off kernel, LADDER_CORRFAST=1
+  G  F + S half-buffer double-buffering (BMM1 overlaps softmax)  one-off kernel, LADDER_SDOUBLE=1
 
 Shape: B=1, H_q=32, H_kv=2 (GQA 16:1), d=128, S_q=S_kv in {8k,16k,32k}, O in bf16,
 no Stats (inference), no Amax_O.  Timing = CUDA-graph replay of one execute (falls back to
@@ -33,6 +35,7 @@ RUNGS = {
     "D": dict(label="mxfp8 + f16 exp + scale outside", family="mxfp8", env={"LADDER_F16EXP": "1", "LADDER_NOSCALE": "1"}),
     "E": dict(label="mxfp8 + f16 exp + scale outside + paged64", family="mxfp8", env={"LADDER_F16EXP": "1", "LADDER_NOSCALE": "1", "LADDER_PAGED64": "1"}, paged=64),
     "F": dict(label="C + correction fast path (alpha via SMEM)", family="mxfp8", env={"LADDER_F16EXP": "1", "LADDER_CORRFAST": "1"}),
+    "G": dict(label="F + S half-buffer double-buffering (BMM1 overlaps softmax)", family="mxfp8", env={"LADDER_F16EXP": "1", "LADDER_CORRFAST": "1", "LADDER_SDOUBLE": "1"}),
 }
 ONEOFF_FILE = "sm107/prefill_d128_mxfp8_ladder.py"
 B, HQ, HKV, D = 1, 32, 2, 128
@@ -42,7 +45,7 @@ LOG2E = math.log2(math.e)
 def _env_from_rung(rung):
     for k, v in RUNGS[rung]["env"].items():
         os.environ[k] = v
-    for k in ("LADDER_F16EXP", "LADDER_NOSCALE", "LADDER_PAGED64", "LADDER_CORRFAST"):
+    for k in ("LADDER_F16EXP", "LADDER_NOSCALE", "LADDER_PAGED64", "LADDER_CORRFAST", "LADDER_SDOUBLE"):
         os.environ.setdefault(k, "0")
     # One JIT / compiled-plan cache per rung: rungs C/D/E share ONE kernel file and differ only by
     # import-time env flags, which the DSL and FE plan caches do not key on.
@@ -121,6 +124,15 @@ def build_case(rung, S, causal, seed=1234):
     qf = torch.randn(B, HQ, S, D, device=dev) * 0.5
     kf = torch.randn(B, HKV, S, D, device=dev) * 0.5
     vf = torch.randn(B, HKV, S, D, device=dev) * 0.5
+    if os.environ.get("LADDER_KV_RAMP", "0") == "1":
+        # Validation stress for the MXFP8 scale-factor plumbing: scale K and V per 32-token block by
+        # 2^((t//32) % 4 - 2) so adjacent E8M0 blocks differ by 2x and the two 64-token halves of every
+        # 128-token step differ by 4x.  Random inputs alone give near-identical scales and would hide a
+        # wrong SF row/column mapping.  The reference sees the same (dequantized) inputs.
+        t = torch.arange(S, device=dev)
+        ramp = torch.pow(2.0, ((t // 32) % 4 - 2).float()).view(1, 1, S, 1)
+        kf = kf * ramp
+        vf = vf * ramp
     noscale = os.environ.get("LADDER_NOSCALE", "0") == "1"
     # Rung D/E: the caller folds attn_scale * log2(e) into Q; the kernel then runs exp2(S - m)
     # directly.  Reference: softmax_e(ln2 * Qpre K^T) == softmax_e(scale * Q K^T).
@@ -362,7 +374,7 @@ def main():
             d=D,
             kernel=kname,
             cfg={k: getattr(getattr(api, "_k_mod", None).CFG, k, None) for k in ("SCHEDULER_POLICY", "CTA_MMA", "STAGES_KV", "TILE_M", "TILE_N", "TILES_Q", "RESCALE_THRESHOLD", "MASK_FLAGS", "PAGED_KV", "PAGE_SIZE")} if getattr(getattr(api, "_k_mod", None), "CFG", None) is not None else None,
-            kmod=dict(PAGED_KV=getattr(getattr(api, "_k_mod", None), "PAGED_KV", None), PAGE_SIZE=getattr(getattr(api, "_k_mod", None), "PAGE_SIZE", None), F16EXP=getattr(getattr(api, "_k_mod", None), "LADDER_F16EXP", None), NOSCALE=getattr(getattr(api, "_k_mod", None), "LADDER_NOSCALE", None), CORRFAST=getattr(getattr(api, "_k_mod", None), "LADDER_CORRFAST", None)),
+            kmod=dict(PAGED_KV=getattr(getattr(api, "_k_mod", None), "PAGED_KV", None), PAGE_SIZE=getattr(getattr(api, "_k_mod", None), "PAGE_SIZE", None), F16EXP=getattr(getattr(api, "_k_mod", None), "LADDER_F16EXP", None), NOSCALE=getattr(getattr(api, "_k_mod", None), "LADDER_NOSCALE", None), CORRFAST=getattr(getattr(api, "_k_mod", None), "LADDER_CORRFAST", None), SDOUBLE=getattr(getattr(api, "_k_mod", None), "LADDER_SDOUBLE", None)),
             compile_s=round(compile_s, 1),
             clocks_before=gpu_clocks(),
             tag=args.tag,

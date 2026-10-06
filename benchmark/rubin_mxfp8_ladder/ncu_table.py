@@ -116,7 +116,7 @@ def main():
     recs = []
     for path in sorted(glob.glob(os.path.join(args.dir, "*.ncu-rep*"))):
         name = os.path.basename(path).split(".ncu-rep")[0]
-        m = re.match(r"([A-F])_(causal|none)_(\d+)(?:_(\w+))?$", name)
+        m = re.match(r"([A-G])_(causal|none)_(\d+)(?:_(\w+))?$", name)
         if not m:
             continue
         rung, mask, S, sched = m.group(1), m.group(2), int(m.group(3)), m.group(4) or "natural"
