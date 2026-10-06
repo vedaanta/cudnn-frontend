@@ -251,3 +251,35 @@ because it is per-tensor fp8, it keeps 2 softmax warpgroups x ~176 registers, an
 consistent with the ~50 % fp32-S floor measured above once the 25 % larger MMA work per element is removed.  Two things are worth taking
 from it: the fused f32x2->f16x2 subtract (saves the 64 standalone F2FP converts per warp-step, ~20 % of the softmax instruction count) and the
 `ifence` register-interference pragma for the 176/192-register softmax body.
+
+## LADDER_FCVT: fused shift + f32->f16 convert from MR 28758 (board w2u1g-lc-0614, 2026-10-06)
+Knob `LADDER_FCVT=1` (classic + PREF arms, needs F16EXP; commits a068a5ea9, 1b41be77a): per pair of scores ONE
+`nvvm.sub_packed_f16x2_f32x2_f32x2` (SASS `FHADD2.F16x2.F32x2.F32x2.FTZ.RZ`, f32x2 - f32x2 -> f16x2) replaces FFMA2/FADD2 + F2FP
+-- with `LADDER_NOSCALE=1` (scale*log2e folded into Q by the caller) that is 64 fewer instructions per warp-step (297 -> ~233).
+The op only exists in round-toward-zero form (the MR's SASS uses the same instruction), so it is not bit-identical to SUB2+F2FP.
+Board 0614 is a fresh Rubin without the NFS mounts: the environment was copied to its local disk (`ship_board0614.sh`,
+`env_board0614.sh`; `board_py.sh` now honours `WT/PY/SP/CUDNN_LIB`).  Driver: `fcvt_check.sh`; rows: `P7_results_fcvt_board0614.jsonl`.
+
+**Timing, 32k, B=1 h 32/2 d128, graph replay, 2 interleaved rounds (F on this board: 2736 us dense / 1365 us causal LPT):**
+
+| variant | dense | causal LPT | TF/s dense / causal |
+|---|---|---|---|
+| F | 0 | 0 | 6429 / 6446 |
+| F + NOSCALE + SUB2 (today's folded-scale path) | -0.1 % | +0.3 % | 6434 / 6423 |
+| **F + NOSCALE + FCVT** | **-5.6 %** | **-7.4 %** | 6811 / 6963 |
+| F + FCVT with the scale inside (divide + HFMA2, the gqa.py path) | +23.8 % | +39.3 % | 5195 / 4627 |
+| PREF + NOSCALE + FCVT | -6.2 % | -9.1 % | 6852 / 7089 |
+| **F + NOSCALE + FCVT + HOIST + CORR_NORESCALE=2** | **-11.2 %** | **-12.5 %** | 7247 / 7367 |
+
+Reading: the fused convert delivers the predicted 5-7 % on its own and stacks with the free levers to -11..-12.5 %; it also lets the
+PREF structure (which was +4 % on F) turn slightly positive (-0.6 / -1.7 % on top), consistent with the issue-port picture.  The
+scale-inside arm is a large regression -- the per-step fp32 divide + sentinel select sits at the head of the burst and the HFMA2
+adds 64 instructions back -- so FCVT is a NOSCALE lever only (the production contract Timmy's thread already asks for).
+
+**Numerics (fp32 reference, `--validate all`):** rel_err identical to four digits between NOSCALE+SUB2 and NOSCALE+FCVT at 2k and 4k
+for both masks (none 0.0399/0.0398 at 2k, 0.0395/0.0395 at 4k; causal 0.0141/0.0141, 0.0174/0.0174); KV-ramp and PREF+FCVT pass.
+O differs element-wise (RZ): 2k dense max |dO| 3.7e-4 (ref amax 0.040) mean 3.5e-5, 64 % of bf16 elements differ by a few ulps;
+2k causal max |dO| 3.1e-2 (ref amax 1.5) mean 4.9e-5.  Equidistant from the reference, i.e. the RZ bias is below the fp8 P
+quantization as predicted.
+
+**Ceiling check:** stack = ~1050 clk/step = ~52 % MMA util -- right at the fp32-S floor measured above (TMEM-P + no-MUFU probe 51 %).
