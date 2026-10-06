@@ -189,6 +189,17 @@ from cudnn.frost.tile_dsl.mask import (
 # ---------------------------------------------------------------------------
 LADDER_F16EXP = int(_os.environ.get("LADDER_F16EXP", "0"))
 LADDER_NOSCALE = int(_os.environ.get("LADDER_NOSCALE", "0"))
+# LADDER_CORRFAST=1: the per-row softmax alpha reaches the correction warps through a 1 KiB
+# SMEM slab (generic-proxy st.shared / ld.shared) instead of a TMEM round trip
+# (tcgen05.st + wait::st on the softmax side, tcgen05.ld + wait::ld on the correction side).
+# Ordering is carried by the EXISTING handshake, unchanged: every softmax lane's
+# mb_stat_full arrive is mbarrier.arrive.release.cta (after its st.shared); the correction's
+# mb_stat_full try_wait.parity is .acquire.cta (before its ld.shared); the correction's
+# mb_stat_empty arrive (.release.cta, after the ld.shared) is what the softmax waits for
+# before the slot is rewritten for the next kv step.  The correction keeps its
+# mb_bmm2_done wait before arriving on mb_bmm2_ready: that wait is what bounds it to one
+# bmm2_ready phase ahead (it is also long satisfied by the time alpha is published).
+LADDER_CORRFAST = int(_os.environ.get("LADDER_CORRFAST", "0"))
 
 # MXFP8 storage dtype dispatch — keyed off CFG.DTYPE_QKV (0=E4M3, 1=E5M2).
 if CFG.DTYPE_QKV == 0:
@@ -582,6 +593,10 @@ def _kernel(
     # at init, never touched by TMA.  LAST slab: _smem_offset_of_ones() above
     # computes this same declaration order and guards the descriptor window.
     sOnes_raw = cutlass.Array(STORAGE_DTYPE, _ONES_ROWS * _ONES_ROW_BYTES, alignment=1024, space=cutlass.AddressSpace.smem)
+    # LADDER_CORRFAST: per-row alpha hand-off slab, TILES_Q x 128 fp32 (see the flag comment).
+    s_alpha_raw = None
+    if cutlass.const_expr(LADDER_CORRFAST):
+        s_alpha_raw = cutlass.Array(cutlass.Float32, CFG.TILES_Q * CFG.SOFTMAX_LANES, alignment=16, space=cutlass.AddressSpace.smem)
 
     sQ = SmemTile(
         base=sQ_raw,
@@ -784,6 +799,7 @@ def _kernel(
             leader_cta_id=leader_cta_id,
             cta_in_pair=cta_in_pair,
             qh_per_kh=qh_per_kh,
+            s_alpha=s_alpha_raw,
         )
 
     elif warp_idx >= CFG.SOFTMAX_WG1_BASE and warp_idx < CFG.SOFTMAX_WG1_BASE + CFG.SOFTMAX_WG_WARPS:
@@ -806,6 +822,7 @@ def _kernel(
             leader_cta_id=leader_cta_id,
             cta_in_pair=cta_in_pair,
             qh_per_kh=qh_per_kh,
+            s_alpha=s_alpha_raw,
         )
 
     elif warp_idx >= CFG.CORR_WARP_BASE and warp_idx < CFG.CORR_WARP_BASE + CFG.CORRECTION_WARPS:
@@ -836,6 +853,7 @@ def _kernel(
             sfo_row_off_b=sfo_row_off_b,
             sfo_col_off_h=sfo_col_off_h,
             sfo_cols=sfo_cols,
+            s_alpha=s_alpha_raw,
         )
 
     elif warp_idx == CFG.MMA_WARP_ID:
@@ -1964,6 +1982,7 @@ def _softmax_kv_body(
     bmm1_phase,
     stat_empty_phase,
     leader_cta_id,
+    s_alpha_slot=None,
 ):
     """Per-iter softmax body — returns (total_max, total_sum, bmm1_phase, stat_empty_phase).
 
@@ -2104,9 +2123,16 @@ def _softmax_kv_body(
     alpha = cute.math.exp2(exp_input, fastmath=True)
     new_total_max = total_max
 
-    alpha_vec = cutlass.Vector.from_elements((alpha,), cutlass.Float32)
-    nvvm.tcgen05_st("32x32b", nvvm.make_tmem_ptr(stats_addr, cutlass.Float32), alpha_vec)
-    nvvm.tcgen05_wait(kind=nvvm.Tcgen05Wait.STORE)
+    if cutlass.const_expr(LADDER_CORRFAST):
+        # alpha -> SMEM slot (generic proxy).  Ordered before the correction's read by this
+        # lane's mb_stat_full arrive (.release.cta) and its try_wait (.acquire.cta); the slot is
+        # rewritten only after the mb_stat_empty wait at the end of this body (the correction
+        # arrives on it, .release.cta, after its ld.shared).  No TMEM store, no wait::st.
+        s_alpha_slot.store(alpha)
+    else:
+        alpha_vec = cutlass.Vector.from_elements((alpha,), cutlass.Float32)
+        nvvm.tcgen05_st("32x32b", nvvm.make_tmem_ptr(stats_addr, cutlass.Float32), alpha_vec)
+        nvvm.tcgen05_wait(kind=nvvm.Tcgen05Wait.STORE)
     bars.mb_stat_full[sub_tile_id].arrive()
 
     # No register row-sum on either chunk: the denominator accumulates in the
@@ -2187,6 +2213,7 @@ def _softmax_warp_group(
     leader_cta_id,
     cta_in_pair,
     qh_per_kh,
+    s_alpha=None,
 ):
     """Softmax warp group — online softmax + α publish (LSE write owned by correction)."""
     # Wait on MMA's TMEM-publish named barrier BEFORE tmem_ptr_i32.load() — else stale base pointer.
@@ -2233,6 +2260,11 @@ def _softmax_warp_group(
 
     softmax_wg_base_const = CFG.SOFTMAX_WG0_BASE if sub_tile_id == 0 else CFG.SOFTMAX_WG1_BASE
     tid_in_wg = cute.arch.thread_idx()[0] - cutlass.Int32(softmax_wg_base_const * 32)
+    # LADDER_CORRFAST: this lane's alpha slot (row = TMEM lane = tid_in_wg; the correction
+    # warp with the same (warp % 4, lane) reads the same row).
+    s_alpha_slot = None
+    if cutlass.const_expr(LADDER_CORRFAST):
+        s_alpha_slot = s_alpha.subview(cutlass.Int32(sub_tile_id * CFG.SOFTMAX_LANES) + tid_in_wg)
 
     while is_valid_tile > cutlass.Int32(0):
         read_tile_id_arrive(sched.mb_read_tile_id.subview(sched_state.idx), CGA_SIZE)
@@ -2271,6 +2303,7 @@ def _softmax_warp_group(
                     bmm1_phase,
                     stat_empty_phase,
                     leader_cta_id,
+                    s_alpha_slot,
                 )
         else:
             for kv_loop in cutlass.range(bounds.left, bounds.unmasked_lo, 1, unroll=1):
@@ -2290,6 +2323,7 @@ def _softmax_warp_group(
                     bmm1_phase,
                     stat_empty_phase,
                     leader_cta_id,
+                    s_alpha_slot,
                 )
             for kv_loop in cutlass.range(bounds.unmasked_lo, bounds.unmasked_hi, 1, unroll=1):
                 total_max, total_sum, bmm1_phase, stat_empty_phase = _softmax_kv_body(
@@ -2308,6 +2342,7 @@ def _softmax_warp_group(
                     bmm1_phase,
                     stat_empty_phase,
                     leader_cta_id,
+                    s_alpha_slot,
                 )
             for kv_loop in cutlass.range(bounds.unmasked_hi, bounds.right, 1, unroll=1):
                 total_max, total_sum, bmm1_phase, stat_empty_phase = _softmax_kv_body(
@@ -2326,6 +2361,7 @@ def _softmax_warp_group(
                     bmm1_phase,
                     stat_empty_phase,
                     leader_cta_id,
+                    s_alpha_slot,
                 )
 
         # Per-tile balance: softmax 1 bootstrap + n_kv end-of-body waits = n_kv+1 = corr fires.
@@ -2391,6 +2427,7 @@ def _correction_warp_group(
     sfo_row_off_b=0,
     sfo_col_off_h=0,
     sfo_cols=0,
+    s_alpha=None,
 ):
     """Correction warp group — α-rescale O + epilogue cast/store + LSE.
 
@@ -2461,14 +2498,20 @@ def _correction_warp_group(
 
                 bars.mb_stat_full[qs].wait(stat_full_phase, spin=SPIN_RING_WAITS)
 
-                stats_addr = tmem_base_iter + cutlass.Int32(stats_off)
-                stats_vec = nvvm.tcgen05_ld(
-                    "32x32b",
-                    nvvm.make_tmem_ptr(stats_addr, cutlass.Float32),
-                    num=2,
-                )
-                nvvm.tcgen05_wait(kind=nvvm.Tcgen05Wait.LOAD)
-                alpha = stats_vec[0]
+                if cutlass.const_expr(LADDER_CORRFAST):
+                    # alpha from the SMEM slot this row's softmax lane wrote before its
+                    # release.cta arrive on mb_stat_full (acquire-waited just above): no
+                    # tcgen05.ld round trip on the PV critical path.
+                    alpha = s_alpha.subview(cutlass.Int32(qs * CFG.SOFTMAX_LANES) + tid_in_wg).load()
+                else:
+                    stats_addr = tmem_base_iter + cutlass.Int32(stats_off)
+                    stats_vec = nvvm.tcgen05_ld(
+                        "32x32b",
+                        nvvm.make_tmem_ptr(stats_addr, cutlass.Float32),
+                        num=2,
+                    )
+                    nvvm.tcgen05_wait(kind=nvvm.Tcgen05Wait.LOAD)
+                    alpha = stats_vec[0]
 
                 # all_alpha_one ballot skips α-rescale once softmax stops bumping total_max.
                 alpha_is_one = alpha == cutlass.Float32(1.0)

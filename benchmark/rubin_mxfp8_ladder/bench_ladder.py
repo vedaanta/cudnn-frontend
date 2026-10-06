@@ -32,6 +32,7 @@ RUNGS = {
     "C": dict(label="mxfp8 + f16 exp", family="mxfp8", env={"LADDER_F16EXP": "1"}),
     "D": dict(label="mxfp8 + f16 exp + scale outside", family="mxfp8", env={"LADDER_F16EXP": "1", "LADDER_NOSCALE": "1"}),
     "E": dict(label="mxfp8 + f16 exp + scale outside + paged64", family="mxfp8", env={"LADDER_F16EXP": "1", "LADDER_NOSCALE": "1", "LADDER_PAGED64": "1"}, paged=64),
+    "F": dict(label="C + correction fast path (alpha via SMEM)", family="mxfp8", env={"LADDER_F16EXP": "1", "LADDER_CORRFAST": "1"}),
 }
 ONEOFF_FILE = "sm107/prefill_d128_mxfp8_ladder.py"
 B, HQ, HKV, D = 1, 32, 2, 128
@@ -41,7 +42,7 @@ LOG2E = math.log2(math.e)
 def _env_from_rung(rung):
     for k, v in RUNGS[rung]["env"].items():
         os.environ[k] = v
-    for k in ("LADDER_F16EXP", "LADDER_NOSCALE", "LADDER_PAGED64"):
+    for k in ("LADDER_F16EXP", "LADDER_NOSCALE", "LADDER_PAGED64", "LADDER_CORRFAST"):
         os.environ.setdefault(k, "0")
     # One JIT / compiled-plan cache per rung: rungs C/D/E share ONE kernel file and differ only by
     # import-time env flags, which the DSL and FE plan caches do not key on.
@@ -308,6 +309,7 @@ def validate(case):
 def main():
     ap = argparse.ArgumentParser()
     ap.add_argument("--rung", required=True, choices=sorted(RUNGS))
+    ap.add_argument("--dump-o", default=None, help="save the validated O (first S) as a .pt for bitwise A/B between rungs")
     ap.add_argument("--seqlens", type=int, nargs="+", default=[8192, 16384, 32768])
     ap.add_argument("--mask", choices=["causal", "none"], default="causal")
     ap.add_argument("--reps", type=int, default=20)
@@ -360,7 +362,7 @@ def main():
             d=D,
             kernel=kname,
             cfg={k: getattr(getattr(api, "_k_mod", None).CFG, k, None) for k in ("SCHEDULER_POLICY", "CTA_MMA", "STAGES_KV", "TILE_M", "TILE_N", "TILES_Q", "RESCALE_THRESHOLD", "MASK_FLAGS", "PAGED_KV", "PAGE_SIZE")} if getattr(getattr(api, "_k_mod", None), "CFG", None) is not None else None,
-            kmod=dict(PAGED_KV=getattr(getattr(api, "_k_mod", None), "PAGED_KV", None), PAGE_SIZE=getattr(getattr(api, "_k_mod", None), "PAGE_SIZE", None), F16EXP=getattr(getattr(api, "_k_mod", None), "LADDER_F16EXP", None), NOSCALE=getattr(getattr(api, "_k_mod", None), "LADDER_NOSCALE", None)),
+            kmod=dict(PAGED_KV=getattr(getattr(api, "_k_mod", None), "PAGED_KV", None), PAGE_SIZE=getattr(getattr(api, "_k_mod", None), "PAGE_SIZE", None), F16EXP=getattr(getattr(api, "_k_mod", None), "LADDER_F16EXP", None), NOSCALE=getattr(getattr(api, "_k_mod", None), "LADDER_NOSCALE", None), CORRFAST=getattr(getattr(api, "_k_mod", None), "LADDER_CORRFAST", None)),
             compile_s=round(compile_s, 1),
             clocks_before=gpu_clocks(),
             tag=args.tag,
@@ -382,6 +384,8 @@ def main():
             run_execute(api, case, ws)
             torch.cuda.synchronize()
             rec["validation"] = validate(case)
+            if args.dump_o:
+                torch.save(case["o"].detach().clone().cpu(), args.dump_o)
         print(json.dumps(rec), flush=True)
         if args.out:
             with open(args.out, "a") as f:

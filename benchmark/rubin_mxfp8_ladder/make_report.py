@@ -15,6 +15,7 @@ RUNG_LABEL = OrderedDict(
     C="B + f16 exp (MUFU.EX2.F16x2)",
     D="C + 1/ln2 folded outside",
     E="D + paged KV, page 64",
+    F="C + correction fast path (alpha via SMEM)",
 )
 SEQS = [8192, 16384, 32768]
 
