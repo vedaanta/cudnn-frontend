@@ -17,3 +17,12 @@ then `python make_report.py --timing results_hecate.jsonl --ncu ncu_hecate.csv -
 PIC-Smart simulations of the same five rungs at B=1, H=1/1, S=4096, no mask live outside the repo:
 `/home/scratch.vagarwalla_gpu/perfsim_ladder/RESULTS.md` (sim cycles, SOL, per-SM MMA SOL, perf-inspector links;
 traces, config and submit scripts alongside).  Captured with `bench_ladder.py --ncu-run --batch 1 --heads 1 1`.
+
+## Rung F: correction fast path (alpha via SMEM), C vs F on board 0030
+- `results_board_CF.jsonl` — C vs F timing sweep (32/2 heads, 8k/16k/32k, causal + no-mask natural, causal LPT); the two 32k
+  cells at −1 % / −0.1 % are sustained-replay clock drift, superseded by:
+- `results_board_CF_32k_interleaved.jsonl` — C/F interleaved twice at 32k with clocks logged: no-mask 2937 → 2781 µs (−5.3 %),
+  causal LPT 1528 → 1427 µs (−6.6 %).
+- `ncu_board_CF_32k.csv/.json` — ncu `--set full` at 32k for both: tensor-active 41.4 → 43.7 % (no-mask), 39.6 → 42.6 % (causal LPT);
+  issue 51 → 54 %; warp latency 7.8 → 7.4 cycles; barrier stalls 0.28 → 0.16; TMEM-pipe instructions 1.5 → 1.1 %.
+F's output is bitwise identical to C's (validated causal + no-mask).
