@@ -3,14 +3,15 @@
 #   board_py.sh <python args...>          uv python3.10 + venv_frost site-packages (torch cu130, internal CuTe DSL)
 #   NCU=1 NCU_OUT=/tmp/... NCU_SKIP=3 NCU_K=regex board_py.sh <python args...>   wrap in sudo ncu
 WT=${WT:-/home/scratch.vagarwalla_gpu/cudnn-fe-github/.claude/worktrees/rubin-ladder-bench}
-PY=$(ls -d /home/vagarwalla/.local/share/uv/python/cpython-3.10.*-linux-x86_64-gnu/bin/python3.10 | tail -1)
-SP=/home/scratch.vagarwalla_libs_1/venv_frost/lib/python3.10/site-packages
+PY=${PY:-$(ls -d /home/vagarwalla/.local/share/uv/python/cpython-3.10.*-linux-x86_64-gnu/bin/python3.10 2>/dev/null | tail -1)}
+SP=${SP:-/home/scratch.vagarwalla_libs_1/venv_frost/lib/python3.10/site-packages}
+CUDNN_LIB=${CUDNN_LIB:-/home/scratch.vagarwalla_gpu/cudnn_9.26.0.51/lib}  # PY/SP/CUDNN_LIB/WT overridable: boards without the NFS mounts run from a local copy
 T=/tmp/vagarwalla/ladder
 mkdir -p $T/cache $T/ncu $T/dsl_cache $T/dsl_cache_root $T/cache_root
 # The internal DSL installs via a .pth (sys.path += nvidia_cutlass_dsl/dsl_packages); PYTHONPATH skips .pth files.
 export PYTHONPATH=$WT/python:$WT/test/python:$SP:$SP/nvidia_cutlass_dsl/dsl_packages${PYTHONPATH_TAIL:+:$PYTHONPATH_TAIL}  # TAIL: extra pkgs (e.g. cupti-python), searched LAST
-export LD_PRELOAD=/home/scratch.vagarwalla_gpu/cudnn_9.26.0.51/lib/libcudnn.so.9
-export LD_LIBRARY_PATH=/home/scratch.vagarwalla_gpu/cudnn_9.26.0.51/lib:${LD_LIBRARY_PATH:-}
+export LD_PRELOAD=$CUDNN_LIB/libcudnn.so.9
+export LD_LIBRARY_PATH=$CUDNN_LIB:${LD_LIBRARY_PATH:-}
 export CUDNN_FRONTEND_ENABLE_FROST_ENGINES=1
 export XDG_CACHE_HOME=$T/cache
 export CUTE_DSL_CACHE_DIR=${CUTE_DSL_CACHE_DIR:-$T/dsl_cache}
