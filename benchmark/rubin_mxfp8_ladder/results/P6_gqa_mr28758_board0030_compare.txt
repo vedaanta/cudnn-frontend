@@ -1,0 +1,25 @@
+=== compare 13:16:10 NVIDIA Graphics Device, 2364 MHz, 475.57 W
+OURS f_none_16384 | S 16384 none natural | 719.93 us | 6109.0 TFLOPS/s | clocks_after 2364 MHz, 2424 MHz, 3186 MHz, 34, 474.60 W
+GQA d128_h32_2_16384_none | clk_before 2364 MHz | 1463.111 us | 3005.955 TFLOPS/s | 2364 MHz 
+OURS f_causal_16384 | S 16384 causal lpt | 388.71 us | 5657.6 TFLOPS/s | clocks_after 2364 MHz, 2424 MHz, 3186 MHz, 33, 474.95 W
+GQA d128_h32_2_16384_causal | clk_before 2364 MHz | 1124.032 us | 3912.741 TFLOPS/s | 2364 MHz 
+OURS f_none_32768 | S 32768 none natural | 2970.52 us | 5922.3 TFLOPS/s | clocks_after 2316 MHz, 2424 MHz, 3186 MHz, 57, 974.58 W
+GQA d128_h32_2_32768_none | clk_before 2364 MHz | 5784.399 us | 3041.316 TFLOPS/s | 2364 MHz 
+OURS f_causal_32768 | S 32768 causal lpt | 1470.46 us | 5982.0 TFLOPS/s | clocks_after 2364 MHz, 2424 MHz, 3186 MHz, 49, 550.68 W
+GQA d128_h32_2_32768_causal | clk_before 2364 MHz | 2952.900 us | 5957.597 TFLOPS/s | 2364 MHz 
+OURS f_none_16384 | S 16384 none natural | 720.06 us | 6107.9 TFLOPS/s | clocks_after 2412 MHz, 2424 MHz, 3186 MHz, 34, 474.78 W
+GQA d128_h32_2_16384_none | clk_before 2364 MHz | 1464.051 us | 3004.026 TFLOPS/s | 2364 MHz 
+OURS f_causal_16384 | S 16384 causal lpt | 388.56 us | 5659.8 TFLOPS/s | clocks_after 2412 MHz, 2424 MHz, 3186 MHz, 33, 478.54 W
+GQA d128_h32_2_16384_causal | clk_before 2364 MHz | 820.954 us | 5357.241 TFLOPS/s | 2364 MHz 
+OURS f_none_32768 | S 32768 none natural | 2959.99 us | 5943.3 TFLOPS/s | clocks_after 2340 MHz, 2424 MHz, 3186 MHz, 56, 1029.68 W
+GQA d128_h32_2_32768_none | clk_before 2364 MHz | 5704.490 us | 3083.919 TFLOPS/s | 2364 MHz 
+OURS f_causal_32768 | S 32768 none natural | 2959.99 us | 5943.3 TFLOPS/s | clocks_after 2340 MHz, 2424 MHz, 3186 MHz, 56, 1029.68 W
+GQA d128_h32_2_32768_causal | clk_before [N/A] |  |  | [N/A] Traceback (most recent call last):
+GQA d192_h128_16384_none | clk_before [N/A] |  |  | [N/A] Traceback (most recent call last):
+GQA d192_h128_16384_causal | clk_before [N/A] |  |  | [N/A] Traceback (most recent call last):
+GQA d192_h128_32768_none | clk_before [N/A] |  |  | [N/A] Traceback (most recent call last):
+GQA d192_h128_32768_causal | clk_before [N/A] |  |  | [N/A] Traceback (most recent call last):
+GQA d128_32768_none_nonpersist | clk_before [N/A] |  |  | [N/A] Traceback (most recent call last):
+GQA d128_32768_none_normarowsum | clk_before [N/A] |  |  | [N/A] Traceback (most recent call last):
+GQA d128_32768_none_bf16 | clk_before [N/A] |  |  | [N/A] Traceback (most recent call last):
+CMP_DONE

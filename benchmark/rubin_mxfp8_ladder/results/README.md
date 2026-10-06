@@ -203,3 +203,51 @@ Reaching 70-80 % needs fewer softmax instructions per element -- f16 S (halves t
 rejected by the user), a 4-wide f32->fp8 pack (does not exist on sm_10x), or an exponent that leaves the MUFU/F2FP pipes -- or a
 third softmax warpgroup with a register budget that does not force 64-column half-steps.  What is bankable on F today: the
 free-lever stack (-4.3 % dense / -2.7 % causal, exact) and, if the A4 TMEM map were built for its own sake, ~-5..-6 % more.
+
+## Check of DKG MR 28758 (`gqa.py`, Richard Cai's 2xfp8 GQA/MLA prefill, "d=192/128 but really fast") -- 2026-10-06
+Source: gitlab-master dlarch-fastkernels/dynamic-kernel-generator !28758 (branch `ricai/feature/2xfp8_mla`, open; `gqa.py` 3.2k lines,
+CuTe DSL with internal-only `cfence`/`ifence`).  Runner + shim for our venv: `../mr28758/` (MR sources are fetched, not committed).
+
+**What it is.** Per-tensor FP8 (no MXFP8 scale-factor tiles), ONE 256-row Q tile per CTA pair (128 rows per CTA) with Q copied once into
+TMEM (TS BMM1); two softmax warpgroups that alternate 128-token KV tiles ("temporal"), each with its own S buffer (`tS_stages=2`) and its own
+PARTIAL O (`tO_stages=2`), merged in the softmax epilogue through TMEM-passed (max, sum) stats; P aliased into the PEER warpgroup's S tail
+behind a `tSP_alias` mbarrier (our panel's design D2, made legal by the explicit alias barrier plus the one-tile temporal offset); S released
+at the LDTM so BMM1 runs two tiles ahead; ones-MMA row-sum (`P1`, 1-2 TMEM stages); fp16 softmax math on fp32 accumulators with the
+scale-shift subtract FUSED into the f32x2->f16x2 convert (`add_packed_f16x2_f32x2_f32x2` = one FHADD2 instead of our FFMA2 + F2FP), HMUL2
+scale, MUFU.EX2.F16x2, F2FP fp8 pack; FA4 conditional rescale (threshold 8, "skip correction"); 176 softmax registers held together by the
+`ifence` ptxas pragma (`.pragma "next knob FenceInterference"`); persistent CLC scheduler.  TMEM = 2x128 S + 2x128 O + Q (32 at d128 / 48 at
+d192) + P1 (32 / 16) = **576 exactly** -- this map has no room for MXFP8's +20 scale-factor columns, which is exactly why our panel found the
+two-partial-O layout infeasible for the mxfp8 kernel.
+
+**How fast it is by its own table** (its board, B=1, h=128, d=192/128, gaussian inputs): 32k dense 13306 us = 6.6 PF/s; the tensor-core
+work per 128-row tile is 336 clk (BMM1 K=192 + PV + P1) -> **~41-44 % MMA util**, i.e. the same ballpark as our F at d128 (37-40 %); causal
+32k 7064 us (~42 %); it equals the Rubin `fmha.py` reference at >= 8k (1.00x) and wins 2.2-2.3x only at S <= 2k (persistence / small-problem
+handling).  The "70 % (90 % with KOLA)" in the description is a PerfSim PIC figure, not silicon.  Its 6.6 PF/s reads higher than our 5.9
+PF/s only because d=192/128 does 25 % more MMA work per softmax element.
+
+**Same-board run (0030, through the shim; `P6_gqa_mr28758_board0030_compare.txt`).**  The kernel compiles on our July-2026 internal DSL
+with five shimmed APIs and PASSES its reference check at d128 GQA 32/2 fp8.  Timing at OUR shape (B=1, h_q=32, h_k=2, d=128), CUDA-event
+timed, interleaved with F:
+
+| 32k / 16k | F (ours, mxfp8) | gqa.py (per-tensor fp8) | ratio |
+|---|---|---|---|
+| 32k dense | 2960-2971 us | 5704-5784 us | **1.9x slower** |
+| 32k causal | 1470 us (LPT) | 2953 us | 2.0x slower |
+| 16k dense | 720 us | 1463 us | 2.0x slower |
+| 16k causal | 389 us (LPT) | 821-1124 us | 2.1-2.9x slower |
+
+That is ~1350 clk per 128-row KV tile (= ~20 % util): the two softmax warpgroups behave as if they do NOT overlap.  Not a spill artifact
+(local compile for sm_107a: REG 128 at launch, STACK 0, zero STL/LDL; `P6_gqa_mr28758_sass_summary.txt`, SASS in
+`P6_gqa_mr28758_d128_sm107a.sass.gz`; LDTM.STAT fused max is used).  Open hypotheses: GQA packing (h_q/h_k=16 -> 16-head x 16-token Q tiles)
+vs our 256-token tiles, DSL-version codegen (July DSL + no-op `ifence`), or the alias-barrier coupling at this shape.  The discriminating
+cells -- MHA h32/h32 (no packing), the MR's own d192/128 h128 shape, `GQA_IFENCE=1`, `--disable_persistence` / `--disable_mma_rowsum` /
+bf16 -- are scripted in `../mr28758/compare2.sh` but did not run: **board 0030's GPU faulted mid-matrix** (GSP crash buffer 13:17, Xid 13 MMU
+NACK warp exceptions, Xid 154 "recovery action PF FLR", `nvidia-smi` reports "GPU requires reset"; `sudo nvidia-smi -r` answers "Not
+Supported"; the lab `cutil` offers only node power control).  Attribution is inconclusive (the fault landed between a completed gqa.py cell
+and an F run).  hecate is reachable but its Slurm/home need a fresh interactive login.
+
+**Relation to our conclusion.** The MR confirms the design space, not a way out of it: with fp32 accumulators it reaches ~576/576 TMEM only
+because it is per-tensor fp8, it keeps 2 softmax warpgroups x ~176 registers, and its silicon utilisation at 32k is ~41-44 % at d192/128 --
+consistent with the ~50 % fp32-S floor measured above once the 25 % larger MMA work per element is removed.  Two things are worth taking
+from it: the fused f32x2->f16x2 subtract (saves the 64 standalone F2FP converts per warp-step, ~20 % of the softmax instruction count) and the
+`ifence` register-interference pragma for the 176/192-register softmax body.

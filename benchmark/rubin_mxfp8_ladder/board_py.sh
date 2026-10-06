@@ -8,7 +8,7 @@ SP=/home/scratch.vagarwalla_libs_1/venv_frost/lib/python3.10/site-packages
 T=/tmp/vagarwalla/ladder
 mkdir -p $T/cache $T/ncu $T/dsl_cache $T/dsl_cache_root $T/cache_root
 # The internal DSL installs via a .pth (sys.path += nvidia_cutlass_dsl/dsl_packages); PYTHONPATH skips .pth files.
-export PYTHONPATH=$WT/python:$WT/test/python:$SP:$SP/nvidia_cutlass_dsl/dsl_packages
+export PYTHONPATH=$WT/python:$WT/test/python:$SP:$SP/nvidia_cutlass_dsl/dsl_packages${PYTHONPATH_TAIL:+:$PYTHONPATH_TAIL}  # TAIL: extra pkgs (e.g. cupti-python), searched LAST
 export LD_PRELOAD=/home/scratch.vagarwalla_gpu/cudnn_9.26.0.51/lib/libcudnn.so.9
 export LD_LIBRARY_PATH=/home/scratch.vagarwalla_gpu/cudnn_9.26.0.51/lib:${LD_LIBRARY_PATH:-}
 export CUDNN_FRONTEND_ENABLE_FROST_ENGINES=1
@@ -24,7 +24,7 @@ if [ "${NCU:-0}" = "1" ]; then
   PY=$PYROOT/bin/python3.10
   mkdir -p $T/root_home
   # forward EVERY LADDER_* knob through sudo (the first version forwarded six and silently profiled plain F for the rest)
-  LADDER_ENV=$(env | grep -E '^LADDER_[A-Z0-9_]+=' | tr '\n' ' ')
+  LADDER_ENV=$(env | grep -E '^(LADDER|GQA)_[A-Z0-9_]+=' | tr '\n' ' ')  # LADDER_* knobs + GQA_* (MR 28758 shim)
   NCU_BIN=/home/scratch.svc_compute_arch/release/nsightCompute/internal/x86_64/latest/ncu
   exec sudo -n env HOME=$T/root_home PYTHONPATH=$PYTHONPATH LD_PRELOAD=$LD_PRELOAD LD_LIBRARY_PATH=$LD_LIBRARY_PATH \
       CUDNN_FRONTEND_ENABLE_FROST_ENGINES=1 XDG_CACHE_HOME=$T/cache_root CUTE_DSL_CACHE_DIR=$T/dsl_cache_root \

@@ -1,0 +1,34 @@
+# MR 28758 gqa.py, d128 GQA 32/2 fp8, compiled for sm_107a with the July-2026 internal DSL + shim (ifence = no-op)
+ Function kernel_cutlass_attention___main__GqaTcgen05_object_at__256_128_128_256_128_128_256_16_64_TiledMMA_ThrLayoutVMNK21111000_PermutationMNK____MMAAtom_ThrID21_ShapeMNK25612864_TVLayoutA2128641_0:
+  REG:128 STACK:0 SHARED:1024 LOCAL:0 CONSTANT[0]:1832 TEXTURE:0 SURFACE:0 SAMPLER:0
+# opcode histogram (top 30)
+    265 FMUL
+    168 BRA
+    161 F2FP
+    157 UMOV
+    145 UIADD3
+    132 MUFU
+    132 FSETP
+    128 HADD2
+    128 FMUL2
+    121 MOV
+     93 ULOP3
+     86 SYNCS
+     85 UISETP
+     80 USHF
+     69 ULEA
+     68 USEL
+     64 USYNCS
+     64 HMUL2
+     64 FHADD2
+     43 SHF
+     41 NANOSLEEP
+     40 NOP
+     39 LDCU
+     32 FFMA2
+     29 LOP3
+     29 BAR
+     24 STS
+     20 LEA
+     20 IADD
+     19 FENCE
