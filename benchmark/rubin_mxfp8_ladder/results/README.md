@@ -125,3 +125,81 @@ Reading: putting P in SMEM (H, and PREF on F) loads the shared-memory port to ~7
 step plus the SS operand reads of P for the PV and again for the row-sum), where the tensor core's own Q/K/V/P operand
 fetches queue behind it; that is the mechanism behind H's and PREF's slowdown independent of the chain logic.  G's
 extra LST (45 %) is the doubled mbarrier traffic and the two K boxes.  PIC files: `perfsim_output/gr100_ladder_{G,H}_b1h1s4k_none_r1/perfsim/pic_analysis/run.A.dir.0/*/pic-analysis/pi/web/full.pfm`.
+
+## Design panel + probes of the "Q in TMEM / two partial O / different tile M,N" ask (2026-10-06, board 0030)
+Goal set by the user: a pipeline that lifts the mainloop MMA util from ~44 % to 70-80 % (step <= 777 / 680 clk per 256 rows x 128
+tokens), fp32 S kept, local-board validation only.  Method: a design workflow (4 designers over temporal / column-split /
+spatial-incremental / wildcard families, two adversarial verifiers per design, one judge; 20 designs) fed with this README's measured
+numbers, then the judge's decisive probes built as knobs on the one-off kernel and measured here.  Panel records: `J_design_panel.md`
+(ranking, designer-vs-verifier table, ceiling analysis, recommendation), `J_design_panel.json.gz` (everything), `J_design_plan_A4.md`.
+
+**Panel result.** No fp32-S design reaches 70 % in the corrected model.  The literal layout (Q in TMEM + two partial O at M=128
+rows/CTA) is 592 of 576 TMEM columns with P aliased into S and 656+ with a dedicated P; every two-partial-O layout that fits aliases P
+into S again and rebuilds F's PV -> BMM1 -> LDTM chain (39-56 %).  Best feasible = **A4**: M=128/CTA, Q in TMEM (TS BMM1), the two
+softmax WGs alternate 128-token KV tiles with ONE shared O/Sigma (tile-order max ratchet through a per-row SMEM slot), a dedicated
+32-column P slot per WG, BMM1(k+2) at the s_free of S(k) -- corrected 55-64 %, 65-72 % only with a working register prefetch, sleeping
+non-softmax waits and the HOIST/double-arrive/overhead trims; costs 2x K/V L2 traffic and STAGES_KV=8.  **Ceiling:** the issue port.
+With fp32 S + f16 exp + fp8 P the softmax is 4 instructions per 2 elements (FFMA2, F2FP cvt, MUFU.EX2.F16x2, F2FP pack) = 297 per warp
+per 128 tokens, i.e. 594 issue slots per SMSP per 544 tensor clocks (109 %) before the ~100-160 slots of the MMA/correction/loader
+warps: 72-79 % at a perfect port, 61-72 % at the 85-90 % a two-warp SMSP reaches; 80 % needs f16 S (user-forbidden) or a 4-wide
+f32->fp8 pack (does not exist on sm_10x; f32 exp doubles MUFU to 1040 clk/step).
+
+**Decisive probe P1 = `LADDER_PREF_TMEMP=1`** (on `LADDER_PREF=1`): P stored into the TMEM S tail with the classic `tcgen05.st` and
+PV/row-sum as the classic TS MMAs, while BMM1(k+1) still goes out at s_free and the next S is prefetched after chunk b's convert = the
+A4 steady state (S freed at the LDTM, P in TMEM, no SMEM-port P traffic) without A4's TMEM map.  Numerics are garbage by design
+(BMM1(k+1) races the P store in the same columns); every barrier, max, alpha and S value is real.  32k, interleaved, graph replay:
+
+| cell (32k) | none natural | causal LPT | ncu tensor-active (none / causal) | step clk (F-calibrated) |
+|---|---|---|---|---|
+| F | 2946 us | 1476-1494 us | 43.7 / 42.6 % | ~1276 |
+| PREF (rung I, P in SMEM) | +4.0 % | +3.8 % | 40.7 / 40.1 % | ~1350 |
+| **PREF + TMEMP** | **-5.0 %** | **-4.2..-5.5 %** | 45.5 / 44.4 % | ~1220 |
+| + CORR_NORESCALE=2 | -5.8 % | -6.0 % | | |
+| + SLEEP_NONSM | -6.2 % | -5.6 % | 47.0 / 45.2 % | ~1180 |
+| F + SLEEP_NONSM (P2, bit-exact) | +0.2 % | 0 % | | |
+| F + HOIST + NORESCALE=2 (P3) | -2.6 % | -2.6..-6 % | | validates |
+| F + HOIST + NORESCALE=2 + NOSCALE + SUB2 (P3) | **-4.3 %** | -2.7 % | | validates |
+
+The judge's gate for building A4 was <= ~900 clk/step (>= 58-60 % tensor-active) on this probe; it lands at ~1220 (45.5 %), so the
+A4 / B3 / D7 family is worth ~F -6 %, not 70 %.  Files: `P1_results_tmemp_probe.jsonl`, `P1_ncu_board_tmemp_32k.{csv,json}`,
+`P3_results_stack.jsonl`, `P1_results_base_1006.jsonl` (same-day F baseline).
+
+**Where the TMEM-P step goes (ncu SASS-level stall sampling, `ncu --import --page source --csv --print-source sass`, none 32k).**
+F: 48 % of all warp samples sit in spin-wait `BRA.U.ANY !UP0` (long-scoreboard) and 15 % in `NANOSLEEP` (parked TMA-store/scheduler
+warps); the two largest spin lines (10.8 + 10.6 %, executed once per step by 4 warps each) are the softmax WGs' bmm1_done waits = the
+chain.  TMEM-P: the chain wait is gone, but ONE softmax WG now spends ~55 % of its time on a single line executed once per step except a
+tile's first step = the P-slot-reuse wait (`bmm2_done(k-1)` before the chunk-a store; its PV is last in the MMA order), the
+`USYNCS.ARRIVE` after the `tcgen05.wait::st` carries ~13 % of each softmax warp's samples (short scoreboard = the TMEM store
+completing), and the MUFU lines carry 21 % of all samples with 78 % "wait" (fixed-latency dispatch gaps: the chunked PREF body
+interleaves the 32-MUFU runs worse than F's single 128-column block, where MUFU shows 17 % wait).  Pipe stand-ins on the TMEM-P arm
+(`LADDER_PROBE` bitmask, numerics garbage, same instruction counts unless noted; `P4_results_pipe_probes.jsonl`):
+
+| TMEM-P + | none | causal LPT | reading |
+|---|---|---|---|
+| no MUFU at all (bit 1, -65 instructions/warp-step) | -4.7 % | -2.7 % | the MUFU pipe is not the floor |
+| fp8 pack F2FP -> one XOR (bit 4) | -2.7 % | -1.4 % | the F2FP pack costs more than an ALU op |
+| f32->f16 F2FP -> PRMT wrapped in two MOVs (bit 2, +128 instr) | +5 % | +9 % | instruction count matters ~1:1 |
+| bits 1+2+4 | -5.9 % | -3.0 % | |
+| MMA order BMM1(st0), PV(st0), BMM1(st1), PV(st1) (`LADDER_PREF_ORDER=1`) | +10 % | +16 % | a WG phase offset through the MMA order couples the WGs; also +15 % on exact PREF (validates == F) |
+
+Structure probes on the TMEM-P arm (what A4's remaining mechanisms would buy; `P5_results_structure_probes*.jsonl`, 32k, medians of
+3-4 interleaved runs vs the same-run F; TMEM-P itself = -4.6 % / -4.6 %):
+
+| TMEM-P + | none | causal LPT | reading |
+|---|---|---|---|
+| P-slot-reuse wait moved to the end of the step (bit 8 = a double-buffered P slot) | -4.3 % | -3.8 % | = TMEM-P: the WG that spends 55 % of its samples there has slack, it is not on the critical path |
+| no `wait::st` before the bmm2_ready arrives (bit 16 = late / asynchronous arrive) | -6.2 % | -4.3 % | the store-completion wait costs ~1.5 % (dense) |
+| f32->f16 F2FP -> one XOR of the bit patterns (bit 2, same instruction count) | -6.7 % | +4.8 % | dense -2 % vs TMEM-P; the causal slowdown reproduces (3 runs) and is unexplained |
+| bits 8 + 1 + 4 (double P, no MUFU, XOR pack) | -11.3 % | -10.7 % | |
+| **bits 16 + 1 + 4** (no store wait, no MUFU at all, XOR pack) | **-15.8 %** | **-14.4 %** | step ~1075 clk = **~51 % util**: the floor of this softmax stream with the MUFU pipe deleted and the sync removed |
+| bits 8+16 together, or bit 32 (prefetch LDTM without the bmm1_done gate) | hang | hang | a `tcgen05.st`/`ld` on columns an in-flight MMA is reading/writing deadlocks the TMEM pipeline (undefined per PTX) -- the one-slot P emulation cannot be pushed further |
+
+**Conclusion.** Three independent lines agree: the panel's issue-port ceiling (72-79 % at a perfect port, 61-72 % realistic), the
+A4-structure probe (45.5 % tensor-active, 47 % with the production double-arrive and sleeping waits), and the pipe probes (51 % with
+the MUFU pipe deleted outright).  The mxfp8 d128 prefill mainloop at fp32 S, two 192-register softmax warpgroups and the f16
+exponent has a structural floor near 50 % MMA util; the chain (BMM1 -> LDTM -> P -> PV) that every layout redesign attacks is worth
+~5 %, and no fp32-S layout (Q in TMEM, one or two partial O, N = 32/64/96/128/256) changes the instruction stream that sets the floor.
+Reaching 70-80 % needs fewer softmax instructions per element -- f16 S (halves the LDTM bytes and removes the f32->f16 convert;
+rejected by the user), a 4-wide f32->fp8 pack (does not exist on sm_10x), or an exponent that leaves the MUFU/F2FP pipes -- or a
+third softmax warpgroup with a register budget that does not force 64-column half-steps.  What is bankable on F today: the
+free-lever stack (-4.3 % dense / -2.7 % causal, exact) and, if the A4 TMEM map were built for its own sake, ~-5..-6 % more.

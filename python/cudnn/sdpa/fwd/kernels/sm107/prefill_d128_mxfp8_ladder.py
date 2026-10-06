@@ -292,7 +292,8 @@ if LADDER_PREF_TMEMP and not LADDER_PREF:
     raise ValueError("LADDER_PREF_TMEMP=1 requires LADDER_PREF=1")
 # LADDER_PROBE (bitmask; PREF-arm pipe stand-ins, numerics garbage, timing only): 1 = no MUFU.EX2 (P = the f16 pairs),
 # 2 = the f32->f16x2 convert replaced by ONE XOR of the bit patterns, 4 = the fp8 pack replaced by ONE XOR,
-# 8 = no P-slot-reuse wait (bmm2_done) before the chunk-a store = a double-buffered P slot, 16 = no wait::st before the
+# 8 = the P-slot-reuse wait (bmm2_done) moved from before the chunk-a store to the END of the step = a double-buffered P
+#     slot (dropping it entirely lets the softmax lap the MMA and overruns the bmm2_ready phases -> deadlock), 16 = no wait::st before the
 # bmm2_ready arrives (late/async arrive), 32 = no bmm1_done wait before the next-step S prefetch.
 LADDER_PROBE = int(_os.environ.get("LADDER_PROBE", "0"))
 # LADDER_PREF_ORDER=1 (PREF arm): MMA order BMM1(st0) -> PV(st0) -> BMM1(st1) -> PV(st1) instead of BMM1,BMM1,PV,PV --
@@ -3424,6 +3425,11 @@ def _pf_softmax_kv_body(
         nvvm.fence_proxy("async.shared", space="cta")
     bars.mb_bmm2_ready[sub_tile_id * CFG.N_BMM2_CHUNKS + 1].arrive(leader_cta_id=leader_cta_id, cta_group=CFG.CTA_MMA)
 
+    if cutlass.const_expr(LADDER_PROBE & 8):
+        # Double-buffered-P emulation: PV(k-1) must be done before step k+1's P store, not before step k's; waiting
+        # here still bounds the run-ahead to one step (a parity wait cannot express 'two phases ago').
+        if kv_loop > kv_left:
+            bars.mb_bmm2_done[sub_tile_id].wait(pdone_phase, spin=SPIN_RING_WAITS)
     bars.mb_stat_empty[sub_tile_id].wait(stat_empty_phase, spin=SPIN_RING_WAITS)
     stat_empty_phase = stat_empty_phase ^ 1
 
