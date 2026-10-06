@@ -52,7 +52,8 @@ def _env_from_rung(rung):
     for var in ("CUTE_DSL_CACHE_DIR", "XDG_CACHE_HOME"):
         base = os.environ.get(var)
         if base:
-            os.environ[var] = f"{base.rstrip('/')}_rung{rung}"
+            sub = "".join(f"_{k[10:].lower()}{os.environ[k]}" for k in ("LADDER_SD_PINGPONG", "LADDER_SD_PREFETCH", "LADDER_SD_LATE_ARRIVE", "LADDER_SD_SWMAX") if os.environ.get(k))
+            os.environ[var] = f"{base.rstrip('/')}_rung{rung}{sub}"
             os.makedirs(os.environ[var], exist_ok=True)
 
 
@@ -374,7 +375,7 @@ def main():
             d=D,
             kernel=kname,
             cfg={k: getattr(getattr(api, "_k_mod", None).CFG, k, None) for k in ("SCHEDULER_POLICY", "CTA_MMA", "STAGES_KV", "TILE_M", "TILE_N", "TILES_Q", "RESCALE_THRESHOLD", "MASK_FLAGS", "PAGED_KV", "PAGE_SIZE")} if getattr(getattr(api, "_k_mod", None), "CFG", None) is not None else None,
-            kmod=dict(PAGED_KV=getattr(getattr(api, "_k_mod", None), "PAGED_KV", None), PAGE_SIZE=getattr(getattr(api, "_k_mod", None), "PAGE_SIZE", None), F16EXP=getattr(getattr(api, "_k_mod", None), "LADDER_F16EXP", None), NOSCALE=getattr(getattr(api, "_k_mod", None), "LADDER_NOSCALE", None), CORRFAST=getattr(getattr(api, "_k_mod", None), "LADDER_CORRFAST", None), SDOUBLE=getattr(getattr(api, "_k_mod", None), "LADDER_SDOUBLE", None)),
+            kmod=dict(PAGED_KV=getattr(getattr(api, "_k_mod", None), "PAGED_KV", None), PAGE_SIZE=getattr(getattr(api, "_k_mod", None), "PAGE_SIZE", None), F16EXP=getattr(getattr(api, "_k_mod", None), "LADDER_F16EXP", None), NOSCALE=getattr(getattr(api, "_k_mod", None), "LADDER_NOSCALE", None), CORRFAST=getattr(getattr(api, "_k_mod", None), "LADDER_CORRFAST", None), SDOUBLE=getattr(getattr(api, "_k_mod", None), "LADDER_SDOUBLE", None), SD_PINGPONG=getattr(getattr(api, "_k_mod", None), "LADDER_SD_PINGPONG", None), SD_PREFETCH=getattr(getattr(api, "_k_mod", None), "LADDER_SD_PREFETCH", None), SD_LATE_ARRIVE=getattr(getattr(api, "_k_mod", None), "LADDER_SD_LATE_ARRIVE", None)),
             compile_s=round(compile_s, 1),
             clocks_before=gpu_clocks(),
             tag=args.tag,

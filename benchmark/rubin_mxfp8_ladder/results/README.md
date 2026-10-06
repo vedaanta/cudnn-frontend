@@ -26,3 +26,37 @@ traces, config and submit scripts alongside).  Captured with `bench_ladder.py --
 - `ncu_board_CF_32k.csv/.json` — ncu `--set full` at 32k for both: tensor-active 41.4 → 43.7 % (no-mask), 39.6 → 42.6 % (causal LPT);
   issue 51 → 54 %; warp latency 7.8 → 7.4 cycles; barrier stalls 0.28 → 0.16; TMEM-pipe instructions 1.5 → 1.1 %.
 F's output is bitwise identical to C's (validated causal + no-mask).
+
+## Rung G: S half-buffer double-buffering (lever 1), F vs G on board 0030
+Kernel lever `LADDER_SDOUBLE=1` (on top of F): each sub-tile's 128-column S slot becomes two 64-column half-buffers with their
+own P tails and bmm1_done/bmm2_done barriers; BMM1 is issued per half (N=64) right after the PV that drained that half-buffer,
+so it executes while the softmax works on the other half.  K is loaded as two 32-row boxes per CTA; SF_K for half b is the
+replicated 128x4 atom + 2 columns; the softmax prefetches the next half's fused LDTM.max; alpha/correction run per half.
+- Numerics: `G_fg_val.jsonl` (S=2048, none + causal) — G's max/mean abs error vs the fp32 reference equals F's
+  (1.65e-3 / 2.43e-4 none; 2.36e-2 / 4.57e-4 causal).  `G_fg_ramp.jsonl` = the same with `LADDER_KV_RAMP=1` (K/V scaled
+  2^((t//32)%4-2) per 32-token block so adjacent E8M0 blocks differ 2x and the two halves of a step 4x): none identical to F,
+  causal mean +1.8 % (per-half max updates change the rounding path in diagonal tiles; a wrong SF mapping would be >10x).
+- Timing (32/2 heads, 8k/16k/32k, graph replay): `G_results_board_FG.jsonl` is the FIRST G build (prefetch carried through a
+  phi: +4..6 % vs F); its ncu (`G_ncu_board_FG_32k.*`) shows issue 54 -> 61 %, FMA pipe 21 -> 30 % = ~65 register moves per
+  half, while long-scoreboard stalls dropped 4.5 -> 3.4.  With the load made unconditional (only the bmm1_done wait is
+  guarded) G == F within +-1 % (`G_results_board_G_variants.jsonl`: 32k none 2990 vs 2962-2997 us; the g_pf1 'none' cells at
+  +22/+73 % were taken while another workload shared the board -- 1.8-2.0 kW, 2.1 GHz -- and are invalid).
+- Variants (same file): per-half ping-pong named barrier +9..17 % (serialises the warpgroups per half); prefetch at the top
+  of the half +11..17 %; prefetch after exp/pack +2..5 %; after the scale-shift (default) neutral.  Consuming both sub-tiles'
+  alphas before either rescale (`G_results_g2.jsonl`, `G_ncu_board_FG2_32k.*`) +6 %: PV(st0) then depends on WG1's alpha
+  publish and the sub-tiles stall each other; reverted.  Deferred store-wait/arrive (`LADDER_SD_LATE_ARRIVE=1`,
+  `G_results_g3.jsonl`): +24..25 % (none 3686 vs 2988 us, causal LPT 1847 vs 1522) -- moving each half's bmm2_ready arrive
+  ~130 clk later is amplified ~3x, i.e. the arrive -> PV -> BMM1 -> LDTM chain IS the critical path.  Plain load + software
+  row max instead of the fused LDTM.max (`LADDER_SD_SWMAX=1`, `G_results_g4.jsonl`): +7.5 %, so the fused reduction is a
+  net win.  Final G (default knobs) vs F in the same sessions: none 2988-2990 vs 2942-2949 us (+1.4 %), causal LPT 1517-1522
+  vs 1490-1494 us (+1.9 %).
+- Why the lever cannot pay off in this TMEM budget: taking PV+BMM1 off the chain needs BMM1(h+2) issued as soon as S(h) is
+  read (a softmax->MMA "S consumed" barrier), which keeps each half-buffer busy ~80 % of the step, so P needs its own slot
+  (16 columns per sub-tile, reuse gated by bmm2_done).  With fp32 S the map is 256 S + 256 O + 32 Σ + 20 SF = 564 of 576;
+  32 more do not fit even after time-multiplexing the SF slots.  Proposed rung H: accumulate S in f16 (D=f16 BMM1; the
+  f16 logit error ~2^-11·|S| is far below the fp8 P quantization), halving S to 128 columns, which pays for dedicated P
+  slots and a third S buffer per sub-tile, halves the LDTM traffic and drops the f32->f16 pack from the softmax.
+- Reading: at 32k none the step costs ~1380 clk/128 tokens against an issue bound of ~840 (61 %), MUFU ~530 and tensor
+  544, i.e. ~540 clk/step of exposed latency remain.  The chain per half-buffer (MMA-thread reaction + tensor-core queue +
+  commit->mbarrier + LDTM ~300) is about as long as the softmax work on the other half, so two half-buffers only break even.
+  PerfSim PIC of G: `/home/scratch.vagarwalla_gpu/perfsim_ladder/perfsim_output/gr100_ladder_G_b1h1s4k_none_r1`.
