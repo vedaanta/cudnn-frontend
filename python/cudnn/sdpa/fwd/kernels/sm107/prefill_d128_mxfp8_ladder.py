@@ -111,6 +111,10 @@ DESC_VERSION: int = 0
 # (test_sm107_ring_waits_take_the_module_spin_constant).  Flipping this constant IS the whole experiment.
 # Measured (with the predicated credit arrive): +3.3 % @ S=2K, +4.3 / +4.1 % @8K dense / causal, +4.2 % @32K (dense H128).
 SPIN_RING_WAITS: bool = True
+# LADDER_SLEEP_NONSM=1 (issue-slot probe): the TMA-loader and correction ring waits take the default sleeping
+# (suspend-hint) form; the MMA and softmax waits keep the module spin constant.
+LADDER_SLEEP_NONSM = int(_os_early.environ.get("LADDER_SLEEP_NONSM", "0"))
+_SPIN_AUX: bool = SPIN_RING_WAITS and not LADDER_SLEEP_NONSM
 Cfg = type(CFG)
 TMA_QK_ITERS = _TMA.QK_ITERS
 TMA_VO_ITERS = _TMA.VO_ITERS
@@ -278,6 +282,22 @@ if LADDER_PREF and not (LADDER_F16EXP and LADDER_CORRFAST):
     raise ValueError("LADDER_PREF=1 requires LADDER_F16EXP=1 and LADDER_CORRFAST=1")
 if LADDER_PREF and (LADDER_SDOUBLE or LADDER_PIPE4 or LADDER_SD_LATE_ARRIVE):
     raise ValueError("LADDER_PREF is a classic-path lever (no SDOUBLE / PIPE4 / LATE_ARRIVE)")
+# LADDER_PREF_TMEMP=1: TIMING PROBE on top of LADDER_PREF (numerics WRONG by design).  P goes to the classic TMEM
+# S tail (P0_OFF / P1_OFF, tcgen05.st + wait::st) and PV / row-sum are the classic TS MMAs, while BMM1(k+1) still
+# goes out at s_free and the next S is still prefetched after chunk b's convert: the dependency graph and the
+# TMEM/SMEM traffic of a dedicated-P-in-TMEM pipeline (design A4) without the TMEM columns for it.  BMM1(k+1)
+# races the P store in the same columns, so O is garbage; every barrier, max, alpha and S value is real.
+LADDER_PREF_TMEMP = int(_os.environ.get("LADDER_PREF_TMEMP", "0"))
+if LADDER_PREF_TMEMP and not LADDER_PREF:
+    raise ValueError("LADDER_PREF_TMEMP=1 requires LADDER_PREF=1")
+# LADDER_PROBE (bitmask; PREF-arm pipe stand-ins, numerics garbage, timing only): 1 = no MUFU.EX2 (P = the f16 pairs),
+# 2 = the f32->f16x2 convert replaced by ONE XOR of the bit patterns, 4 = the fp8 pack replaced by ONE XOR,
+# 8 = no P-slot-reuse wait (bmm2_done) before the chunk-a store = a double-buffered P slot, 16 = no wait::st before the
+# bmm2_ready arrives (late/async arrive), 32 = no bmm1_done wait before the next-step S prefetch.
+LADDER_PROBE = int(_os.environ.get("LADDER_PROBE", "0"))
+# LADDER_PREF_ORDER=1 (PREF arm): MMA order BMM1(st0) -> PV(st0) -> BMM1(st1) -> PV(st1) instead of BMM1,BMM1,PV,PV --
+# WG1's S lands ~one PV + one bmm2_ready wait after WG0's, a controlled phase offset between the two softmax WGs.
+LADDER_PREF_ORDER = int(_os.environ.get("LADDER_PREF_ORDER", "0"))
 _PF_P_SLOT_BYTES = CFG.TILE_M * CFG.TILE_N * CFG.BPE  # 128 rows x 128 fp8
 _PF_P_LBO = 8 * 16
 _PF_P_SBO = 8 * CFG.TILE_N * CFG.BPE  # 8 rows x 128 B
@@ -1364,7 +1384,7 @@ def _tmaldg_warp_group(
             kv_row_base = kv_left * CFG.TILE_N
 
             # Prologue: Q[0] / K[first] / Q[1] / V[first] interleaved.
-            bars.mb_q_empty[0].wait(q_empty_phase, spin=SPIN_RING_WAITS)
+            bars.mb_q_empty[0].wait(q_empty_phase, spin=_SPIN_AUX)
             if cutlass.const_expr(CFG.CTA_MMA == 2):
                 if is_leader:
                     if nvvm.elect_sync():
@@ -1387,7 +1407,7 @@ def _tmaldg_warp_group(
                 mcast_mask=tma_mcast_mask,
             )
 
-            bars.mb_k_empty[kv_state.idx].wait(kv_state.phase, spin=SPIN_RING_WAITS)
+            bars.mb_k_empty[kv_state.idx].wait(kv_state.phase, spin=_SPIN_AUX)
             if cutlass.const_expr(CFG.CTA_MMA == 2):
                 if is_leader:
                     if nvvm.elect_sync():
@@ -1406,7 +1426,7 @@ def _tmaldg_warp_group(
                 mcast_mask=sf_mcast_mask,
             )
 
-            bars.mb_q_empty[1].wait(q_empty_phase, spin=SPIN_RING_WAITS)
+            bars.mb_q_empty[1].wait(q_empty_phase, spin=_SPIN_AUX)
             if cutlass.const_expr(CFG.CTA_MMA == 2):
                 if is_leader:
                     if nvvm.elect_sync():
@@ -1430,7 +1450,7 @@ def _tmaldg_warp_group(
             )
             q_empty_phase = q_empty_phase ^ 1
 
-            bars.mb_v_empty[kv_state.idx].wait(kv_state.phase, spin=SPIN_RING_WAITS)
+            bars.mb_v_empty[kv_state.idx].wait(kv_state.phase, spin=_SPIN_AUX)
             if cutlass.const_expr(CFG.CTA_MMA == 2):
                 if is_leader:
                     if nvvm.elect_sync():
@@ -1453,7 +1473,7 @@ def _tmaldg_warp_group(
             for kv_loop in cutlass.range(kv_left + cutlass.Int32(1), kv_right, 1, unroll=1):
                 kv_row_base_iter = kv_loop * CFG.TILE_N
 
-                bars.mb_k_empty[kv_state.idx].wait(kv_state.phase, spin=SPIN_RING_WAITS)
+                bars.mb_k_empty[kv_state.idx].wait(kv_state.phase, spin=_SPIN_AUX)
                 if cutlass.const_expr(CFG.CTA_MMA == 2):
                     if is_leader:
                         if nvvm.elect_sync():
@@ -1472,7 +1492,7 @@ def _tmaldg_warp_group(
                     mcast_mask=sf_mcast_mask,
                 )
 
-                bars.mb_v_empty[kv_state.idx].wait(kv_state.phase, spin=SPIN_RING_WAITS)
+                bars.mb_v_empty[kv_state.idx].wait(kv_state.phase, spin=_SPIN_AUX)
                 if cutlass.const_expr(CFG.CTA_MMA == 2):
                     if is_leader:
                         if nvvm.elect_sync():
@@ -1716,6 +1736,17 @@ def _sd_pv_half_smem(qs: int, c: int, desc_V, accumulate, sP, tmem_raw, bmm2_des
     desc_P = sP[qs * 2 + c].desc()
     _sd_mma_ss_step(bmm2_desc, desc_P, desc_V, tmem_raw.subview(o_off), c, accumulate, tmem_SF_P, tmem_SF_V)
     _sd_mma_ss_step(sum_desc, desc_P, desc_ones, tmem_raw.subview(sum_off), c, accumulate)
+
+
+@cute.jit
+def _pf_pv_chunk_tmem(qs: int, c: int, desc_V, accumulate, tmem_raw, bmm2_desc, sum_desc, desc_ones, tmem_SF_P, tmem_SF_V):
+    """LADDER_PREF_TMEMP: PV + ones-row-sum for 64-column chunk c of sub-tile qs with P read from the classic TMEM
+    tail (P0_OFF / P1_OFF): the classic TS MMAs, one K=64 phase each (k_idx=c advances A by 16 columns)."""
+    o_off = LAYOUT.O0_OFF if qs == 0 else LAYOUT.O1_OFF
+    sum_off = _SUM0_OFF if qs == 0 else _SUM1_OFF
+    p_off = LAYOUT.P0_OFF if qs == 0 else LAYOUT.P1_OFF
+    mma_ts_step(bmm2_desc, tmem_raw.subview(p_off), desc_V, tmem_raw.subview(o_off), c, accumulate, tmem_sf_a=tmem_SF_P, tmem_sf_b=tmem_SF_V)
+    mma_ts_step(sum_desc, tmem_raw.subview(p_off), desc_ones, tmem_raw.subview(sum_off), c, accumulate)
 
 
 @cute.jit
@@ -2051,38 +2082,98 @@ def _mma_warp_group(
                                 group=CTA_GROUP_KIND,
                                 multicast=nvvm.Tcgen05CpMulticast.WARPX4,
                             )
-                    s_free[0].wait(sfree_phase, spin=SPIN_RING_WAITS)
-                    mma_ss(bmm1_desc, desc_Q0, desc_K, (tmem_raw.subview(LAYOUT.S0_OFF)), tmem_sf_a=tmem_SF_Q0, tmem_sf_b=tmem_SF_K)
-                    if nvvm.elect_sync():
-                        bars.mb_bmm1_done[0].arrive(mcast_mask=mcast_mask, cta_group=CFG.CTA_MMA)
-                    s_free[1].wait(sfree_phase, spin=SPIN_RING_WAITS)
-                    mma_ss(bmm1_desc, desc_Q1, desc_K, (tmem_raw.subview(LAYOUT.S1_OFF)), tmem_sf_a=tmem_SF_Q1, tmem_sf_b=tmem_SF_K)
-                    if nvvm.elect_sync():
-                        bars.mb_bmm1_done[1].arrive(mcast_mask=mcast_mask, cta_group=CFG.CTA_MMA)
-                        bars.mb_k_empty[kv_state.idx].arrive(mcast_mask=mcast_mask, cta_group=CFG.CTA_MMA)
+                    if cutlass.const_expr(LADDER_PREF_ORDER):
+                        # BMM1(st0) -> PV(st0) -> BMM1(st1) -> PV(st1): WG1's S lands one PV + one bmm2_ready wait after WG0's.
+                        s_free[0].wait(sfree_phase, spin=SPIN_RING_WAITS)
+                        mma_ss(bmm1_desc, desc_Q0, desc_K, (tmem_raw.subview(LAYOUT.S0_OFF)), tmem_sf_a=tmem_SF_Q0, tmem_sf_b=tmem_SF_K)
+                        if nvvm.elect_sync():
+                            bars.mb_bmm1_done[0].arrive(mcast_mask=mcast_mask, cta_group=CFG.CTA_MMA)
+                        bars.mb_bmm2_ready[0 * CFG.N_BMM2_CHUNKS + 0].wait(bmm2_ready_phase, spin=SPIN_RING_WAITS)
+                        _ladder_mma_after_sync()
+                        if cutlass.const_expr(LADDER_PREF_TMEMP):
+                            _pf_pv_chunk_tmem(0, 0, desc_V, is_not_first_bmm2, tmem_raw, bmm2_desc, sum_desc, desc_ones, tmem_SF_P, tmem_SF_V)
+                        else:
+                            _sd_mma_ss_step(bmm2_desc, desc_P0, desc_V, tmem_raw.subview(LAYOUT.O0_OFF), 0, is_not_first_bmm2, tmem_SF_P, tmem_SF_V)
+                            _sd_mma_ss_step(sum_desc, desc_P0, desc_ones, tmem_raw.subview(_SUM0_OFF), 0, is_not_first_bmm2)
+                        bars.mb_bmm2_ready[0 * CFG.N_BMM2_CHUNKS + 1].wait(bmm2_ready_phase, spin=SPIN_RING_WAITS)
+                        _ladder_mma_after_sync()
+                        if cutlass.const_expr(LADDER_PREF_TMEMP):
+                            _pf_pv_chunk_tmem(0, 1, desc_V, cutlass.Boolean(True), tmem_raw, bmm2_desc, sum_desc, desc_ones, tmem_SF_P, tmem_SF_V)
+                        else:
+                            _sd_mma_ss_step(bmm2_desc, desc_P0 + _PF_P_KSTEP_INC, desc_V, tmem_raw.subview(LAYOUT.O0_OFF), 1, cutlass.Boolean(True), tmem_SF_P, tmem_SF_V)
+                            _sd_mma_ss_step(sum_desc, desc_P0 + _PF_P_KSTEP_INC, desc_ones, tmem_raw.subview(_SUM0_OFF), 1, cutlass.Boolean(True))
+                        if nvvm.elect_sync():
+                            bars.mb_bmm2_done[0].arrive(mcast_mask=mcast_mask, cta_group=CFG.CTA_MMA)
 
-                    bars.mb_bmm2_ready[0 * CFG.N_BMM2_CHUNKS + 0].wait(bmm2_ready_phase, spin=SPIN_RING_WAITS)
-                    _ladder_mma_after_sync()
-                    _sd_mma_ss_step(bmm2_desc, desc_P0, desc_V, tmem_raw.subview(LAYOUT.O0_OFF), 0, is_not_first_bmm2, tmem_SF_P, tmem_SF_V)
-                    _sd_mma_ss_step(sum_desc, desc_P0, desc_ones, tmem_raw.subview(_SUM0_OFF), 0, is_not_first_bmm2)
-                    bars.mb_bmm2_ready[0 * CFG.N_BMM2_CHUNKS + 1].wait(bmm2_ready_phase, spin=SPIN_RING_WAITS)
-                    _ladder_mma_after_sync()
-                    _sd_mma_ss_step(bmm2_desc, desc_P0 + _PF_P_KSTEP_INC, desc_V, tmem_raw.subview(LAYOUT.O0_OFF), 1, cutlass.Boolean(True), tmem_SF_P, tmem_SF_V)
-                    _sd_mma_ss_step(sum_desc, desc_P0 + _PF_P_KSTEP_INC, desc_ones, tmem_raw.subview(_SUM0_OFF), 1, cutlass.Boolean(True))
-                    if nvvm.elect_sync():
-                        bars.mb_bmm2_done[0].arrive(mcast_mask=mcast_mask, cta_group=CFG.CTA_MMA)
+                        s_free[1].wait(sfree_phase, spin=SPIN_RING_WAITS)
+                        mma_ss(bmm1_desc, desc_Q1, desc_K, (tmem_raw.subview(LAYOUT.S1_OFF)), tmem_sf_a=tmem_SF_Q1, tmem_sf_b=tmem_SF_K)
+                        if nvvm.elect_sync():
+                            bars.mb_bmm1_done[1].arrive(mcast_mask=mcast_mask, cta_group=CFG.CTA_MMA)
+                            bars.mb_k_empty[kv_state.idx].arrive(mcast_mask=mcast_mask, cta_group=CFG.CTA_MMA)
 
-                    bars.mb_bmm2_ready[1 * CFG.N_BMM2_CHUNKS + 0].wait(bmm2_ready_phase, spin=SPIN_RING_WAITS)
-                    _ladder_mma_after_sync()
-                    _sd_mma_ss_step(bmm2_desc, desc_P1, desc_V, tmem_raw.subview(LAYOUT.O1_OFF), 0, is_not_first_bmm2, tmem_SF_P, tmem_SF_V)
-                    _sd_mma_ss_step(sum_desc, desc_P1, desc_ones, tmem_raw.subview(_SUM1_OFF), 0, is_not_first_bmm2)
-                    bars.mb_bmm2_ready[1 * CFG.N_BMM2_CHUNKS + 1].wait(bmm2_ready_phase, spin=SPIN_RING_WAITS)
-                    _ladder_mma_after_sync()
-                    _sd_mma_ss_step(bmm2_desc, desc_P1 + _PF_P_KSTEP_INC, desc_V, tmem_raw.subview(LAYOUT.O1_OFF), 1, cutlass.Boolean(True), tmem_SF_P, tmem_SF_V)
-                    _sd_mma_ss_step(sum_desc, desc_P1 + _PF_P_KSTEP_INC, desc_ones, tmem_raw.subview(_SUM1_OFF), 1, cutlass.Boolean(True))
-                    if nvvm.elect_sync():
-                        bars.mb_bmm2_done[1].arrive(mcast_mask=mcast_mask, cta_group=CFG.CTA_MMA)
-                        bars.mb_v_empty[old_state.idx].arrive(mcast_mask=mcast_mask, cta_group=CFG.CTA_MMA)
+                        bars.mb_bmm2_ready[1 * CFG.N_BMM2_CHUNKS + 0].wait(bmm2_ready_phase, spin=SPIN_RING_WAITS)
+                        _ladder_mma_after_sync()
+                        if cutlass.const_expr(LADDER_PREF_TMEMP):
+                            _pf_pv_chunk_tmem(1, 0, desc_V, is_not_first_bmm2, tmem_raw, bmm2_desc, sum_desc, desc_ones, tmem_SF_P, tmem_SF_V)
+                        else:
+                            _sd_mma_ss_step(bmm2_desc, desc_P1, desc_V, tmem_raw.subview(LAYOUT.O1_OFF), 0, is_not_first_bmm2, tmem_SF_P, tmem_SF_V)
+                            _sd_mma_ss_step(sum_desc, desc_P1, desc_ones, tmem_raw.subview(_SUM1_OFF), 0, is_not_first_bmm2)
+                        bars.mb_bmm2_ready[1 * CFG.N_BMM2_CHUNKS + 1].wait(bmm2_ready_phase, spin=SPIN_RING_WAITS)
+                        _ladder_mma_after_sync()
+                        if cutlass.const_expr(LADDER_PREF_TMEMP):
+                            _pf_pv_chunk_tmem(1, 1, desc_V, cutlass.Boolean(True), tmem_raw, bmm2_desc, sum_desc, desc_ones, tmem_SF_P, tmem_SF_V)
+                        else:
+                            _sd_mma_ss_step(bmm2_desc, desc_P1 + _PF_P_KSTEP_INC, desc_V, tmem_raw.subview(LAYOUT.O1_OFF), 1, cutlass.Boolean(True), tmem_SF_P, tmem_SF_V)
+                            _sd_mma_ss_step(sum_desc, desc_P1 + _PF_P_KSTEP_INC, desc_ones, tmem_raw.subview(_SUM1_OFF), 1, cutlass.Boolean(True))
+                        if nvvm.elect_sync():
+                            bars.mb_bmm2_done[1].arrive(mcast_mask=mcast_mask, cta_group=CFG.CTA_MMA)
+                            bars.mb_v_empty[old_state.idx].arrive(mcast_mask=mcast_mask, cta_group=CFG.CTA_MMA)
+
+                    else:
+                        s_free[0].wait(sfree_phase, spin=SPIN_RING_WAITS)
+                        mma_ss(bmm1_desc, desc_Q0, desc_K, (tmem_raw.subview(LAYOUT.S0_OFF)), tmem_sf_a=tmem_SF_Q0, tmem_sf_b=tmem_SF_K)
+                        if nvvm.elect_sync():
+                            bars.mb_bmm1_done[0].arrive(mcast_mask=mcast_mask, cta_group=CFG.CTA_MMA)
+                        s_free[1].wait(sfree_phase, spin=SPIN_RING_WAITS)
+                        mma_ss(bmm1_desc, desc_Q1, desc_K, (tmem_raw.subview(LAYOUT.S1_OFF)), tmem_sf_a=tmem_SF_Q1, tmem_sf_b=tmem_SF_K)
+                        if nvvm.elect_sync():
+                            bars.mb_bmm1_done[1].arrive(mcast_mask=mcast_mask, cta_group=CFG.CTA_MMA)
+                            bars.mb_k_empty[kv_state.idx].arrive(mcast_mask=mcast_mask, cta_group=CFG.CTA_MMA)
+
+                        bars.mb_bmm2_ready[0 * CFG.N_BMM2_CHUNKS + 0].wait(bmm2_ready_phase, spin=SPIN_RING_WAITS)
+                        _ladder_mma_after_sync()
+                        if cutlass.const_expr(LADDER_PREF_TMEMP):
+                            _pf_pv_chunk_tmem(0, 0, desc_V, is_not_first_bmm2, tmem_raw, bmm2_desc, sum_desc, desc_ones, tmem_SF_P, tmem_SF_V)
+                        else:
+                            _sd_mma_ss_step(bmm2_desc, desc_P0, desc_V, tmem_raw.subview(LAYOUT.O0_OFF), 0, is_not_first_bmm2, tmem_SF_P, tmem_SF_V)
+                            _sd_mma_ss_step(sum_desc, desc_P0, desc_ones, tmem_raw.subview(_SUM0_OFF), 0, is_not_first_bmm2)
+                        bars.mb_bmm2_ready[0 * CFG.N_BMM2_CHUNKS + 1].wait(bmm2_ready_phase, spin=SPIN_RING_WAITS)
+                        _ladder_mma_after_sync()
+                        if cutlass.const_expr(LADDER_PREF_TMEMP):
+                            _pf_pv_chunk_tmem(0, 1, desc_V, cutlass.Boolean(True), tmem_raw, bmm2_desc, sum_desc, desc_ones, tmem_SF_P, tmem_SF_V)
+                        else:
+                            _sd_mma_ss_step(bmm2_desc, desc_P0 + _PF_P_KSTEP_INC, desc_V, tmem_raw.subview(LAYOUT.O0_OFF), 1, cutlass.Boolean(True), tmem_SF_P, tmem_SF_V)
+                            _sd_mma_ss_step(sum_desc, desc_P0 + _PF_P_KSTEP_INC, desc_ones, tmem_raw.subview(_SUM0_OFF), 1, cutlass.Boolean(True))
+                        if nvvm.elect_sync():
+                            bars.mb_bmm2_done[0].arrive(mcast_mask=mcast_mask, cta_group=CFG.CTA_MMA)
+
+                        bars.mb_bmm2_ready[1 * CFG.N_BMM2_CHUNKS + 0].wait(bmm2_ready_phase, spin=SPIN_RING_WAITS)
+                        _ladder_mma_after_sync()
+                        if cutlass.const_expr(LADDER_PREF_TMEMP):
+                            _pf_pv_chunk_tmem(1, 0, desc_V, is_not_first_bmm2, tmem_raw, bmm2_desc, sum_desc, desc_ones, tmem_SF_P, tmem_SF_V)
+                        else:
+                            _sd_mma_ss_step(bmm2_desc, desc_P1, desc_V, tmem_raw.subview(LAYOUT.O1_OFF), 0, is_not_first_bmm2, tmem_SF_P, tmem_SF_V)
+                            _sd_mma_ss_step(sum_desc, desc_P1, desc_ones, tmem_raw.subview(_SUM1_OFF), 0, is_not_first_bmm2)
+                        bars.mb_bmm2_ready[1 * CFG.N_BMM2_CHUNKS + 1].wait(bmm2_ready_phase, spin=SPIN_RING_WAITS)
+                        _ladder_mma_after_sync()
+                        if cutlass.const_expr(LADDER_PREF_TMEMP):
+                            _pf_pv_chunk_tmem(1, 1, desc_V, cutlass.Boolean(True), tmem_raw, bmm2_desc, sum_desc, desc_ones, tmem_SF_P, tmem_SF_V)
+                        else:
+                            _sd_mma_ss_step(bmm2_desc, desc_P1 + _PF_P_KSTEP_INC, desc_V, tmem_raw.subview(LAYOUT.O1_OFF), 1, cutlass.Boolean(True), tmem_SF_P, tmem_SF_V)
+                            _sd_mma_ss_step(sum_desc, desc_P1 + _PF_P_KSTEP_INC, desc_ones, tmem_raw.subview(_SUM1_OFF), 1, cutlass.Boolean(True))
+                        if nvvm.elect_sync():
+                            bars.mb_bmm2_done[1].arrive(mcast_mask=mcast_mask, cta_group=CFG.CTA_MMA)
+                            bars.mb_v_empty[old_state.idx].arrive(mcast_mask=mcast_mask, cta_group=CFG.CTA_MMA)
 
                     bmm2_ready_phase = bmm2_ready_phase ^ 1
                     sfree_phase = sfree_phase ^ 1
@@ -2370,22 +2461,34 @@ def _mma_warp_group(
                 s_free[1].wait(sfree_phase, spin=SPIN_RING_WAITS)
                 bars.mb_bmm2_ready[0 * CFG.N_BMM2_CHUNKS + 0].wait(bmm2_ready_phase, spin=SPIN_RING_WAITS)
                 _ladder_mma_after_sync()
-                _sd_mma_ss_step(bmm2_desc, desc_P0, desc_V, tmem_raw.subview(LAYOUT.O0_OFF), 0, is_not_first_bmm2_epi, tmem_SF_P, tmem_SF_V)
-                _sd_mma_ss_step(sum_desc, desc_P0, desc_ones, tmem_raw.subview(_SUM0_OFF), 0, is_not_first_bmm2_epi)
+                if cutlass.const_expr(LADDER_PREF_TMEMP):
+                    _pf_pv_chunk_tmem(0, 0, desc_V, is_not_first_bmm2_epi, tmem_raw, bmm2_desc, sum_desc, desc_ones, tmem_SF_P, tmem_SF_V)
+                else:
+                    _sd_mma_ss_step(bmm2_desc, desc_P0, desc_V, tmem_raw.subview(LAYOUT.O0_OFF), 0, is_not_first_bmm2_epi, tmem_SF_P, tmem_SF_V)
+                    _sd_mma_ss_step(sum_desc, desc_P0, desc_ones, tmem_raw.subview(_SUM0_OFF), 0, is_not_first_bmm2_epi)
                 bars.mb_bmm2_ready[0 * CFG.N_BMM2_CHUNKS + 1].wait(bmm2_ready_phase, spin=SPIN_RING_WAITS)
                 _ladder_mma_after_sync()
-                _sd_mma_ss_step(bmm2_desc, desc_P0 + _PF_P_KSTEP_INC, desc_V, tmem_raw.subview(LAYOUT.O0_OFF), 1, cutlass.Boolean(True), tmem_SF_P, tmem_SF_V)
-                _sd_mma_ss_step(sum_desc, desc_P0 + _PF_P_KSTEP_INC, desc_ones, tmem_raw.subview(_SUM0_OFF), 1, cutlass.Boolean(True))
+                if cutlass.const_expr(LADDER_PREF_TMEMP):
+                    _pf_pv_chunk_tmem(0, 1, desc_V, cutlass.Boolean(True), tmem_raw, bmm2_desc, sum_desc, desc_ones, tmem_SF_P, tmem_SF_V)
+                else:
+                    _sd_mma_ss_step(bmm2_desc, desc_P0 + _PF_P_KSTEP_INC, desc_V, tmem_raw.subview(LAYOUT.O0_OFF), 1, cutlass.Boolean(True), tmem_SF_P, tmem_SF_V)
+                    _sd_mma_ss_step(sum_desc, desc_P0 + _PF_P_KSTEP_INC, desc_ones, tmem_raw.subview(_SUM0_OFF), 1, cutlass.Boolean(True))
                 if nvvm.elect_sync():
                     bars.mb_bmm2_done[0].arrive(mcast_mask=mcast_mask, cta_group=CFG.CTA_MMA)
                 bars.mb_bmm2_ready[1 * CFG.N_BMM2_CHUNKS + 0].wait(bmm2_ready_phase, spin=SPIN_RING_WAITS)
                 _ladder_mma_after_sync()
-                _sd_mma_ss_step(bmm2_desc, desc_P1, desc_V, tmem_raw.subview(LAYOUT.O1_OFF), 0, is_not_first_bmm2_epi, tmem_SF_P, tmem_SF_V)
-                _sd_mma_ss_step(sum_desc, desc_P1, desc_ones, tmem_raw.subview(_SUM1_OFF), 0, is_not_first_bmm2_epi)
+                if cutlass.const_expr(LADDER_PREF_TMEMP):
+                    _pf_pv_chunk_tmem(1, 0, desc_V, is_not_first_bmm2_epi, tmem_raw, bmm2_desc, sum_desc, desc_ones, tmem_SF_P, tmem_SF_V)
+                else:
+                    _sd_mma_ss_step(bmm2_desc, desc_P1, desc_V, tmem_raw.subview(LAYOUT.O1_OFF), 0, is_not_first_bmm2_epi, tmem_SF_P, tmem_SF_V)
+                    _sd_mma_ss_step(sum_desc, desc_P1, desc_ones, tmem_raw.subview(_SUM1_OFF), 0, is_not_first_bmm2_epi)
                 bars.mb_bmm2_ready[1 * CFG.N_BMM2_CHUNKS + 1].wait(bmm2_ready_phase, spin=SPIN_RING_WAITS)
                 _ladder_mma_after_sync()
-                _sd_mma_ss_step(bmm2_desc, desc_P1 + _PF_P_KSTEP_INC, desc_V, tmem_raw.subview(LAYOUT.O1_OFF), 1, cutlass.Boolean(True), tmem_SF_P, tmem_SF_V)
-                _sd_mma_ss_step(sum_desc, desc_P1 + _PF_P_KSTEP_INC, desc_ones, tmem_raw.subview(_SUM1_OFF), 1, cutlass.Boolean(True))
+                if cutlass.const_expr(LADDER_PREF_TMEMP):
+                    _pf_pv_chunk_tmem(1, 1, desc_V, cutlass.Boolean(True), tmem_raw, bmm2_desc, sum_desc, desc_ones, tmem_SF_P, tmem_SF_V)
+                else:
+                    _sd_mma_ss_step(bmm2_desc, desc_P1 + _PF_P_KSTEP_INC, desc_V, tmem_raw.subview(LAYOUT.O1_OFF), 1, cutlass.Boolean(True), tmem_SF_P, tmem_SF_V)
+                    _sd_mma_ss_step(sum_desc, desc_P1 + _PF_P_KSTEP_INC, desc_ones, tmem_raw.subview(_SUM1_OFF), 1, cutlass.Boolean(True))
                 if nvvm.elect_sync():
                     bars.mb_bmm2_done[1].arrive(mcast_mask=mcast_mask, cta_group=CFG.CTA_MMA)
                     bars.mb_v_empty[kv_state.idx].arrive(mcast_mask=mcast_mask, cta_group=CFG.CTA_MMA)
@@ -3146,15 +3249,43 @@ def _sd_softmax_step(
 
 
 
+from cutlass.cute.arch.nvvm_wrappers import inline_ptx as _probe_inline_ptx  # noqa: E402
+
+
+@cute.jit
+def _probe_prmt_hi(lo, hi):
+    """LADDER_PROBE&2 stand-in for fp32_to_fp16: one PRMT (ALU) packing the high halves of two f32 words."""
+    return _probe_inline_ptx("{\n\t.reg .b32 ra, rb;\n\tmov.b32 ra, $1;\n\tmov.b32 rb, $2;\n\tprmt.b32 $0, ra, rb, 0x7632;\n\t}", write_only_types=[cutlass.Int32], read_only_args=[lo, hi])
+
+
+@cute.jit
+def _probe_xor_f32(lo, hi):
+    """LADDER_PROBE&2 stand-in for fp32_to_fp16: the two f32 bit patterns XORed (one ALU op, no convert)."""
+    v = cutlass.Vector.from_elements((lo, hi), cutlass.Float32).bitcast(cutlass.Int32)
+    return _probe_xor(v[0], v[1])
+
+
+@cute.jit
+def _probe_xor(a: cutlass.Int32, b: cutlass.Int32) -> cutlass.Int32:
+    """LADDER_PROBE&4 stand-in for f16x2x2_to_fp8_word: one XOR (ALU)."""
+    return _probe_inline_ptx("xor.b32 $0, $1, $2;", write_only_types=[cutlass.Int32], read_only_args=[a, b])
+
+
 def _pf_cvt_chunk(elems):
+    if LADDER_PROBE & 2:
+        return [_probe_xor_f32(elems[2 * i], elems[2 * i + 1]) for i in range(len(elems) // 2)]
     return [fp32_to_fp16(elems[2 * i], elems[2 * i + 1]) for i in range(len(elems) // 2)]
 
 
 def _pf_ex2_chunk(words):
+    if LADDER_PROBE & 1:
+        return list(words)
     return [ex2_f16x2(w) for w in words]
 
 
 def _pf_pack_chunk(pw):
+    if LADDER_PROBE & 4:
+        return [_probe_xor(pw[2 * g], pw[2 * g + 1]) for g in range(len(pw) // 2)]
     return [f16x2x2_to_fp8_word(pw[2 * g], pw[2 * g + 1], _FP8_TAG_P) for g in range(len(pw) // 2)]
 
 
@@ -3203,6 +3334,9 @@ def _pf_softmax_kv_body(
     RESCALE_THRESHOLD = cutlass.Float32(CFG.RESCALE_THRESHOLD)
     s_addr_a = tmem_base + cutlass.Int32(tmem_S_off + 0)
     s_addr_b = tmem_base + cutlass.Int32(tmem_S_off + CHUNK)
+    tmem_P_off = LAYOUT.P0_OFF if sub_tile_id == 0 else LAYOUT.P1_OFF
+    p_addr_a = tmem_base + cutlass.Int32(tmem_P_off)
+    p_addr_b = tmem_base + cutlass.Int32(tmem_P_off + 16)
 
     reg_S_a = cutlass.Vector.from_elements(tuple(res_a[:CHUNK]), cutlass.Int32).bitcast(cutlass.Float32)
     reg_S_b = cutlass.Vector.from_elements(tuple(res_b[:CHUNK]), cutlass.Int32).bitcast(cutlass.Float32)
@@ -3258,24 +3392,36 @@ def _pf_softmax_kv_body(
     ex_a = _pf_ex2_chunk(pairs_a)
     words_a = _pf_pack_chunk(ex_a)
     # P slot reuse: PV(k-1) (which read this slot) must have retired; skipped on the tile's first step.
-    if kv_loop > kv_left:
-        bars.mb_bmm2_done[sub_tile_id].wait(pdone_phase, spin=SPIN_RING_WAITS)
-    _pf_store_p_chunk(p_slot_base, p_row_off, 0, words_a)
-    nvvm.fence_proxy("async.shared", space="cta")
+    if cutlass.const_expr(not (LADDER_PROBE & 8)):
+        if kv_loop > kv_left:
+            bars.mb_bmm2_done[sub_tile_id].wait(pdone_phase, spin=SPIN_RING_WAITS)
+    if cutlass.const_expr(LADDER_PREF_TMEMP):
+        nvvm.tcgen05_st("32x32b", nvvm.make_tmem_ptr(p_addr_a, cutlass.Int32), cutlass.Vector.from_elements(tuple(words_a), cutlass.Int32))
+        if cutlass.const_expr(not (LADDER_PROBE & 16)):
+            _ladder_st_sync()
+    else:
+        _pf_store_p_chunk(p_slot_base, p_row_off, 0, words_a)
+        nvvm.fence_proxy("async.shared", space="cta")
     bars.mb_bmm2_ready[sub_tile_id * CFG.N_BMM2_CHUNKS + 0].arrive(leader_cta_id=leader_cta_id, cta_group=CFG.CTA_MMA)
     if cutlass.const_expr(LADDER_CORR_NORESCALE == 2):
         bars.mb_bmm2_ready[sub_tile_id * CFG.N_BMM2_CHUNKS + 0].arrive(leader_cta_id=leader_cta_id, cta_group=CFG.CTA_MMA)
     # ---- chunk b: cvt first (frees the last 64 S registers), then prefetch step k+1's S into them
     eb = [reg_S_b[_i] for _i in range(CHUNK)]
     pairs_b = _pf_cvt_chunk(eb)
-    if kv_loop + cutlass.Int32(1) < kv_right:
-        bars.mb_bmm1_done[sub_tile_id].wait(bmm1_phase ^ 1, spin=SPIN_RING_WAITS)
+    if cutlass.const_expr(not (LADDER_PROBE & 32)):
+        if kv_loop + cutlass.Int32(1) < kv_right:
+            bars.mb_bmm1_done[sub_tile_id].wait(bmm1_phase ^ 1, spin=SPIN_RING_WAITS)
     nxt_a = tmem_load_max_reduction_x64(s_addr_a)
     nxt_b = tmem_load_max_reduction_x64(s_addr_b)
     ex_b = _pf_ex2_chunk(pairs_b)
     words_b = _pf_pack_chunk(ex_b)
-    _pf_store_p_chunk(p_slot_base, p_row_off, 1, words_b)
-    nvvm.fence_proxy("async.shared", space="cta")
+    if cutlass.const_expr(LADDER_PREF_TMEMP):
+        nvvm.tcgen05_st("32x32b", nvvm.make_tmem_ptr(p_addr_b, cutlass.Int32), cutlass.Vector.from_elements(tuple(words_b), cutlass.Int32))
+        if cutlass.const_expr(not (LADDER_PROBE & 16)):
+            _ladder_st_sync()
+    else:
+        _pf_store_p_chunk(p_slot_base, p_row_off, 1, words_b)
+        nvvm.fence_proxy("async.shared", space="cta")
     bars.mb_bmm2_ready[sub_tile_id * CFG.N_BMM2_CHUNKS + 1].arrive(leader_cta_id=leader_cta_id, cta_group=CFG.CTA_MMA)
 
     bars.mb_stat_empty[sub_tile_id].wait(stat_empty_phase, spin=SPIN_RING_WAITS)
@@ -3706,7 +3852,7 @@ def _correction_warp_group(
                 for qs in cutlass.range_constexpr(CFG.TILES_Q):
                     bars.mb_bmm2_ready[qs * 2 + 0].arrive(leader_cta_id=leader_cta_id, cta_group=CFG.CTA_MMA)
                 for qs in cutlass.range_constexpr(CFG.TILES_Q):
-                    bars.mb_stat_full[qs].wait(stat_full_phase, spin=SPIN_RING_WAITS)
+                    bars.mb_stat_full[qs].wait(stat_full_phase, spin=_SPIN_AUX)
                     bars.mb_stat_empty[qs].arrive()
                 stat_full_phase = stat_full_phase ^ 1
                 # step left, half 1: rescale after PV(left, half 0).
@@ -3732,7 +3878,7 @@ def _correction_warp_group(
                     for qs in cutlass.range_constexpr(CFG.TILES_Q):
                         bars.mb_bmm2_ready[qs * CFG.N_BMM2_CHUNKS + 0].arrive(leader_cta_id=leader_cta_id, cta_group=CFG.CTA_MMA)
                 for qs in cutlass.range_constexpr(CFG.TILES_Q):
-                    bars.mb_stat_full[qs].wait(stat_full_phase, spin=SPIN_RING_WAITS)
+                    bars.mb_stat_full[qs].wait(stat_full_phase, spin=_SPIN_AUX)
                     bars.mb_stat_empty[qs].arrive()
                 stat_full_phase = stat_full_phase ^ 1
             else:
@@ -3747,7 +3893,7 @@ def _correction_warp_group(
                     stats_off = LAYOUT.STATS_OFF + qs * LAYOUT.STATS_STRIDE
                     tmem_O_off = LAYOUT.O0_OFF if qs == 0 else LAYOUT.O1_OFF
 
-                    bars.mb_stat_full[qs].wait(stat_full_phase, spin=SPIN_RING_WAITS)
+                    bars.mb_stat_full[qs].wait(stat_full_phase, spin=_SPIN_AUX)
 
                     if cutlass.const_expr(LADDER_CORRFAST):
                         # alpha from the SMEM slot this row's softmax lane wrote before its
@@ -3778,7 +3924,7 @@ def _correction_warp_group(
                         # of k+1, which follows its P arrivals of k; the bmm2_done parity stays right because that
                         # barrier can never be more than one completion ahead of this wait.
                         if ~all_alpha_one:
-                            bars.mb_bmm2_done[qs].wait(bmm2_done_phase, spin=SPIN_RING_WAITS)
+                            bars.mb_bmm2_done[qs].wait(bmm2_done_phase, spin=_SPIN_AUX)
                             for chunk_idx in cutlass.range_constexpr(N_CHUNKS_O_RESCALE):
                                 o_addr = tmem_base_iter + cutlass.Int32(tmem_O_off + chunk_idx * O_CHUNK)
                                 o_chunk = nvvm.tcgen05_ld("32x32b", nvvm.make_tmem_ptr(o_addr, cutlass.Float32), num=O_CHUNK)
@@ -3786,7 +3932,7 @@ def _correction_warp_group(
                                 nvvm.tcgen05_st("32x32b", nvvm.make_tmem_ptr(o_addr, cutlass.Float32), o_scaled)
                             nvvm.tcgen05_wait(kind=nvvm.Tcgen05Wait.STORE)
                     else:
-                        bars.mb_bmm2_done[qs].wait(bmm2_done_phase, spin=SPIN_RING_WAITS)
+                        bars.mb_bmm2_done[qs].wait(bmm2_done_phase, spin=_SPIN_AUX)
                         # vec_scale_pair emits mul_packed_f32x2; N_CHUNKS_O_RESCALE covers O AND the 16 row-sum columns.
                         if ~all_alpha_one:
                             for chunk_idx in cutlass.range_constexpr(N_CHUNKS_O_RESCALE):
@@ -3808,11 +3954,11 @@ def _correction_warp_group(
             tmem_O_off = LAYOUT.O0_OFF if qs == 0 else LAYOUT.O1_OFF
 
             if cutlass.const_expr(LADDER_SDOUBLE):
-                bars.mb_bmm2_done[qs * 2 + 1].wait(bmm2_done_phase, spin=SPIN_RING_WAITS)
+                bars.mb_bmm2_done[qs * 2 + 1].wait(bmm2_done_phase, spin=_SPIN_AUX)
             else:
-                bars.mb_bmm2_done[qs].wait(bmm2_done_phase, spin=SPIN_RING_WAITS)
+                bars.mb_bmm2_done[qs].wait(bmm2_done_phase, spin=_SPIN_AUX)
 
-            bars.mb_stat_full[qs].wait(stat_full_phase, spin=SPIN_RING_WAITS)
+            bars.mb_stat_full[qs].wait(stat_full_phase, spin=_SPIN_AUX)
 
             stats_addr = tmem_base_epi + cutlass.Int32(stats_off)
             stats_vec = nvvm.tcgen05_ld(
@@ -4046,7 +4192,7 @@ def _correction_warp_group(
                     q_elems = [o_elems[i] * inv_sf for i in range(_GROUP)]
 
                     if g == 0:
-                        bars.mb_o_empty[qs].wait(o_empty_phase, spin=SPIN_RING_WAITS)
+                        bars.mb_o_empty[qs].wait(o_empty_phase, spin=_SPIN_AUX)
                     for cj in cutlass.range_constexpr(_CHUNKS_PER_GROUP):
                         _chunk = g * _CHUNKS_PER_GROUP + cj
                         col_elems = _chunk * O_CHUNK
@@ -4112,7 +4258,7 @@ def _correction_warp_group(
                     smem_ptr = sO_sub_base.subview(smem_offset).data_ptr()
                     # Gate FIRST SMEM store (not earlier TMEM-load loop) — keeps load/FFMA/cast overlapped with prior TMA-STG drain.
                     if chunk_idx == 0:
-                        bars.mb_o_empty[qs].wait(o_empty_phase, spin=SPIN_RING_WAITS)
+                        bars.mb_o_empty[qs].wait(o_empty_phase, spin=_SPIN_AUX)
                     smem_ptr.store_swizzled(o_out, alignment=64, swizzle=_O_SMEM_SWIZZLE)
 
             if cutlass.const_expr(amax_o_tensor is not None):

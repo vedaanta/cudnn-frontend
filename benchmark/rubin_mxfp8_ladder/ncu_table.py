@@ -63,6 +63,8 @@ METRICS = {
     "l1_pct": ("l1tex__throughput.avg.pct_of_peak_sustained_elapsed", 1.0),
     "tma_ld_mb": ("l1tex__m_xbar2l1tex_read_bytes_mem_global_op_tma_ld.sum", 1.0),
     "fp8_mma_ops": ("sm__ops_path_tensor_op_utcqmma_src_fp8_dst_fp32_sparsity_off.sum", 1.0),
+    "local_ld_sectors": ("l1tex__t_sectors_pipe_lsu_mem_local_op_ld.sum", 1.0),  # spill indicator (LDL)
+    "local_st_sectors": ("l1tex__t_sectors_pipe_lsu_mem_local_op_st.sum", 1.0),  # spill indicator (STL)
     "regs": ("launch__registers_per_thread", 1.0),
     "smem_kb": ("launch__shared_mem_per_block", 1.0),
     "grid": ("launch__grid_size", 1.0),
@@ -129,7 +131,7 @@ def main():
     recs = []
     for path in sorted(glob.glob(os.path.join(args.dir, "*.ncu-rep*"))):
         name = os.path.basename(path).split(".ncu-rep")[0]
-        m = re.match(r"([A-H])_(causal|none)_(\d+)(?:_(\w+))?$", name)
+        m = re.match(r"([A-Za-z0-9]+)_(causal|none)_(\d+)(?:_(\w+))?$", name)  # rung label = any [A-Za-z0-9]+ (probe cells: TP, TPNS, I)
         if not m:
             continue
         rung, mask, S, sched = m.group(1), m.group(2), int(m.group(3)), m.group(4) or "natural"

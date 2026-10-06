@@ -23,10 +23,12 @@ if [ "${NCU:-0}" = "1" ]; then
   [ -x $PYROOT/bin/python3.10 ] || cp -r $(dirname $(dirname $PY)) $PYROOT
   PY=$PYROOT/bin/python3.10
   mkdir -p $T/root_home
+  # forward EVERY LADDER_* knob through sudo (the first version forwarded six and silently profiled plain F for the rest)
+  LADDER_ENV=$(env | grep -E '^LADDER_[A-Z0-9_]+=' | tr '\n' ' ')
   NCU_BIN=/home/scratch.svc_compute_arch/release/nsightCompute/internal/x86_64/latest/ncu
   exec sudo -n env HOME=$T/root_home PYTHONPATH=$PYTHONPATH LD_PRELOAD=$LD_PRELOAD LD_LIBRARY_PATH=$LD_LIBRARY_PATH \
       CUDNN_FRONTEND_ENABLE_FROST_ENGINES=1 XDG_CACHE_HOME=$T/cache_root CUTE_DSL_CACHE_DIR=$T/dsl_cache_root \
-      LADDER_F16EXP=${LADDER_F16EXP:-0} LADDER_NOSCALE=${LADDER_NOSCALE:-0} LADDER_PAGED64=${LADDER_PAGED64:-0} LADDER_CORRFAST=${LADDER_CORRFAST:-0} LADDER_SDOUBLE=${LADDER_SDOUBLE:-0} LADDER_PSMEM=${LADDER_PSMEM:-0} \
+      $LADDER_ENV \
       $NCU_BIN --target-processes all ${NCU_SET:---set full} --launch-skip ${NCU_SKIP:-3} --launch-count ${NCU_COUNT:-1} \
       "${KARG[@]}" -f -o ${NCU_OUT:-$T/ncu/ladder} $PY "$@"
 fi
