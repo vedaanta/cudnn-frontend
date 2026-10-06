@@ -90,3 +90,27 @@ softmax's own (P_a stored ~650-700 clk after bmm1_done: LDTM ~300, alpha ~30, sc
 wait::st).  The exact production form of the shortcut is the per-warp agreement: both lanes of a row compute the same
 alpha and vote; no-rescale step -> softmax arrives twice, correction silent; rescale step -> softmax once, correction
 rescales then arrives (count per phase unchanged, no new barrier).
+
+## F-side levers from the SASS/PIC analysis (board 0030, 32k, interleaved, each knob in its own plan cache)
+The F PIC puts one softmax burst (first FFMA2 to last STTM) at ~430 clk; the compiled SASS (`F_sm107.sass.gz`,
+extracted from the plan object's embedded sm_107a cubin) shows the steady-state step body is 297 instructions:
+64 FFMA2 + 128 F2FP (64 f32->f16x2 converts + 64 fp8 packs, two per word) + 65 MUFU.EX2.F16x2 + ~40 overhead, with
+ptxas already interleaving FFMA2/F2FP/MUFU and issuing STTM a inside chunk b's MUFU stream; the P hand-off is
+STTM -> FENCE.VIEW.ASYNC.T -> USYNCS.ARRIVE (so `wait::st` and an explicit `fence::before_thread_sync` lower alike).
+| knob | none natural | causal LPT | numerics |
+|---|---|---|---|
+| `LADDER_NOSCALE=1` (scale folded into Q, rung D's lever) | -1.0 % | -0.6 % | 0.0368 (vs 0.0371) |
+| `+ LADDER_SUB2=1` (explicit packed FADD2 shift) | -1.2 % | -0.5 % | bit-identical to NOSCALE |
+| `LADDER_PIPE4=1` (quarter-interleaved cvt/ex2/pack in DSL order) | 0 % | -1.5 % (noise) | identical |
+| `LADDER_STFENCE=1` (fence instead of wait::st; MMA fences after sync) | 0 % | 0 % | identical |
+| `LADDER_HOIST=1` (TMEM base loaded once per tile; FMNMX max) | **-1.6 %** | **-2.6 %** | identical |
+| `LADDER_PREF=1` (P in SMEM per step, early BMM1 via s_free, next-step S prefetched into freed regs) | +4 % | +3.7 % | identical (incl. ramp) |
+| `LADDER_PREF=1 LADDER_SMREGS=208` (softmax 208 / correction 56 registers) | +14 % | +16 % | identical |
+Files: `F_results_sub2.jsonl`, `F_results_pipe4.jsonl`, `F_results_stfence.jsonl`, `F_results_pref2.jsonl`.
+Lesson: PREF is the third chain-free variant (after G and H) that does not shorten the step, so the step is not bound
+by the BMM1/LDTM chain; without the ping-pong the two softmax warps per SMSP run in lockstep and their MUFU and
+FFMA2/F2FP phases collide, and inside each burst the warp runs at ~0.6 IPC on dependency stalls.  The per-warp PIC
+rows of G/H (chain-free) are the view that decides between a controlled warpgroup phase offset and a schedule change.
+GOTCHA (hit twice): any new env knob MUST be added to the cache-suffix list in `bench_ladder.py` (`_env_from_rung`),
+or variants silently share F's plan cache and run whichever kernel compiled first for that plan key; the jsonl now
+records the kernel module's flag values (`kmod`) so a run proves which path it executed.
