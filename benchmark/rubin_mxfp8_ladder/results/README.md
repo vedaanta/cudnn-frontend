@@ -60,3 +60,18 @@ replicated 128x4 atom + 2 columns; the softmax prefetches the next half's fused 
   544, i.e. ~540 clk/step of exposed latency remain.  The chain per half-buffer (MMA-thread reaction + tensor-core queue +
   commit->mbarrier + LDTM ~300) is about as long as the softmax work on the other half, so two half-buffers only break even.
   PerfSim PIC of G: `/home/scratch.vagarwalla_gpu/perfsim_ladder/perfsim_output/gr100_ladder_G_b1h1s4k_none_r1`.
+
+## Rung H: P in SMEM + early BMM1 (`LADDER_PSMEM=1`, on top of G)
+P is written to a 4-slot SMEM region (sub-tile x half, 8 KiB each, UMMA K-major no-swizzle core-matrix layout) and PV +
+the ones row-sum read it as SS MMAs, so the S half-buffer is free as soon as the softmax has read it: the softmax arrives
+a leader-scope `s_free` barrier right after its scale-shift and the MMA issues the next step's BMM1 for that half at once,
+before the PVs.  Numerics identical to G/F (`H_results_h.jsonl`: 2k none/causal and the scale ramp).
+- Timing 32k, same session, interleaved: none F 2950 / G 2989 / H 3103 us; causal LPT F 1497 / G 1522 / H 1589 us.
+- ncu (`H_ncu_board_FGH_32k.*`, the G column there is the alphas-first G2 build): H long-scoreboard stalls 3.6 vs F 4.5
+  (the chain stall did shrink), but issue 56 % (+15 % instructions: 4 shared stores + proxy fence + remote `s_free`
+  arrive + slot wait per half) and not-selected 0.49 vs 0.16 (issue contention).  SMEM 175 -> 207 KiB.
+- Conclusion so far: with the BMM1/PV chain removed the step did not get shorter, so the softmax warpgroups' per-half time
+  is not dominated by that chain; the remaining per-warp cost (XU/MUFU ~40 %, issue ~55 %, warp latency ~7 cycles per
+  instruction) points at intra-warp dependency latency across the LDTM -> FFMA -> CVT -> MUFU -> pack -> store sequence
+  with only two softmax warps per SMSP.  The PerfSim PICs of G and H (`perfsim_output/gr100_ladder_{G,H}_b1h1s4k_none_r1`)
+  give the per-warp timelines needed to confirm which wait it is.
