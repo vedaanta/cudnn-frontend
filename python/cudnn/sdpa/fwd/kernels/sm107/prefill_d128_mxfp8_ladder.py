@@ -299,6 +299,16 @@ LADDER_PROBE = int(_os.environ.get("LADDER_PROBE", "0"))
 # LADDER_PREF_ORDER=1 (PREF arm): MMA order BMM1(st0) -> PV(st0) -> BMM1(st1) -> PV(st1) instead of BMM1,BMM1,PV,PV --
 # WG1's S lands ~one PV + one bmm2_ready wait after WG0's, a controlled phase offset between the two softmax WGs.
 LADDER_PREF_ORDER = int(_os.environ.get("LADDER_PREF_ORDER", "0"))
+# LADDER_FCVT=1 (needs F16EXP; classic + PREF arms; not SDOUBLE / PIPE4): the shift and the f32->f16 convert are ONE
+# instruction per pair (nvvm sub_packed_f16x2_f32x2_f32x2 -> FHADD2 with an f16x2 result) instead of FFMA2/FADD2 + F2FP.
+# With LADDER_NOSCALE=1 the exponent input is f16(S - m) with ONE rounding, bit-identical to today's SUB2 + F2FP path.
+# Without it the kernel computes f16(S - m/scale) and multiplies by f16(scale) in f16x2 (HFMA2) -- the gqa.py (MR 28758)
+# path, a second f16 rounding before the exponent.  (From DKG MR 28758, Richard Cai.)
+LADDER_FCVT = int(_os.environ.get("LADDER_FCVT", "0"))
+if LADDER_FCVT and not LADDER_F16EXP:
+    raise ValueError("LADDER_FCVT=1 requires LADDER_F16EXP=1")
+if LADDER_FCVT and (LADDER_SDOUBLE or LADDER_PIPE4):
+    raise ValueError("LADDER_FCVT is a classic/PREF-path lever (no SDOUBLE / PIPE4)")
 _PF_P_SLOT_BYTES = CFG.TILE_M * CFG.TILE_N * CFG.BPE  # 128 rows x 128 fp8
 _PF_P_LBO = 8 * 16
 _PF_P_SBO = 8 * CFG.TILE_N * CFG.BPE  # 8 rows x 128 B
@@ -2686,6 +2696,8 @@ from cutlass._mlir.dialects import vector as _ladder_vector  # noqa: E402
 from cutlass._mlir.dialects import nvvm as _ladder_nvvm_ops  # noqa: E402
 from cutlass._mlir.extras import types as _ladder_T  # noqa: E402
 from cutlass._mlir import ir as _ladder_ir  # noqa: E402
+from cutlass._mlir.dialects import llvm as _ladder_llvm  # noqa: E402
+from cutlass.cute.arch.nvvm_wrappers import fma_packed_f16x2 as _ladder_fma_f16x2  # noqa: E402
 
 
 def _ladder_vec_add_pair(vec, scalar, N):
@@ -2715,6 +2727,41 @@ def _ladder_mma_after_sync():
     """Consumer side of LADDER_STFENCE: order the MMA after the producer's fenced TMEM stores."""
     if LADDER_STFENCE:
         nvvm.tcgen05_fence("after_thread_sync")
+
+
+def _ladder_m_vec2(m):
+    """LADDER_FCVT: broadcast the f32 shift to an f32x2 IR vector (once per chunk)."""
+    return _ladder_vector.broadcast(_ladder_ir.VectorType.get([2], _ladder_T.f32()), m.ir_value())
+
+
+def _ladder_scale_h2(scale_log2):
+    """LADDER_FCVT without NOSCALE: the f16x2 word (scale, scale) for the in-kernel scale multiply."""
+    return fp32_to_fp16(scale_log2, scale_log2)
+
+
+def _ladder_fcvt_words(elems, m_eff, scale_h2, n):
+    """LADDER_FCVT: n fp32 -> n//2 f16x2 words = f16(elem - m_eff) per pair in ONE fused sub+convert
+    (sub_packed_f16x2_f32x2_f32x2, FHADD2); without NOSCALE each word is then scaled in f16x2 (HFMA2 x scale + 0)."""
+    f32x2_ty = _ladder_ir.VectorType.get([2], _ladder_T.f32())
+    f16x2_ty = _ladder_ir.VectorType.get([2], _ladder_T.f16())
+    m_vec = _ladder_m_vec2(m_eff)
+    words = []
+    for i in range(n // 2):
+        pair = _ladder_vector.from_elements(f32x2_ty, [elems[2 * i].ir_value(), elems[2 * i + 1].ir_value()])
+        res = _ladder_nvvm_ops.sub_packed_f16x2_f32x2_f32x2(f16x2_ty, pair, m_vec)
+        words.append(cutlass.Int32(_ladder_llvm.bitcast(_ladder_T.i32(), res)))
+    if not LADDER_NOSCALE:
+        words = [_ladder_fma_f16x2(w, scale_h2, cutlass.Int32(0)) for w in words]
+    return words
+
+
+def _ladder_f16_exp_chunk_fused(chunk_S_raw, m_eff, scale_h2, n: int = 64):
+    """LADDER_FCVT form of _ladder_f16_exp_chunk: fused shift+convert, MUFU EX2.F16x2, f16x2x2 -> fp8 word."""
+    elems = [chunk_S_raw[i] for i in range(n)]
+    pairs = _ladder_fcvt_words(elems, m_eff, scale_h2, n)
+    p_pairs = [ex2_f16x2(w) for w in pairs]
+    words = [f16x2x2_to_fp8_word(p_pairs[2 * g], p_pairs[2 * g + 1], _FP8_TAG_P) for g in range(n // 4)]
+    return cutlass.Vector.from_elements(tuple(words), cutlass.Int32)
 
 
 def _ladder_q_cvt(elems):
@@ -2915,17 +2962,27 @@ def _softmax_kv_body(
     # the BMM2 pipe reads.  Dropping the two 64-wide reduction trees is the
     # point of this port -- their long dependent add chain sat between the exp
     # burst and the alpha / P publishes on the critical path.
-    if cutlass.const_expr(LADDER_NOSCALE):
-        if cutlass.const_expr(LADDER_SUB2):
-            neg_m = cutlass.Float32(0.0) - new_total_max
-            reg_S_a = _ladder_vec_add_pair(reg_S_a, neg_m, CHUNK)
-            reg_S_b = _ladder_vec_add_pair(reg_S_b, neg_m, CHUNK)
+    reg_S_a_raw = reg_S_a
+    reg_S_b_raw = reg_S_b
+    if cutlass.const_expr(LADDER_FCVT):
+        # fused shift+convert consumes the RAW scores; the shifted f32 copy is only still needed for the LSE row sums
+        if cutlass.const_expr(LADDER_NOSCALE):
+            fcvt_m = new_total_max
         else:
-            reg_S_a = reg_S_a - new_total_max
-            reg_S_b = reg_S_b - new_total_max
-    else:
-        reg_S_a = reg_S_a * scale_log2 - new_total_max
-        reg_S_b = reg_S_b * scale_log2 - new_total_max
+            fcvt_m = new_total_max / scale_log2
+        fcvt_scale_h2 = _ladder_scale_h2(scale_log2)
+    if cutlass.const_expr((not LADDER_FCVT) or has_lse):
+        if cutlass.const_expr(LADDER_NOSCALE):
+            if cutlass.const_expr(LADDER_SUB2):
+                neg_m = cutlass.Float32(0.0) - new_total_max
+                reg_S_a = _ladder_vec_add_pair(reg_S_a, neg_m, CHUNK)
+                reg_S_b = _ladder_vec_add_pair(reg_S_b, neg_m, CHUNK)
+            else:
+                reg_S_a = reg_S_a - new_total_max
+                reg_S_b = reg_S_b - new_total_max
+        else:
+            reg_S_a = reg_S_a * scale_log2 - new_total_max
+            reg_S_b = reg_S_b * scale_log2 - new_total_max
     if cutlass.const_expr(LADDER_PIPE4):
         _ea = [reg_S_a[_i] for _i in range(CHUNK)]
         _eb = [reg_S_b[_i] for _i in range(CHUNK)]
@@ -2952,7 +3009,10 @@ def _softmax_kv_body(
         bars.mb_bmm2_ready[sub_tile_id * CFG.N_BMM2_CHUNKS + 1].arrive(leader_cta_id=leader_cta_id, cta_group=CFG.CTA_MMA)
     else:
         if cutlass.const_expr(LADDER_F16EXP):
-            p_words_a = _ladder_f16_exp_chunk(reg_S_a, CHUNK)
+            if cutlass.const_expr(LADDER_FCVT):
+                p_words_a = _ladder_f16_exp_chunk_fused(reg_S_a_raw, fcvt_m, fcvt_scale_h2, CHUNK)
+            else:
+                p_words_a = _ladder_f16_exp_chunk(reg_S_a, CHUNK)
             nvvm.tcgen05_st("32x32b", nvvm.make_tmem_ptr(p_addr_a, cutlass.Int32), p_words_a)
         else:
             reg_P_a = cute.math.exp2(reg_S_a, fastmath=True)
@@ -2964,7 +3024,10 @@ def _softmax_kv_body(
             bars.mb_bmm2_ready[sub_tile_id * CFG.N_BMM2_CHUNKS + 0].arrive(leader_cta_id=leader_cta_id, cta_group=CFG.CTA_MMA)
 
         if cutlass.const_expr(LADDER_F16EXP):
-            p_words_b = _ladder_f16_exp_chunk(reg_S_b, CHUNK)
+            if cutlass.const_expr(LADDER_FCVT):
+                p_words_b = _ladder_f16_exp_chunk_fused(reg_S_b_raw, fcvt_m, fcvt_scale_h2, CHUNK)
+            else:
+                p_words_b = _ladder_f16_exp_chunk(reg_S_b, CHUNK)
             nvvm.tcgen05_st("32x32b", nvvm.make_tmem_ptr(p_addr_b, cutlass.Int32), p_words_b)
         else:
             reg_P_b = cute.math.exp2(reg_S_b, fastmath=True)
@@ -3374,22 +3437,35 @@ def _pf_softmax_kv_body(
     s_alpha_slot.store(alpha)
     bars.mb_stat_full[sub_tile_id].arrive()
 
-    if cutlass.const_expr(LADDER_NOSCALE):
-        if cutlass.const_expr(LADDER_SUB2):
-            neg_m = cutlass.Float32(0.0) - new_total_max
-            reg_S_a = _ladder_vec_add_pair(reg_S_a, neg_m, CHUNK)
-            reg_S_b = _ladder_vec_add_pair(reg_S_b, neg_m, CHUNK)
+    reg_S_a_raw = reg_S_a
+    reg_S_b_raw = reg_S_b
+    if cutlass.const_expr(LADDER_FCVT):
+        # fused shift+convert consumes the RAW scores; the shifted f32 copy is only still needed for the LSE row sums
+        if cutlass.const_expr(LADDER_NOSCALE):
+            fcvt_m = new_total_max
         else:
-            reg_S_a = reg_S_a - new_total_max
-            reg_S_b = reg_S_b - new_total_max
-    else:
-        reg_S_a = reg_S_a * scale_log2 - new_total_max
-        reg_S_b = reg_S_b * scale_log2 - new_total_max
+            fcvt_m = new_total_max / scale_log2
+        fcvt_scale_h2 = _ladder_scale_h2(scale_log2)
+    if cutlass.const_expr((not LADDER_FCVT) or has_lse):
+        if cutlass.const_expr(LADDER_NOSCALE):
+            if cutlass.const_expr(LADDER_SUB2):
+                neg_m = cutlass.Float32(0.0) - new_total_max
+                reg_S_a = _ladder_vec_add_pair(reg_S_a, neg_m, CHUNK)
+                reg_S_b = _ladder_vec_add_pair(reg_S_b, neg_m, CHUNK)
+            else:
+                reg_S_a = reg_S_a - new_total_max
+                reg_S_b = reg_S_b - new_total_max
+        else:
+            reg_S_a = reg_S_a * scale_log2 - new_total_max
+            reg_S_b = reg_S_b * scale_log2 - new_total_max
 
     p_slot_base = sP[sub_tile_id].base
     # ---- chunk a: cvt -> ex2 -> pack -> 4 shared stores -> fence -> arrive
-    ea = [reg_S_a[_i] for _i in range(CHUNK)]
-    pairs_a = _pf_cvt_chunk(ea)
+    if cutlass.const_expr(LADDER_FCVT):
+        pairs_a = _ladder_fcvt_words([reg_S_a_raw[_i] for _i in range(CHUNK)], fcvt_m, fcvt_scale_h2, CHUNK)
+    else:
+        ea = [reg_S_a[_i] for _i in range(CHUNK)]
+        pairs_a = _pf_cvt_chunk(ea)
     ex_a = _pf_ex2_chunk(pairs_a)
     words_a = _pf_pack_chunk(ex_a)
     # P slot reuse: PV(k-1) (which read this slot) must have retired; skipped on the tile's first step.
@@ -3407,8 +3483,11 @@ def _pf_softmax_kv_body(
     if cutlass.const_expr(LADDER_CORR_NORESCALE == 2):
         bars.mb_bmm2_ready[sub_tile_id * CFG.N_BMM2_CHUNKS + 0].arrive(leader_cta_id=leader_cta_id, cta_group=CFG.CTA_MMA)
     # ---- chunk b: cvt first (frees the last 64 S registers), then prefetch step k+1's S into them
-    eb = [reg_S_b[_i] for _i in range(CHUNK)]
-    pairs_b = _pf_cvt_chunk(eb)
+    if cutlass.const_expr(LADDER_FCVT):
+        pairs_b = _ladder_fcvt_words([reg_S_b_raw[_i] for _i in range(CHUNK)], fcvt_m, fcvt_scale_h2, CHUNK)
+    else:
+        eb = [reg_S_b[_i] for _i in range(CHUNK)]
+        pairs_b = _pf_cvt_chunk(eb)
     if cutlass.const_expr(not (LADDER_PROBE & 32)):
         if kv_loop + cutlass.Int32(1) < kv_right:
             bars.mb_bmm1_done[sub_tile_id].wait(bmm1_phase ^ 1, spin=SPIN_RING_WAITS)
