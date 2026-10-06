@@ -301,14 +301,25 @@ LADDER_PROBE = int(_os.environ.get("LADDER_PROBE", "0"))
 LADDER_PREF_ORDER = int(_os.environ.get("LADDER_PREF_ORDER", "0"))
 # LADDER_FCVT=1 (needs F16EXP; classic + PREF arms; not SDOUBLE / PIPE4): the shift and the f32->f16 convert are ONE
 # instruction per pair (nvvm sub_packed_f16x2_f32x2_f32x2 -> FHADD2 with an f16x2 result) instead of FFMA2/FADD2 + F2FP.
-# With LADDER_NOSCALE=1 the exponent input is f16(S - m) with ONE rounding, bit-identical to today's SUB2 + F2FP path.
-# Without it the kernel computes f16(S - m/scale) and multiplies by f16(scale) in f16x2 (HFMA2) -- the gqa.py (MR 28758)
-# path, a second f16 rounding before the exponent.  (From DKG MR 28758, Richard Cai.)
+# With LADDER_NOSCALE=1 the exponent input is f16(S - m) in ONE rounding -- but the op only exists in round-toward-zero +
+# FTZ form (SASS FHADD2.F16x2.F32x2.F32x2.FTZ.RZ; no RN variant on sm_107a), so it is NOT bit-identical to the SUB2 + F2FP
+# (RN) path: P carries a one-sided upward bias of <= 1 f16 ulp of the exponent (~0.03 % near the row max, ~0.5 % for
+# |x| in 8..16), far below the e4m3 P quantization and partly cancelled through the ones-MMA row sum.  Validate with a
+# tolerance against the fp32 reference, never bitwise against SUB2.
+# Without NOSCALE the kernel computes f16(S - m/scale) (an fp32 divide per step, sentinel-guarded for fully-masked rows)
+# and multiplies by f16(scale) in f16x2 (HFMA2) -- gqa.py's path: three roundings and instruction-neutral (the HFMA2
+# replaces the F2FP), kept as a numerics probe only.  FCVT is a stats-less lever: with has_lse the shifted f32 copy is
+# still computed for the LSE row sums.  (From DKG MR 28758, Richard Cai.)
 LADDER_FCVT = int(_os.environ.get("LADDER_FCVT", "0"))
 if LADDER_FCVT and not LADDER_F16EXP:
     raise ValueError("LADDER_FCVT=1 requires LADDER_F16EXP=1")
 if LADDER_FCVT and (LADDER_SDOUBLE or LADDER_PIPE4):
     raise ValueError("LADDER_FCVT is a classic/PREF-path lever (no SDOUBLE / PIPE4)")
+if LADDER_FCVT:
+    from cutlass._mlir.dialects import nvvm as _nvvm_probe
+
+    if not hasattr(_nvvm_probe, "sub_packed_f16x2_f32x2_f32x2"):
+        raise ValueError("LADDER_FCVT=1 needs a CuTe DSL with nvvm.sub.packed.f16x2.f32x2.f32x2 (older venvs lack it)")
 _PF_P_SLOT_BYTES = CFG.TILE_M * CFG.TILE_N * CFG.BPE  # 128 rows x 128 fp8
 _PF_P_LBO = 8 * 16
 _PF_P_SBO = 8 * CFG.TILE_N * CFG.BPE  # 8 rows x 128 B
@@ -2741,7 +2752,8 @@ def _ladder_scale_h2(scale_log2):
 
 def _ladder_fcvt_words(elems, m_eff, scale_h2, n):
     """LADDER_FCVT: n fp32 -> n//2 f16x2 words = f16(elem - m_eff) per pair in ONE fused sub+convert
-    (sub_packed_f16x2_f32x2_f32x2, FHADD2); without NOSCALE each word is then scaled in f16x2 (HFMA2 x scale + 0)."""
+    (sub_packed_f16x2_f32x2_f32x2 = FHADD2 .FTZ.RZ: round-toward-zero, the only mode this op has); without NOSCALE each
+    word is then scaled in f16x2 (HFMA2 x scale + 0)."""
     f32x2_ty = _ladder_ir.VectorType.get([2], _ladder_T.f32())
     f16x2_ty = _ladder_ir.VectorType.get([2], _ladder_T.f16())
     m_vec = _ladder_m_vec2(m_eff)
@@ -2968,9 +2980,14 @@ def _softmax_kv_body(
         # fused shift+convert consumes the RAW scores; the shifted f32 copy is only still needed for the LSE row sums
         if cutlass.const_expr(LADDER_NOSCALE):
             fcvt_m = new_total_max
+            fcvt_scale_h2 = None
         else:
-            fcvt_m = new_total_max / scale_log2
-        fcvt_scale_h2 = _ladder_scale_h2(scale_log2)
+            # raw-unit shift m/scale (fp32 divide, ~10 instr/step).  A fully-masked row's running max is EXACTLY
+            # NEG_INF * scale_log2 and the divide does not round-trip it (S - m' = +-1e31 -> f16 +-65504 -> ex2 = inf),
+            # so pin that case to the raw sentinel: P = 1 on every column, today's behaviour.
+            fcvt_m_div = new_total_max / scale_log2
+            fcvt_m = cutlass.Float32(arith.select((new_total_max == NEG_INF * scale_log2).ir_value(), NEG_INF.ir_value(), fcvt_m_div.ir_value()))
+            fcvt_scale_h2 = _ladder_scale_h2(scale_log2)
     if cutlass.const_expr((not LADDER_FCVT) or has_lse):
         if cutlass.const_expr(LADDER_NOSCALE):
             if cutlass.const_expr(LADDER_SUB2):
@@ -3443,9 +3460,14 @@ def _pf_softmax_kv_body(
         # fused shift+convert consumes the RAW scores; the shifted f32 copy is only still needed for the LSE row sums
         if cutlass.const_expr(LADDER_NOSCALE):
             fcvt_m = new_total_max
+            fcvt_scale_h2 = None
         else:
-            fcvt_m = new_total_max / scale_log2
-        fcvt_scale_h2 = _ladder_scale_h2(scale_log2)
+            # raw-unit shift m/scale (fp32 divide, ~10 instr/step).  A fully-masked row's running max is EXACTLY
+            # NEG_INF * scale_log2 and the divide does not round-trip it (S - m' = +-1e31 -> f16 +-65504 -> ex2 = inf),
+            # so pin that case to the raw sentinel: P = 1 on every column, today's behaviour.
+            fcvt_m_div = new_total_max / scale_log2
+            fcvt_m = cutlass.Float32(arith.select((new_total_max == NEG_INF * scale_log2).ir_value(), NEG_INF.ir_value(), fcvt_m_div.ir_value()))
+            fcvt_scale_h2 = _ladder_scale_h2(scale_log2)
     if cutlass.const_expr((not LADDER_FCVT) or has_lse):
         if cutlass.const_expr(LADDER_NOSCALE):
             if cutlass.const_expr(LADDER_SUB2):
