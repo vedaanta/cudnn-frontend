@@ -223,6 +223,19 @@ LADDER_SD_PREFETCH = int(_os.environ.get("LADDER_SD_PREFETCH", "1"))
 LADDER_SD_LATE_ARRIVE = int(_os.environ.get("LADDER_SD_LATE_ARRIVE", "0"))
 #   LADDER_SD_SWMAX=1  plain tcgen05.ld x64 + software row max instead of the fused LDTM.max (latency probe)
 LADDER_SD_SWMAX = int(_os.environ.get("LADDER_SD_SWMAX", "0"))
+# LADDER_PSMEM=1 (rung H, on top of LADDER_SDOUBLE): P lives in SMEM (one 8 KiB slot per sub-tile x half,
+# UMMA no-swizzle core-matrix layout, LBO 128 B / SBO 512 B) and PV + the ones row-sum read it as SS
+# MMAs.  The S half-buffer is therefore free as soon as the softmax has READ it: the softmax arrives
+# the leader-scope s_free barrier right after its scale-shift and the MMA issues the next step's
+# BMM1 for that half immediately (before the PVs), taking arrive -> PV -> BMM1 off the critical
+# chain.  Prefetch is forced to the top of the half.  Slot reuse is gated by the per-half
+# mb_bmm2_done (waited by the softmax before overwriting the slot two halves later).
+LADDER_PSMEM = int(_os.environ.get("LADDER_PSMEM", "0"))
+if LADDER_PSMEM and not (LADDER_SDOUBLE and LADDER_F16EXP and LADDER_CORRFAST):
+    raise ValueError("LADDER_PSMEM=1 requires LADDER_SDOUBLE=1, LADDER_F16EXP=1 and LADDER_CORRFAST=1")
+if LADDER_PSMEM and LADDER_SD_LATE_ARRIVE:
+    raise ValueError("LADDER_PSMEM and LADDER_SD_LATE_ARRIVE are mutually exclusive")
+_SD_PF = 0 if LADDER_PSMEM else LADDER_SD_PREFETCH
 _SD_RES_WORDS = 64 if LADDER_SD_SWMAX else 65
 if LADDER_SDOUBLE and not LADDER_CORRFAST:
     raise ValueError("LADDER_SDOUBLE=1 requires LADDER_CORRFAST=1 (per-half alpha rides the SMEM slot)")
@@ -471,6 +484,13 @@ _SD_K_HALF_DESC_INC = (_SD_K_HALF_ROWS * CFG.TILE_K * CFG.BPE) >> 4
 # SF_K rides the replicated 128x4 atom (tcgen05.cp 32x128b.warpx4): B row n reads lane n, column
 # n//32.  Half b's rows are tokens 64..127 = row-groups 2,3 -> start the SF_B operand 2 columns in.
 _SD_SF_K_HALF_COLS = 2
+# LADDER_PSMEM: P slot = 128 rows x 64 fp8 in the UMMA K-major no-swizzle layout: core matrix = 8 rows x 16 B
+# contiguous (128 B); LBO = 128 B between core matrices along K; SBO = 512 B between 8-row groups.
+# Byte address of (row r, K byte k) = (r//8)*512 + (k//16)*128 + (r%8)*16 + k%16.
+_SD_P_SLOT_BYTES = CFG.TILE_M * (CFG.TILE_N // 2) * CFG.BPE
+_SD_P_SLOTS = CFG.TILES_Q * 2
+_SD_P_LBO = 8 * 16
+_SD_P_SBO = 4 * _SD_P_LBO
 
 # fp8 1.0 bit pattern x4 for the ones tile (e4m3 0x38 / e5m2 0x3C).
 _ONES_I32 = 0x38383838 if CFG.DTYPE_QKV == 0 else 0x3C3C3C3C
@@ -663,6 +683,28 @@ def _kernel(
     s_alpha_raw = None
     if cutlass.const_expr(LADDER_CORRFAST):
         s_alpha_raw = cutlass.Array(cutlass.Float32, CFG.TILES_Q * CFG.SOFTMAX_LANES, alignment=16, space=cutlass.AddressSpace.smem)
+    # LADDER_PSMEM: P slots (declared LAST so every other operand keeps its offset; 32 KiB at d128) and the
+    # softmax -> MMA 'S half-buffer consumed' barrier (4 stages, both CTAs' softmax lanes arrive on the leader).
+    sP = None
+    sd_s_free = None
+    if cutlass.const_expr(LADDER_PSMEM):
+        sP_raw = cutlass.Array(cutlass.Int8, _SD_P_SLOTS * _SD_P_SLOT_BYTES, alignment=1024, space=cutlass.AddressSpace.smem)
+        sP = SmemTile(
+            base=sP_raw,
+            elems_per_stage=_SD_P_SLOT_BYTES,
+            stages=_SD_P_SLOTS,
+            leading_byte_offset=_SD_P_LBO,
+            stride_byte_offset=_SD_P_SBO,
+            layout=0,
+            desc_version=DESC_VERSION,
+        )
+        sd_s_free = _SdMBarrier(
+            cutlass.Array(cutlass.Int64, 4, alignment=16, space=cutlass.AddressSpace.smem),
+            stages=4,
+            init_count=CFG.SOFTMAX_LANES * CFG.CTA_MMA,
+            producer=_SdProducer.LEADER,
+            scope=_SdScope.LEADER,
+        )
 
     sQ = SmemTile(
         base=sQ_raw,
@@ -798,6 +840,9 @@ def _kernel(
                 for _i in (2, 3):
                     bars.mb_bmm1_done[_i].init()
                     bars.mb_bmm2_done[_i].init()
+            if cutlass.const_expr(LADDER_PSMEM):
+                for _i in (0, 1, 2, 3):
+                    sd_s_free[_i].init()
             for ks in cutlass.range_constexpr(CFG.STAGES_KV):
                 bars.mb_k_full[ks].init()
                 bars.mb_k_empty[ks].init()
@@ -872,6 +917,8 @@ def _kernel(
             cta_in_pair=cta_in_pair,
             qh_per_kh=qh_per_kh,
             s_alpha=s_alpha_raw,
+            sP=sP,
+            s_free=sd_s_free,
         )
 
     elif warp_idx >= CFG.SOFTMAX_WG1_BASE and warp_idx < CFG.SOFTMAX_WG1_BASE + CFG.SOFTMAX_WG_WARPS:
@@ -895,6 +942,8 @@ def _kernel(
             cta_in_pair=cta_in_pair,
             qh_per_kh=qh_per_kh,
             s_alpha=s_alpha_raw,
+            sP=sP,
+            s_free=sd_s_free,
         )
 
     elif warp_idx >= CFG.CORR_WARP_BASE and warp_idx < CFG.CORR_WARP_BASE + CFG.CORRECTION_WARPS:
@@ -954,6 +1003,8 @@ def _kernel(
                     mcast_mask=mcast_mask,
                     cta_in_pair=cta_in_pair,
                     qh_per_kh=qh_per_kh,
+                    sP=sP,
+                    s_free=sd_s_free,
                 )
             else:
                 _mma_warp_quiet(
@@ -993,6 +1044,8 @@ def _kernel(
                 mcast_mask=mcast_mask,
                 cta_in_pair=cta_in_pair,
                 qh_per_kh=qh_per_kh,
+                sP=sP,
+                s_free=sd_s_free,
             )
 
     elif warp_idx == CFG.TMALDG_WARP_ID:
@@ -1548,6 +1601,45 @@ def _sd_pv_half(qs: int, c: int, desc_V, accumulate, tmem_raw, bmm2_desc, sum_de
 
 
 @cute.jit
+def _sd_mma_ss_step(desc, desc_a, desc_b_base, tmem_c, k_idx: int, accumulate, tmem_sf_a=None, tmem_sf_b=None):
+    """One K step of an SS MMA whose A descriptor already points at the K slice (LADDER_PSMEM P slot);
+    B and the SF ids advance by ``k_idx`` exactly like ``mma_ts_step``."""
+    if cutlass.const_expr(desc.cta_group == 1):
+        cta_group_kind = nvvm.CTAGroup.CTA_1
+    else:
+        cta_group_kind = nvvm.CTAGroup.CTA_2
+    db = desc_b_base + ((desc.smem_advance_B_intra * k_idx) >> 4)
+    if nvvm.elect_sync():
+        if cutlass.const_expr(desc.is_block_scale):
+            sf_id = (k_idx * desc.sf_blocks_per_step) % 4
+            step_idesc = desc.idesc.set_sf_ids(a_sf_id=sf_id, b_sf_id=sf_id)
+            nvvm.tcgen05_mma_block_scale(
+                desc.kind,
+                cta_group_kind,
+                tmem_c,
+                desc_a,
+                db,
+                step_idesc,
+                accumulate,
+                scale_a=tmem_sf_a,
+                scale_b=tmem_sf_b,
+                scale_vec_size=desc.scale_vec_size,
+            )
+        else:
+            nvvm.tcgen05_mma(desc.kind, cta_group_kind, tmem_c, desc_a, db, desc.idesc, accumulate)
+
+
+@cute.jit
+def _sd_pv_half_smem(qs: int, c: int, desc_V, accumulate, sP, tmem_raw, bmm2_desc, sum_desc, desc_ones, tmem_SF_P, tmem_SF_V):
+    """LADDER_PSMEM: PV + ones-row-sum for half c of sub-tile qs with P read from its SMEM slot (SS MMAs)."""
+    o_off = LAYOUT.O0_OFF if qs == 0 else LAYOUT.O1_OFF
+    sum_off = _SUM0_OFF if qs == 0 else _SUM1_OFF
+    desc_P = sP[qs * 2 + c].desc()
+    _sd_mma_ss_step(bmm2_desc, desc_P, desc_V, tmem_raw.subview(o_off), c, accumulate, tmem_SF_P, tmem_SF_V)
+    _sd_mma_ss_step(sum_desc, desc_P, desc_ones, tmem_raw.subview(sum_off), c, accumulate)
+
+
+@cute.jit
 def _sd_bmm1_half(qs: int, c: int, desc_K, tmem_raw, bmm1_half_desc, desc_Q0, desc_Q1, tmem_SF_Q0, tmem_SF_Q1, tmem_SF_K):
     """LADDER_SDOUBLE: N=64 BMM1 of half c (tokens c*64..c*64+63 of the stage) into half-buffer (qs, c)."""
     desc_Q = desc_Q0 if qs == 0 else desc_Q1
@@ -1588,6 +1680,8 @@ def _mma_warp_group(
     mcast_mask,
     cta_in_pair,
     qh_per_kh,
+    sP=None,
+    s_free=None,
 ):
     """Leader MMA warp — block-scale MMA stream for BMM1 + BMM2.
 
@@ -1754,6 +1848,7 @@ def _mma_warp_group(
     q_full_phase = cutlass.Int32(0)
     kv_state = PipelineState.start(phase=0)
     bmm2_ready_phase = cutlass.Int32(0)
+    sfree_phase = cutlass.Int32(0)  # LADDER_PSMEM: s_free[qs*2+c] completes once per kv step
     empty_mainloop_phase = cutlass.Int32(0)
     # Stats-consumed gate (one flip per tile per sub-tile): the final
     # (total_max, total_sum) stats ride the S_acc HEAD, which the prologue BMM1
@@ -1848,7 +1943,78 @@ def _mma_warp_group(
 
             q_full_phase = q_full_phase ^ 1
 
-            if cutlass.const_expr(LADDER_SDOUBLE):
+            if cutlass.const_expr(LADDER_PSMEM):
+                # LADDER_PSMEM steady state: per half c, the two BMM1(stage kv_loop, c) go out as soon as the
+                # softmax has consumed S(stage kv_loop-1, c) (s_free), THEN the two PVs of stage kv_loop-1
+                # half c (P from SMEM).  S half-buffer c held nothing but S, so no write-after-read hazard
+                # against the P the PV reads.
+                for kv_loop in cutlass.range(kv_left + cutlass.Int32(1), kv_right, 1, unroll=1):
+                    old_state = kv_state
+                    kv_state = advance(kv_state, CFG.STAGES_KV)
+
+                    bars.mb_v_full[old_state.idx].wait(old_state.phase, spin=SPIN_RING_WAITS)
+                    desc_V = sV[old_state.idx].desc()
+                    desc_V_SF = sV_SF[old_state.idx].desc()
+                    if nvvm.elect_sync():
+                        nvvm.tcgen05_cp(nvvm.Tcgen05CpShape.SHAPE_32X128B, tmem_SF_V, desc_V_SF, group=CTA_GROUP_KIND, multicast=nvvm.Tcgen05CpMulticast.WARPX4)
+                    is_not_first_bmm2 = cutlass.Boolean(kv_loop != (kv_left + cutlass.Int32(1)))
+
+                    bars.mb_k_full[kv_state.idx].wait(kv_state.phase, spin=SPIN_RING_WAITS)
+                    desc_K = sK[kv_state.idx].desc()
+                    desc_K_SF = sK_SF[kv_state.idx].desc()
+                    if nvvm.elect_sync():
+                        for _sf_k in cutlass.range_constexpr(SF_NUM_BLOCKS_K):
+                            nvvm.tcgen05_cp(
+                                shape=nvvm.Tcgen05CpShape.SHAPE_32X128B,
+                                taddr=tmem_SF_K.subview(_sf_k * SF_REGISTERS_PER_BLOCK),
+                                smem_desc=desc_K_SF + _sf_k * (SF_BYTES_PER_BLOCK // 16),
+                                group=CTA_GROUP_KIND,
+                                multicast=nvvm.Tcgen05CpMulticast.WARPX4,
+                            )
+
+                    # ---- half 0: BMM1s (early) then PVs
+                    s_free[0].wait(sfree_phase, spin=SPIN_RING_WAITS)
+                    _sd_bmm1_half(0, 0, desc_K, tmem_raw, bmm1_half_desc, desc_Q0, desc_Q1, tmem_SF_Q0, tmem_SF_Q1, tmem_SF_K)
+                    if nvvm.elect_sync():
+                        bars.mb_bmm1_done[0].arrive(mcast_mask=mcast_mask, cta_group=CFG.CTA_MMA)
+                    s_free[2].wait(sfree_phase, spin=SPIN_RING_WAITS)
+                    _sd_bmm1_half(1, 0, desc_K, tmem_raw, bmm1_half_desc, desc_Q0, desc_Q1, tmem_SF_Q0, tmem_SF_Q1, tmem_SF_K)
+                    if nvvm.elect_sync():
+                        bars.mb_bmm1_done[2].arrive(mcast_mask=mcast_mask, cta_group=CFG.CTA_MMA)
+
+                    bars.mb_bmm2_ready[0].wait(bmm2_ready_phase, spin=SPIN_RING_WAITS)
+                    _sd_pv_half_smem(0, 0, desc_V, is_not_first_bmm2, sP, tmem_raw, bmm2_desc, sum_desc, desc_ones, tmem_SF_P, tmem_SF_V)
+                    if nvvm.elect_sync():
+                        bars.mb_bmm2_done[0].arrive(mcast_mask=mcast_mask, cta_group=CFG.CTA_MMA)
+                    bars.mb_bmm2_ready[2].wait(bmm2_ready_phase, spin=SPIN_RING_WAITS)
+                    _sd_pv_half_smem(1, 0, desc_V, is_not_first_bmm2, sP, tmem_raw, bmm2_desc, sum_desc, desc_ones, tmem_SF_P, tmem_SF_V)
+                    if nvvm.elect_sync():
+                        bars.mb_bmm2_done[2].arrive(mcast_mask=mcast_mask, cta_group=CFG.CTA_MMA)
+
+                    # ---- half 1
+                    s_free[1].wait(sfree_phase, spin=SPIN_RING_WAITS)
+                    _sd_bmm1_half(0, 1, desc_K, tmem_raw, bmm1_half_desc, desc_Q0, desc_Q1, tmem_SF_Q0, tmem_SF_Q1, tmem_SF_K)
+                    if nvvm.elect_sync():
+                        bars.mb_bmm1_done[1].arrive(mcast_mask=mcast_mask, cta_group=CFG.CTA_MMA)
+                    s_free[3].wait(sfree_phase, spin=SPIN_RING_WAITS)
+                    _sd_bmm1_half(1, 1, desc_K, tmem_raw, bmm1_half_desc, desc_Q0, desc_Q1, tmem_SF_Q0, tmem_SF_Q1, tmem_SF_K)
+                    if nvvm.elect_sync():
+                        bars.mb_bmm1_done[3].arrive(mcast_mask=mcast_mask, cta_group=CFG.CTA_MMA)
+                        bars.mb_k_empty[kv_state.idx].arrive(mcast_mask=mcast_mask, cta_group=CFG.CTA_MMA)
+
+                    bars.mb_bmm2_ready[1].wait(bmm2_ready_phase, spin=SPIN_RING_WAITS)
+                    _sd_pv_half_smem(0, 1, desc_V, cutlass.Boolean(True), sP, tmem_raw, bmm2_desc, sum_desc, desc_ones, tmem_SF_P, tmem_SF_V)
+                    if nvvm.elect_sync():
+                        bars.mb_bmm2_done[1].arrive(mcast_mask=mcast_mask, cta_group=CFG.CTA_MMA)
+                    bars.mb_bmm2_ready[3].wait(bmm2_ready_phase, spin=SPIN_RING_WAITS)
+                    _sd_pv_half_smem(1, 1, desc_V, cutlass.Boolean(True), sP, tmem_raw, bmm2_desc, sum_desc, desc_ones, tmem_SF_P, tmem_SF_V)
+                    if nvvm.elect_sync():
+                        bars.mb_bmm2_done[3].arrive(mcast_mask=mcast_mask, cta_group=CFG.CTA_MMA)
+                        bars.mb_v_empty[old_state.idx].arrive(mcast_mask=mcast_mask, cta_group=CFG.CTA_MMA)
+
+                    bmm2_ready_phase = bmm2_ready_phase ^ 1
+                    sfree_phase = sfree_phase ^ 1
+            elif cutlass.const_expr(LADDER_SDOUBLE):
                 # LADDER_SDOUBLE steady state.  Iteration kv_loop: PV of stage kv_loop-1 (both halves)
                 # and BMM1 of stage kv_loop (both halves).  Per half c: wait bmm2_ready[qs*2+c] ->
                 # PV(qs,c) + row-sum -> commit bmm2_done[qs*2+c] -> BMM1(qs, new stage, c) into the
@@ -2047,7 +2213,32 @@ def _mma_warp_group(
                 )
             is_not_first_bmm2_epi = cutlass.Boolean((kv_right - kv_left) != cutlass.Int32(1))
 
-            if cutlass.const_expr(LADDER_SDOUBLE):
+            if cutlass.const_expr(LADDER_PSMEM):
+                # Last stage: consume the four s_free arrivals (no BMM1 follows; keeps the phases aligned),
+                # then the PVs with P from SMEM.
+                s_free[0].wait(sfree_phase, spin=SPIN_RING_WAITS)
+                s_free[2].wait(sfree_phase, spin=SPIN_RING_WAITS)
+                bars.mb_bmm2_ready[0].wait(bmm2_ready_phase, spin=SPIN_RING_WAITS)
+                _sd_pv_half_smem(0, 0, desc_V, is_not_first_bmm2_epi, sP, tmem_raw, bmm2_desc, sum_desc, desc_ones, tmem_SF_P, tmem_SF_V)
+                if nvvm.elect_sync():
+                    bars.mb_bmm2_done[0].arrive(mcast_mask=mcast_mask, cta_group=CFG.CTA_MMA)
+                bars.mb_bmm2_ready[2].wait(bmm2_ready_phase, spin=SPIN_RING_WAITS)
+                _sd_pv_half_smem(1, 0, desc_V, is_not_first_bmm2_epi, sP, tmem_raw, bmm2_desc, sum_desc, desc_ones, tmem_SF_P, tmem_SF_V)
+                if nvvm.elect_sync():
+                    bars.mb_bmm2_done[2].arrive(mcast_mask=mcast_mask, cta_group=CFG.CTA_MMA)
+                s_free[1].wait(sfree_phase, spin=SPIN_RING_WAITS)
+                s_free[3].wait(sfree_phase, spin=SPIN_RING_WAITS)
+                bars.mb_bmm2_ready[1].wait(bmm2_ready_phase, spin=SPIN_RING_WAITS)
+                _sd_pv_half_smem(0, 1, desc_V, cutlass.Boolean(True), sP, tmem_raw, bmm2_desc, sum_desc, desc_ones, tmem_SF_P, tmem_SF_V)
+                if nvvm.elect_sync():
+                    bars.mb_bmm2_done[1].arrive(mcast_mask=mcast_mask, cta_group=CFG.CTA_MMA)
+                bars.mb_bmm2_ready[3].wait(bmm2_ready_phase, spin=SPIN_RING_WAITS)
+                _sd_pv_half_smem(1, 1, desc_V, cutlass.Boolean(True), sP, tmem_raw, bmm2_desc, sum_desc, desc_ones, tmem_SF_P, tmem_SF_V)
+                if nvvm.elect_sync():
+                    bars.mb_bmm2_done[3].arrive(mcast_mask=mcast_mask, cta_group=CFG.CTA_MMA)
+                    bars.mb_v_empty[kv_state.idx].arrive(mcast_mask=mcast_mask, cta_group=CFG.CTA_MMA)
+                sfree_phase = sfree_phase ^ 1
+            elif cutlass.const_expr(LADDER_SDOUBLE):
                 bars.mb_bmm2_ready[0].wait(bmm2_ready_phase, spin=SPIN_RING_WAITS)
                 _sd_pv_half(0, 0, desc_V, is_not_first_bmm2_epi, tmem_raw, bmm2_desc, sum_desc, desc_ones, tmem_SF_P, tmem_SF_V)
                 if nvvm.elect_sync():
@@ -2469,6 +2660,11 @@ def _sd_softmax_half(
     pend_c: int = -1,
     pend_cond=None,
     last_cond=None,
+    sP=None,
+    s_free=None,
+    p_row_off=None,
+    pdone_phase=None,
+    pdone_cond=None,
 ):
     """LADDER_SDOUBLE: one 64-column half.  ``res`` is this half's prefetched LDTM.max result.
 
@@ -2513,7 +2709,7 @@ def _sd_softmax_half(
     else:
         current_max = cur_max * scale_log2
 
-    if cutlass.const_expr(LADDER_SD_PREFETCH == 0):
+    if cutlass.const_expr(_SD_PF == 0):
         if cutlass.const_expr(prefetch_guarded):
             if kv_loop + cutlass.Int32(1) < kv_right:
                 bars.mb_bmm1_done[sub_tile_id * 2 + prefetch_c].wait(bmm1_phase, spin=SPIN_RING_WAITS)
@@ -2539,6 +2735,10 @@ def _sd_softmax_half(
         reg_S = reg_S - new_total_max
     else:
         reg_S = reg_S * scale_log2 - new_total_max
+    if cutlass.const_expr(LADDER_PSMEM):
+        # S half-buffer (sub_tile_id, c) consumed: every data register of this half's LDTM has been read by
+        # the scale-shift above (in-order issue => the load completed).  The MMA may now overwrite it.
+        s_free[sub_tile_id * 2 + c].arrive(leader_cta_id=leader_cta_id, cta_group=CFG.CTA_MMA)
 
     if cutlass.const_expr(LADDER_SD_LATE_ARRIVE and pend_c >= 0):
         # Previous half's P store has had this half's max/alpha/scale-shift to drain.  MUST precede the
@@ -2554,7 +2754,7 @@ def _sd_softmax_half(
     # Prefetch the other half-buffer (see docstring).  The LOAD is unconditional (on the tile's last
     # half it reads the stale buffer, result unused) so the carried vector has no phi; only the
     # bmm1_done WAIT is guarded (a BMM1 that is never issued would deadlock it).
-    if cutlass.const_expr(LADDER_SD_PREFETCH == 1):
+    if cutlass.const_expr(_SD_PF == 1):
         if cutlass.const_expr(prefetch_guarded):
             if kv_loop + cutlass.Int32(1) < kv_right:
                 bars.mb_bmm1_done[sub_tile_id * 2 + prefetch_c].wait(bmm1_phase, spin=SPIN_RING_WAITS)
@@ -2563,9 +2763,23 @@ def _sd_softmax_half(
         res_next = _sd_load_half(tmem_base, sub_tile_id, prefetch_c)
 
     reg_P = reg_S
-    if cutlass.const_expr(LADDER_F16EXP):
+    if cutlass.const_expr(LADDER_PSMEM):
         p_words = _ladder_f16_exp_chunk(reg_S, CHUNK)
-        if cutlass.const_expr(LADDER_SD_PREFETCH == 2):
+        # Slot reuse: the PV that read this slot's previous P (same half, previous kv step) must have
+        # retired -- its mb_bmm2_done.  Skipped on the tile's first step (no previous P in the slot).
+        if pdone_cond:
+            bars.mb_bmm2_done[sub_tile_id * 2 + c].wait(pdone_phase, spin=SPIN_RING_WAITS)
+        p_slot = sP[sub_tile_id * 2 + c].base
+        for _j in cutlass.range_constexpr(4):
+            Pointer(p_slot.subview(p_row_off + cutlass.Int32(_j * _SD_P_LBO)).data_ptr(), dtype=cutlass.Int32).store(
+                cutlass.Vector.from_elements(tuple(p_words[4 * _j + _i] for _i in range(4)), cutlass.Int32), alignment=16
+            )
+        # generic-proxy st.shared -> async-proxy (UMMA) read: proxy fence, then the release arrive.
+        nvvm.fence_proxy("async.shared", space="cta")
+        bars.mb_bmm2_ready[sub_tile_id * 2 + c].arrive(leader_cta_id=leader_cta_id, cta_group=CFG.CTA_MMA)
+    elif cutlass.const_expr(LADDER_F16EXP):
+        p_words = _ladder_f16_exp_chunk(reg_S, CHUNK)
+        if cutlass.const_expr(_SD_PF == 2):
             if cutlass.const_expr(prefetch_guarded):
                 if kv_loop + cutlass.Int32(1) < kv_right:
                     bars.mb_bmm1_done[sub_tile_id * 2 + prefetch_c].wait(bmm1_phase, spin=SPIN_RING_WAITS)
@@ -2576,7 +2790,7 @@ def _sd_softmax_half(
     else:
         reg_P = cute.math.exp2(reg_S, fastmath=True)
         p_fp8 = reg_P.to(STORAGE_DTYPE)
-        if cutlass.const_expr(LADDER_SD_PREFETCH == 2):
+        if cutlass.const_expr(_SD_PF == 2):
             if cutlass.const_expr(prefetch_guarded):
                 if kv_loop + cutlass.Int32(1) < kv_right:
                     bars.mb_bmm1_done[sub_tile_id * 2 + prefetch_c].wait(bmm1_phase, spin=SPIN_RING_WAITS)
@@ -2584,7 +2798,9 @@ def _sd_softmax_half(
                 bars.mb_bmm1_done[sub_tile_id * 2 + prefetch_c].wait(bmm1_phase, spin=SPIN_RING_WAITS)
             res_next = _sd_load_half(tmem_base, sub_tile_id, prefetch_c)
         nvvm.tcgen05_st("32x32b", nvvm.make_tmem_ptr(p_addr, cutlass.Float32), p_fp8)
-    if cutlass.const_expr(LADDER_SD_LATE_ARRIVE):
+    if cutlass.const_expr(LADDER_PSMEM):
+        pass
+    elif cutlass.const_expr(LADDER_SD_LATE_ARRIVE):
         if cutlass.const_expr(last_cond is not None):
             if last_cond:
                 nvvm.tcgen05_wait(kind=nvvm.Tcgen05Wait.STORE)
@@ -2628,6 +2844,10 @@ def _sd_softmax_step(
     s_alpha_slot,
     res_cur,
     kv_left=None,
+    sP=None,
+    s_free=None,
+    p_row_off=None,
+    pdone_phase=None,
 ):
     """LADDER_SDOUBLE per-kv-step softmax: half 0 (prefetched in ``res_cur``), then half 1.
     bmm1_done[qs*2+0] / [qs*2+1] each complete once per step; the half-1 wait uses this step's
@@ -2637,14 +2857,19 @@ def _sd_softmax_step(
         apply_mask, sub_tile_id, 0, has_lse, res_cur, kv_loop, kv_right, tmem_base, bars, q_abs, eff_seqlen_kv, seqlen_q, scale_log2,
         total_max, total_sum, bmm1_phase, stat_empty_phase, leader_cta_id, s_alpha_slot, 1, False,
         1, (kv_loop > kv_left) if cutlass.const_expr(LADDER_SD_LATE_ARRIVE) else None, None,
+        sP, s_free, p_row_off, pdone_phase, (kv_loop > kv_left) if cutlass.const_expr(LADDER_PSMEM) else None,
     )
     total_max, total_sum, stat_empty_phase, res_next = _sd_softmax_half(
         apply_mask, sub_tile_id, 1, has_lse, res_1, kv_loop, kv_right, tmem_base, bars, q_abs, eff_seqlen_kv, seqlen_q, scale_log2,
         total_max, total_sum, bmm1_phase ^ 1, stat_empty_phase, leader_cta_id, s_alpha_slot, 0, True,
         0, None, (kv_loop + cutlass.Int32(1) == kv_right) if cutlass.const_expr(LADDER_SD_LATE_ARRIVE) else None,
+        sP, s_free, p_row_off, pdone_phase, (kv_loop > kv_left) if cutlass.const_expr(LADDER_PSMEM) else None,
     )
     bmm1_phase = bmm1_phase ^ 1
-    return total_max, total_sum, bmm1_phase, stat_empty_phase, res_next
+    if cutlass.const_expr(LADDER_PSMEM):
+        # the slot-reuse parity advances only on steps that waited (k > left); the tile end adds one more
+        pdone_phase = pdone_phase ^ cutlass.Int32(arith.select((kv_loop > kv_left).ir_value(), cutlass.Int32(1).ir_value(), cutlass.Int32(0).ir_value()))
+    return total_max, total_sum, bmm1_phase, stat_empty_phase, res_next, pdone_phase
 
 
 @cute.jit
@@ -2667,6 +2892,8 @@ def _softmax_warp_group(
     cta_in_pair,
     qh_per_kh,
     s_alpha=None,
+    sP=None,
+    s_free=None,
 ):
     """Softmax warp group — online softmax + α publish (LSE write owned by correction)."""
     # Wait on MMA's TMEM-publish named barrier BEFORE tmem_ptr_i32.load() — else stale base pointer.
@@ -2718,6 +2945,9 @@ def _softmax_warp_group(
     s_alpha_slot = None
     if cutlass.const_expr(LADDER_CORRFAST):
         s_alpha_slot = s_alpha.subview(cutlass.Int32(sub_tile_id * CFG.SOFTMAX_LANES) + tid_in_wg)
+    # LADDER_PSMEM: this lane's row inside a P slot (row r -> (r//8)*SBO + (r%8)*16) and the slot-reuse parity.
+    sd_p_row_off = (tid_in_wg >> cutlass.Int32(3)) * cutlass.Int32(_SD_P_SBO) + (tid_in_wg & cutlass.Int32(7)) * cutlass.Int32(16)
+    sd_pdone_phase = cutlass.Int32(0)
 
     while is_valid_tile > cutlass.Int32(0):
         read_tile_id_arrive(sched.mb_read_tile_id.subview(sched_state.idx), CGA_SIZE)
@@ -2746,21 +2976,21 @@ def _softmax_warp_group(
                 res_cur = _sd_load_half(tmem_ptr_i32.load(), sub_tile_id, 0)
             if cutlass.const_expr(CFG.MASK_FLAGS == MASK_NONE):
                 for kv_loop in cutlass.range(bounds.left, bounds.right, 1, unroll=1):
-                    total_max, total_sum, bmm1_phase, stat_empty_phase, res_cur = _sd_softmax_step(
-                        False, sub_tile_id, has_lse, kv_loop, bounds.right, tmem_ptr_i32, bars, q_abs, eff_seqlen_kv, eff_seqlen_q, scale_log2, total_max, total_sum, bmm1_phase, stat_empty_phase, leader_cta_id, s_alpha_slot, res_cur, bounds.left
+                    total_max, total_sum, bmm1_phase, stat_empty_phase, res_cur, sd_pdone_phase = _sd_softmax_step(
+                        False, sub_tile_id, has_lse, kv_loop, bounds.right, tmem_ptr_i32, bars, q_abs, eff_seqlen_kv, eff_seqlen_q, scale_log2, total_max, total_sum, bmm1_phase, stat_empty_phase, leader_cta_id, s_alpha_slot, res_cur, bounds.left, sP, s_free, sd_p_row_off, sd_pdone_phase
                     )
             else:
                 for kv_loop in cutlass.range(bounds.left, bounds.unmasked_lo, 1, unroll=1):
-                    total_max, total_sum, bmm1_phase, stat_empty_phase, res_cur = _sd_softmax_step(
-                        True, sub_tile_id, has_lse, kv_loop, bounds.right, tmem_ptr_i32, bars, q_abs, eff_seqlen_kv, eff_seqlen_q, scale_log2, total_max, total_sum, bmm1_phase, stat_empty_phase, leader_cta_id, s_alpha_slot, res_cur, bounds.left
+                    total_max, total_sum, bmm1_phase, stat_empty_phase, res_cur, sd_pdone_phase = _sd_softmax_step(
+                        True, sub_tile_id, has_lse, kv_loop, bounds.right, tmem_ptr_i32, bars, q_abs, eff_seqlen_kv, eff_seqlen_q, scale_log2, total_max, total_sum, bmm1_phase, stat_empty_phase, leader_cta_id, s_alpha_slot, res_cur, bounds.left, sP, s_free, sd_p_row_off, sd_pdone_phase
                     )
                 for kv_loop in cutlass.range(bounds.unmasked_lo, bounds.unmasked_hi, 1, unroll=1):
-                    total_max, total_sum, bmm1_phase, stat_empty_phase, res_cur = _sd_softmax_step(
-                        False, sub_tile_id, has_lse, kv_loop, bounds.right, tmem_ptr_i32, bars, q_abs, eff_seqlen_kv, eff_seqlen_q, scale_log2, total_max, total_sum, bmm1_phase, stat_empty_phase, leader_cta_id, s_alpha_slot, res_cur, bounds.left
+                    total_max, total_sum, bmm1_phase, stat_empty_phase, res_cur, sd_pdone_phase = _sd_softmax_step(
+                        False, sub_tile_id, has_lse, kv_loop, bounds.right, tmem_ptr_i32, bars, q_abs, eff_seqlen_kv, eff_seqlen_q, scale_log2, total_max, total_sum, bmm1_phase, stat_empty_phase, leader_cta_id, s_alpha_slot, res_cur, bounds.left, sP, s_free, sd_p_row_off, sd_pdone_phase
                     )
                 for kv_loop in cutlass.range(bounds.unmasked_hi, bounds.right, 1, unroll=1):
-                    total_max, total_sum, bmm1_phase, stat_empty_phase, res_cur = _sd_softmax_step(
-                        True, sub_tile_id, has_lse, kv_loop, bounds.right, tmem_ptr_i32, bars, q_abs, eff_seqlen_kv, eff_seqlen_q, scale_log2, total_max, total_sum, bmm1_phase, stat_empty_phase, leader_cta_id, s_alpha_slot, res_cur, bounds.left
+                    total_max, total_sum, bmm1_phase, stat_empty_phase, res_cur, sd_pdone_phase = _sd_softmax_step(
+                        True, sub_tile_id, has_lse, kv_loop, bounds.right, tmem_ptr_i32, bars, q_abs, eff_seqlen_kv, eff_seqlen_q, scale_log2, total_max, total_sum, bmm1_phase, stat_empty_phase, leader_cta_id, s_alpha_slot, res_cur, bounds.left, sP, s_free, sd_p_row_off, sd_pdone_phase
                     )
         elif cutlass.const_expr(CFG.MASK_FLAGS == MASK_NONE):
             for kv_loop in cutlass.range(bounds.left, bounds.right, 1, unroll=1):
@@ -2845,6 +3075,9 @@ def _softmax_warp_group(
         # total_sum is the exact fp32 row-sum when stats are requested (has_lse) and
         # the untouched zero vector otherwise -- O's denominator is in the row-sum
         # TMEM columns either way; word 1 feeds the LSE only.
+        if cutlass.const_expr(LADDER_PSMEM):
+            sd_pdone_phase = sd_pdone_phase ^ 1  # the last step's (or an empty tile's) bmm2_done completion is never waited
+
         total_sum_scalar = total_sum[0] + total_sum[1]
 
         stats_addr_epi = tmem_ptr_i32.load() + cutlass.Int32(stats_off)

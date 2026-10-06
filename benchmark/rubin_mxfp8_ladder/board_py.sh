@@ -14,7 +14,7 @@ export LD_LIBRARY_PATH=/home/scratch.vagarwalla_gpu/cudnn_9.26.0.51/lib:${LD_LIB
 export CUDNN_FRONTEND_ENABLE_FROST_ENGINES=1
 export XDG_CACHE_HOME=$T/cache
 export CUTE_DSL_CACHE_DIR=${CUTE_DSL_CACHE_DIR:-$T/dsl_cache}
-export LADDER_F16EXP LADDER_NOSCALE LADDER_PAGED64 LADDER_CORRFAST LADDER_SDOUBLE
+export LADDER_F16EXP LADDER_NOSCALE LADDER_PAGED64 LADDER_CORRFAST LADDER_SDOUBLE LADDER_PSMEM
 cd $WT/benchmark/rubin_mxfp8_ladder
 if [ "${NCU:-0}" = "1" ]; then
   KARG=(); [ -n "${NCU_K:-}" ] && KARG=(-k "regex:$NCU_K")
@@ -26,7 +26,7 @@ if [ "${NCU:-0}" = "1" ]; then
   NCU_BIN=/home/scratch.svc_compute_arch/release/nsightCompute/internal/x86_64/latest/ncu
   exec sudo -n env HOME=$T/root_home PYTHONPATH=$PYTHONPATH LD_PRELOAD=$LD_PRELOAD LD_LIBRARY_PATH=$LD_LIBRARY_PATH \
       CUDNN_FRONTEND_ENABLE_FROST_ENGINES=1 XDG_CACHE_HOME=$T/cache_root CUTE_DSL_CACHE_DIR=$T/dsl_cache_root \
-      LADDER_F16EXP=${LADDER_F16EXP:-0} LADDER_NOSCALE=${LADDER_NOSCALE:-0} LADDER_PAGED64=${LADDER_PAGED64:-0} LADDER_CORRFAST=${LADDER_CORRFAST:-0} LADDER_SDOUBLE=${LADDER_SDOUBLE:-0} \
+      LADDER_F16EXP=${LADDER_F16EXP:-0} LADDER_NOSCALE=${LADDER_NOSCALE:-0} LADDER_PAGED64=${LADDER_PAGED64:-0} LADDER_CORRFAST=${LADDER_CORRFAST:-0} LADDER_SDOUBLE=${LADDER_SDOUBLE:-0} LADDER_PSMEM=${LADDER_PSMEM:-0} \
       $NCU_BIN --target-processes all ${NCU_SET:---set full} --launch-skip ${NCU_SKIP:-3} --launch-count ${NCU_COUNT:-1} \
       "${KARG[@]}" -f -o ${NCU_OUT:-$T/ncu/ladder} $PY "$@"
 fi

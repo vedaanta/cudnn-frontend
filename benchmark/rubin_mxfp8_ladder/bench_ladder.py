@@ -10,6 +10,7 @@ One rung per process (the one-off kernel reads its levers from env at import):
   E  D + paged KV cache, page_size 64 (HND pools, random table)  one-off kernel, LADDER_PAGED64=1
   F  C + correction fast path (alpha via SMEM)                   one-off kernel, LADDER_CORRFAST=1
   G  F + S half-buffer double-buffering (BMM1 overlaps softmax)  one-off kernel, LADDER_SDOUBLE=1
+  H  G + P in SMEM, early BMM1 (S half-buffer freed on read)      one-off kernel, LADDER_PSMEM=1
 
 Shape: B=1, H_q=32, H_kv=2 (GQA 16:1), d=128, S_q=S_kv in {8k,16k,32k}, O in bf16,
 no Stats (inference), no Amax_O.  Timing = CUDA-graph replay of one execute (falls back to
@@ -36,6 +37,7 @@ RUNGS = {
     "E": dict(label="mxfp8 + f16 exp + scale outside + paged64", family="mxfp8", env={"LADDER_F16EXP": "1", "LADDER_NOSCALE": "1", "LADDER_PAGED64": "1"}, paged=64),
     "F": dict(label="C + correction fast path (alpha via SMEM)", family="mxfp8", env={"LADDER_F16EXP": "1", "LADDER_CORRFAST": "1"}),
     "G": dict(label="F + S half-buffer double-buffering (BMM1 overlaps softmax)", family="mxfp8", env={"LADDER_F16EXP": "1", "LADDER_CORRFAST": "1", "LADDER_SDOUBLE": "1"}),
+    "H": dict(label="G + P in SMEM, early BMM1 (S half-buffer freed on read)", family="mxfp8", env={"LADDER_F16EXP": "1", "LADDER_CORRFAST": "1", "LADDER_SDOUBLE": "1", "LADDER_PSMEM": "1"}),
 }
 ONEOFF_FILE = "sm107/prefill_d128_mxfp8_ladder.py"
 B, HQ, HKV, D = 1, 32, 2, 128
@@ -45,7 +47,7 @@ LOG2E = math.log2(math.e)
 def _env_from_rung(rung):
     for k, v in RUNGS[rung]["env"].items():
         os.environ[k] = v
-    for k in ("LADDER_F16EXP", "LADDER_NOSCALE", "LADDER_PAGED64", "LADDER_CORRFAST", "LADDER_SDOUBLE"):
+    for k in ("LADDER_F16EXP", "LADDER_NOSCALE", "LADDER_PAGED64", "LADDER_CORRFAST", "LADDER_SDOUBLE", "LADDER_PSMEM"):
         os.environ.setdefault(k, "0")
     # One JIT / compiled-plan cache per rung: rungs C/D/E share ONE kernel file and differ only by
     # import-time env flags, which the DSL and FE plan caches do not key on.
@@ -375,7 +377,7 @@ def main():
             d=D,
             kernel=kname,
             cfg={k: getattr(getattr(api, "_k_mod", None).CFG, k, None) for k in ("SCHEDULER_POLICY", "CTA_MMA", "STAGES_KV", "TILE_M", "TILE_N", "TILES_Q", "RESCALE_THRESHOLD", "MASK_FLAGS", "PAGED_KV", "PAGE_SIZE")} if getattr(getattr(api, "_k_mod", None), "CFG", None) is not None else None,
-            kmod=dict(PAGED_KV=getattr(getattr(api, "_k_mod", None), "PAGED_KV", None), PAGE_SIZE=getattr(getattr(api, "_k_mod", None), "PAGE_SIZE", None), F16EXP=getattr(getattr(api, "_k_mod", None), "LADDER_F16EXP", None), NOSCALE=getattr(getattr(api, "_k_mod", None), "LADDER_NOSCALE", None), CORRFAST=getattr(getattr(api, "_k_mod", None), "LADDER_CORRFAST", None), SDOUBLE=getattr(getattr(api, "_k_mod", None), "LADDER_SDOUBLE", None), SD_PINGPONG=getattr(getattr(api, "_k_mod", None), "LADDER_SD_PINGPONG", None), SD_PREFETCH=getattr(getattr(api, "_k_mod", None), "LADDER_SD_PREFETCH", None), SD_LATE_ARRIVE=getattr(getattr(api, "_k_mod", None), "LADDER_SD_LATE_ARRIVE", None)),
+            kmod=dict(PAGED_KV=getattr(getattr(api, "_k_mod", None), "PAGED_KV", None), PAGE_SIZE=getattr(getattr(api, "_k_mod", None), "PAGE_SIZE", None), F16EXP=getattr(getattr(api, "_k_mod", None), "LADDER_F16EXP", None), NOSCALE=getattr(getattr(api, "_k_mod", None), "LADDER_NOSCALE", None), CORRFAST=getattr(getattr(api, "_k_mod", None), "LADDER_CORRFAST", None), SDOUBLE=getattr(getattr(api, "_k_mod", None), "LADDER_SDOUBLE", None), SD_PINGPONG=getattr(getattr(api, "_k_mod", None), "LADDER_SD_PINGPONG", None), SD_PREFETCH=getattr(getattr(api, "_k_mod", None), "LADDER_SD_PREFETCH", None), SD_LATE_ARRIVE=getattr(getattr(api, "_k_mod", None), "LADDER_SD_LATE_ARRIVE", None), PSMEM=getattr(getattr(api, "_k_mod", None), "LADDER_PSMEM", None)),
             compile_s=round(compile_s, 1),
             clocks_before=gpu_clocks(),
             tag=args.tag,
