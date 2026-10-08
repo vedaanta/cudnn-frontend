@@ -10,6 +10,10 @@ for d in $OUT/*/; do
   log=$OUT/$n.flow.log
   last=$(grep -vE "^\s*$" $log 2>/dev/null | tail -1 | cut -c1-100)
   st="running"
+  # a flow whose orchestrator died (e.g. the computelab frontends' 512 MiB per-user memory cgroup OOM-killing it) leaves
+  # the directory behind: its remote LSF jobs may still write into it, but nothing will drive the later stages
+  [ -f "$log" ] || st="NO FLOW LOG (orchestrator gone; resubmit under another suffix)"
+  pgrep -f "[f]low.perfsim run.*$n" > /dev/null 2>&1 || [ ! -f "$log" ] || st="orchestrator not on this host"
   [ -n "$t3d" ] && st="trace3d OK"
   [ -n "$apdf" ] && st="SMART done"
   [ -n "$pfm" ] && st="DONE full.pfm"

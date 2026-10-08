@@ -47,11 +47,14 @@ python make_report.py --timing results.jsonl --ncu results/ncu_table.json --unit
 ```
 
 Config string keys (`key=val,...`): `corr` default|always|never, `paged` 0|64, `half` 0|1, `prefolded` 0|1,
-`kernel` product|bench|auto (auto = bench iff a lever needs it), `corrfast` / `hoist` 0|1|auto (on with the bench
-kernel), `rowsum_mma` 0|1 (d256 stretch), `cga` 1|2|auto (adapter default: d128 cga2, d256 MXFP8 cga1), `sched`,
-`sf` dense|paged (scale-factor layout the paged loader expects; auto = dense for d128, paged for d256), `name`.
+`kernel` product|bench|auto (auto = bench iff a lever needs it), `corrfast` / `hoist` 0|1|auto (auto = on with the
+d128 bench kernel; d128-only -- the d256 bench kernel raises at import when either is 1 and the parser rejects it),
+`rowsum_mma` 0|1 (d256: ones-MMA Sigma instead of the register pair-tree row-sum), `cga` 1|2|auto (adapter default:
+d128 cga2, d256 MXFP8 cga1; the d256 BENCH kernel defaults to cga2 = its loader geometry, with the adapter's
+"only supports cga in (1,)" policy check bypassed per instance -- `cga=1` selects the adapter's choice), `sched`,
+`sf` (scale-factor layout; both bench loaders use the dense prefix layout below), `name`.
 
-## The bench kernels (d128 = K1 `prefill_d128_mxfp8_bench.py`, merged; d256 follows K2)
+## The bench kernels (d128 `prefill_d128_mxfp8_bench.py`, d256 `prefill_d256_mxfp8_bench.py`; all-default rendering == product PTX)
 
 `kernel=bench` (or any non-default lever) monkeypatches `api_dsl._SM107_MXFP8_KERNEL_FILES[(d, d)]` to
 `sm107/prefill_d{d}_mxfp8_bench.py` before the adapter is built and exports `BENCH_PAGED64 / BENCH_CORR /
@@ -62,16 +65,26 @@ Paged contract (from rep_K1; the native MXFP8 binder admits pools only at whole-
 is declared `paged_page_size=128` over NHD pools `(n_pages128, H_kv, 128, d)` = the 64-row-page pool
 `(n_pages, 64, H_kv, d)` viewed as 128-row pages, the block tables are the `(B, S/64)` int32 tables of 64-row page ids
 (random placement over `B*S/64 + 8` pages, 8 dead; the kernel addresses pool page `p >> 1`, row `(p & 1) * 64`), and the
-DENSE tile-indexed SF_K / SF_V bytes ride in the prefix of `(n_pages128, H_kv, 1, 512)` uint8 buffers. Adapter gates
+DENSE tile-indexed SF_K / SF_V bytes ride in the prefix of `(n_pages128, H_kv, 1, 4 * d)` uint8 buffers (512 B per
+128-row tile at d128, 1024 B at d256; a 64-row page cannot hold a whole F8_128x4 atom set). Pools are NHD (row stride
+H_kv * d, the dense BSHD interleaving): the same kernels over HND 128-row pools pay +40 % paging cost at d256 instead
+of +8..13 %, so a harness that builds HND pools measures a different question. Adapter gates
 bypassed per instance: the "Rubin paged KV requires half D128/D256 THD ..." decline (`_not_implemented_error_if`
 wrapper, `BYPASS_MSGS`) and the prefolded-on-paged routing `raise` (`softmax_scale_prefolded` toggled off around
 `check_support()`, restored, `scale_softmax = 1/log2 e` before `compile()`); the record's `bypassed` lists what fired.
 Correction modes: `default` = product threshold rule; `always` = FA2 ratchet (threshold 0, O + Sigma rescaled every
 step, exact); `never` = no rescale, no correction arrive (timing-only unless the rescale emulation finds 0 rescales --
-`--kv-growth 1.3` is the input that forces rescales). `build_paged_sf()` is the hook for K2's d256 SF layout.
+`--kv-growth 1.3` is the input that forces rescales). The d256 kernel's `always` keeps the product barrier protocol (the
+unconditional 256-column TMEM round trip sits on the PV(k-1) -> rescale -> PV(k) chain every step); its `never` keeps the
+alpha handshake (so the epilogue's parity wait stays alias-free) but drops the bootstrap / per-step arrives, the
+bmm2_done wait, the rescale and the wait::st.
 
 ## Gotchas
 
+- PerfSim submit host: the computelab frontends cap each user at a 512 MiB memory cgroup; a flow orchestrator holds
+  ~110 MB, so the fifth concurrent flow on one frontend (and the submitting shell) is OOM-killed while the flow's remote
+  LSF jobs keep writing into the output dir. Keep <= 4 flows per frontend or submit from the scratch login box (no cap;
+  verified to reach LSF/SSAF); `perfsim/status.sh` flags directories whose orchestrator is gone.
 - Interleave configs; never time sequentially (2.4 -> 1.8 GHz throttling on 0614); check `clocks` / `power_w_median` in the records.
 - A new lever MUST be in `LEVER_ENV` (cache suffix) or configs silently share a compiled plan and run the wrong kernel; `kmod` in the record proves which flags the module saw.
 - `ncu --import` needs a writable HOME (run_ncu.sh sets one); the board has no sudo and needs none (RmProfilingAdminOnly=0).
