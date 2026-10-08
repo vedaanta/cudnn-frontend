@@ -14,7 +14,7 @@ and the bench-kernel levers (paged page 64, correction fast path + TMEM-base hoi
 
 | file | what |
 |---|---|
-| `bench.py` | the harness. One CONFIG = one worker process (the bench kernels read `BENCH_*` at import and the DSL / compiled-plan caches do not key on them; each worker gets `CUTE_DSL_CACHE_DIR` + `XDG_CACHE_HOME` suffixed by kernel file + every lever). The coordinator interleaves the configs of a cell round-robin: `--reps` graph replays per burst, `--cooldown-ms` idle after each burst, `--rounds` rounds; records clocks / power per round (nvidia-smi), all burst samples, kernel CFG + module flags, validation vs an fp32 blocked reference, the rescale emulation (`corr=never` is exact only at zero rescales -> else `timing_only`). `--ncu-run` = in-process warm-ups + ONE launch (ncu / APIC). `--kv-ramp` scales K/V per 32-token block for scale-factor mapping validation. |
+| `bench.py` | the harness. One CONFIG = one worker process (the bench kernels read `BENCH_*` at import; each worker gets `CUTE_DSL_CACHE_DIR` + `XDG_CACHE_HOME` suffixed by kernel file + every lever). The coordinator interleaves the configs of a cell round-robin: `--reps` graph replays per burst, `--cooldown-ms` idle after each burst, `--rounds` rounds; records clocks / power per round (nvidia-smi), all burst samples, kernel CFG + module flags, validation vs an fp32 blocked reference, the rescale emulation under the product rule and the `always` ratchet (`corr=never` is exact only at zero rescales -> else `timing_only`). `--ncu-run` = in-process warm-ups + ONE launch (ncu / APIC). `--kv-ramp` scales K/V per 32-token block (scale-factor mapping), `--kv-growth g` grows K per 128-row tile (forces rescales). |
 | `board_py_0614.sh` | env wrapper for board w2u1g-lc-0614 (uv py3.10 + venv_sp + cudnn 9.26 under /tmp/vagarwalla; `NCU=1` wraps python in the locally staged Nsight Compute; `APIC=1` drops LD_PRELOAD for the capturer). |
 | `run_sweep.sh` | timing sweep: per mask one coordinator with all configs interleaved; holds `/tmp/vagarwalla/ladder/gpu_timing.lock`. |
 | `run_ncu.sh` | one `--set full` report per (config, mask, S) at the 4th launch + the raw-metrics and SASS-source CSV exports next to it (so no ncu is needed off-board). |
@@ -51,16 +51,24 @@ Config string keys (`key=val,...`): `corr` default|always|never, `paged` 0|64, `
 kernel), `rowsum_mma` 0|1 (d256 stretch), `cga` 1|2|auto (adapter default: d128 cga2, d256 MXFP8 cga1), `sched`,
 `sf` dense|paged (scale-factor layout the paged loader expects; auto = dense for d128, paged for d256), `name`.
 
-## Switching to the bench kernels
+## The bench kernels (d128 = K1 `prefill_d128_mxfp8_bench.py`, merged; d256 follows K2)
 
 `kernel=bench` (or any non-default lever) monkeypatches `api_dsl._SM107_MXFP8_KERNEL_FILES[(d, d)]` to
-`sm107/prefill_d{d}_mxfp8_bench.py` before the adapter is built, exports `BENCH_PAGED64 / BENCH_CORR /
-BENCH_CORRFAST / BENCH_HOIST / BENCH_ROWSUM_MMA / BENCH_KV_RAMP` into the worker's environment, bypasses the
-adapter's cc 10.7 MXFP8 paged gates (`BYPASS_MSGS`, incl. the prefolded-paged NotImplementedError) and, for
-`sf=dense`, presents the plan as unpaged to the prepared binder's per-page scale-factor byte-count check
-(`_DenseSFView`). HALF + prefolded reach the kernel through TemplateParams (`softmax_f16`, `softmax_scale_prefolded`).
-Paged inputs: HND pools `(num_pages, H_kv, 64, d)` filled through a random block table (+7 dead pages),
-`seq_kv_lens` = S; `build_paged_sf()` is the hook for a per-page scale-factor pool layout (d256 kernel contract).
+`sm107/prefill_d{d}_mxfp8_bench.py` before the adapter is built and exports `BENCH_PAGED64 / BENCH_CORR /
+BENCH_CORRFAST / BENCH_HOIST / BENCH_ROWSUM_MMA` (+ `BENCH_HALF=0 / BENCH_PREFOLDED=0`: HALF + prefolded travel
+through TemplateParams `softmax_f16` / `softmax_scale_prefolded`) into the worker's environment; the kernel folds the
+lever values into `FROST_SOURCE_DIGEST`, and the harness still gives every lever set its own cache dirs.
+Paged contract (from rep_K1; the native MXFP8 binder admits pools only at whole-F8_128x4-atom page sizes): the plan
+is declared `paged_page_size=128` over NHD pools `(n_pages128, H_kv, 128, d)` = the 64-row-page pool
+`(n_pages, 64, H_kv, d)` viewed as 128-row pages, the block tables are the `(B, S/64)` int32 tables of 64-row page ids
+(random placement over `B*S/64 + 8` pages, 8 dead; the kernel addresses pool page `p >> 1`, row `(p & 1) * 64`), and the
+DENSE tile-indexed SF_K / SF_V bytes ride in the prefix of `(n_pages128, H_kv, 1, 512)` uint8 buffers. Adapter gates
+bypassed per instance: the "Rubin paged KV requires half D128/D256 THD ..." decline (`_not_implemented_error_if`
+wrapper, `BYPASS_MSGS`) and the prefolded-on-paged routing `raise` (`softmax_scale_prefolded` toggled off around
+`check_support()`, restored, `scale_softmax = 1/log2 e` before `compile()`); the record's `bypassed` lists what fired.
+Correction modes: `default` = product threshold rule; `always` = FA2 ratchet (threshold 0, O + Sigma rescaled every
+step, exact); `never` = no rescale, no correction arrive (timing-only unless the rescale emulation finds 0 rescales --
+`--kv-growth 1.3` is the input that forces rescales). `build_paged_sf()` is the hook for K2's d256 SF layout.
 
 ## Gotchas
 

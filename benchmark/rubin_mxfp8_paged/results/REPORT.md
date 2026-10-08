@@ -6,12 +6,15 @@ Timing host(s): w2u1g-lc-0614 (cc 10.7, 216 SMs). Shapes B/H_q/H_kv = 1/32/8; Q/
 
 ### d=128, none mask, scheduler natural
 
-| config | 8k µs (TF/s) | MMA util | Δ first |
-|---|---|---|---|
-| `corrdefault_p0_half_pf_prod`<br>corr=default, paged=0, f16-softmax, prefolded+fused, product kernel, cga2 | 172.2 (6387) | 40.6 % | – |
-| `corrdefault_p0_f32_scale_prod`<br>corr=default, paged=0, f32-softmax, scale in-kernel, product kernel, cga2 | 217.0 (5067) | 32.2 % | +26.0% |
+| config | 8k µs (TF/s) | MMA util | Δ first | 32k µs (TF/s) | MMA util | Δ first |
+|---|---|---|---|---|---|---|
+| `corrdefault_p0_half_pf_prod`<br>corr=default, paged=0, f16-softmax, prefolded+fused, product kernel, cga2 | 172.2 (6387) | 40.6 % | – | 2417.8 (7276) | 46.2 % | – |
+| `corrdefault_p0_f32_scale_prod`<br>corr=default, paged=0, f32-softmax, scale in-kernel, product kernel, cga2 | 217.0 (5067) | 32.2 % | +26.0% | – | – | – |
+| `corrdefault_p64_half_pf_benc_cf1h1`<br>corr=default, paged=64, f16-softmax, prefolded+fused, bench kernel, corrfast=1 hoist=1, cga2 | – | – | – | 2515.9 (6992) | 44.4 % | +4.1% |
+| `corralways_p64_half_pf_benc_cf1h1`<br>corr=always, paged=64, f16-softmax, prefolded+fused, bench kernel, corrfast=1 hoist=1, cga2 | – | – | – | 3594.7 (4894) | 31.1 % | +48.7% |
+| `corrnever_p64_half_pf_benc_cf1h1`<br>corr=never, paged=64, f16-softmax, prefolded+fused, bench kernel, corrfast=1 hoist=1, cga2 | – | – | – | 2364.6 (7440) *timing-only* | 47.2 % | -2.2% |
 
-Median SM clock / power during timing: 2364.0 MHz / 481.47 W. Validation vs fp32 reference (max abs err / ref amax; rms rel): corrdefault_p0_half_pf_prod@8k rel 3.64% rms 2.66%; corrdefault_p0_f32_scale_prod@8k rel 3.52% rms 2.66%.
+Median SM clock / power during timing: 2364.0 MHz / 481.47 W, 2364.0 MHz / 600.89 W. Validation vs fp32 reference (max abs err / ref amax; rms rel): corrdefault_p0_half_pf_prod@8k rel 3.64% rms 2.66%; corrdefault_p0_f32_scale_prod@8k rel 3.52% rms 2.66%.
 
 ### d=128, causal mask, scheduler natural
 
@@ -59,6 +62,15 @@ Units: tensor (UTCQMMA MACs), mufu (exp2 lanes), issue (warp-instr/4), fma / alu
 | `corrdefault_p0_f32_scale_prod` | 845 | 32% [272] | 61% [512] | 55% [462] | 30% [256] | 4% [30] | 40% [338] | 19% [162] | 16% [132] | 7% [57] | xu_inst 61% |
 | `corrdefault_p0_half_pf_prod` | 671 | 41% [272] (45) | 38% [256] (43) | 55% [367] (46) | 23% [154] (22) | 20% [131] (14) | 50% [338] (41) | 24% [162] (2) | 11% [72] (13) | 9% [57] | issue 55% |
 
+### d=128, none, S=32k: per-unit util vs SOL (SOL = min clocks per 128x128 step per SM at the unit's peak; util = SOL / measured step clocks; ncu % in parentheses)
+
+| config | step clk | tensor | mufu | issue | fma | alu | smem | tmem | l2 | dram | binding |
+|---|---|---|---|---|---|---|---|---|---|---|---|
+| `corralways_p64_half_pf_benc_cf1h1` | 875 | 31% [272] | 29% [256] | 47% [412] | 29% [256] | 3% [30] | 39% [338] | 48% [418] | 15% [132] | 2% [14] | tmem 48% |
+| `corrdefault_p0_half_pf_prod` | 589 | 46% [272] | 43% [256] | 58% [340] | 22% [128] | 5% [30] | 57% [338] | 28% [162] | 22% [132] | 2% [14] | issue 58% |
+| `corrdefault_p64_half_pf_benc_cf1h1` | 613 | 44% [272] | 42% [256] | 55% [340] | 21% [128] | 5% [30] | 55% [338] | 26% [162] | 22% [132] | 2% [14] | issue 55% |
+| `corrnever_p64_half_pf_benc_cf1h1` | 576 | 47% [272] | 44% [256] | 59% [340] | 22% [128] | 5% [30] | 59% [338] | 28% [162] | 23% [132] | 2% [14] | issue 59% |
+
 ### d=128, causal, S=8k: per-unit util vs SOL (SOL = min clocks per 128x128 step per SM at the unit's peak; util = SOL / measured step clocks; ncu % in parentheses)
 
 | config | step clk | tensor | mufu | issue | fma | alu | smem | tmem | l2 | dram | binding |
@@ -87,6 +99,7 @@ Units: tensor (UTCQMMA MACs), mufu (exp2 lanes), issue (warp-instr/4), fma / alu
 | S | config | ncu µs | TF/s | clk GHz | SM active % | tensor pipe % | UTCQMMA fp8 % (realtime) | MUFU (XU) % | FMA % | ALU % | TMEM instr % | issue % | IPC | warp lat cyc | stall long-sb | stall wait | stall short-sb | stall barrier | stall math-throttle | stall mio-throttle | L1/SMEM % | L2 % | L2 hit % | DRAM % | DRAM GB/s | regs | SMEM KB | waves |
 |---|---|---|---|---|---|---|---|---|---|---|---|---|---|---|---|---|---|---|---|---|---|---|---|---|---|---|---|---|
 | 8k | `corrdefault_p0_half_pf_prod` | 174 | 6317 | 2.27 | 92.2 | 45.3 | – | 43.3 | 22.1 | 14.2 | 1.7 | 45.8 | 1.84 | 8.5 | 4.96 | 0.85 | 0.80 | 0.12 | 0.02 | 0.01 | 41.2 | 12.7 | 83.3 | – | 398 | 128 | 174 | 4.74 |
+| 8k | `corrdefault_p64_half_pf_benc_cf1h1` | 182 | 6029 | 2.26 | 92.4 | 43.4 | – | 41.5 | 21.5 | 14.6 | 1.1 | 44.6 | 1.78 | 8.8 | 5.18 | 0.91 | 0.64 | 0.39 | 0.03 | 0.01 | 39.5 | 12.5 | 80.0 | – | 382 | 128 | 175 | 4.74 |
 
 
 

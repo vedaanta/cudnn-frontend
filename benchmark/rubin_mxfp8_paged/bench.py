@@ -42,10 +42,14 @@ LOG2E = math.log2(math.e)
 LN2 = math.log(2.0)
 PRODUCT_KERNEL_FILES = {128: "sm107/prefill_d128_mxfp8.py", 256: "sm107/prefill_d256_mxfp8.py"}
 BENCH_KERNEL_FILES = {128: "sm107/prefill_d128_mxfp8_bench.py", 256: "sm107/prefill_d256_mxfp8_bench.py"}
-LEVER_ENV = ("BENCH_PAGED64", "BENCH_CORR", "BENCH_CORRFAST", "BENCH_HOIST", "BENCH_ROWSUM_MMA", "BENCH_KV_RAMP")
-CFG_FIELDS = ("TILE_M", "TILE_N", "TILE_K", "TILE_O", "TILES_Q", "CTA_MMA", "STAGES_KV", "RESCALE_THRESHOLD", "SCHEDULER_POLICY", "MASK_FLAGS", "PAGED_KV", "PAGE_SIZE", "SOFTMAX_WARPGROUPS", "CORRECTION_WARPS", "SOFTMAX_REGS", "CORRECTION_REGS", "TOTAL_WARPS")
-KMOD_FLAGS = ("SOFTMAX_F16", "SCALE_PREFOLDED", "_FUSED_SHIFT_CVT", "PAGED_KV", "PAGE_SIZE", "BENCH_PAGED64", "BENCH_CORR", "BENCH_CORRFAST", "BENCH_HOIST", "BENCH_ROWSUM_MMA", "LADDER_F16EXP", "LADDER_NOSCALE", "LADDER_FCVT")
-BYPASS_MSGS = ("SM107 sibling", "multiple of 128", "F8_128x4 SF atoms", "not wired in the paged-KV", "paged KV", "page size")
+LEVER_ENV = ("BENCH_PAGED64", "BENCH_CORR", "BENCH_CORRFAST", "BENCH_HOIST", "BENCH_ROWSUM_MMA", "BENCH_HALF", "BENCH_PREFOLDED", "BENCH_KV_RAMP")
+CFG_FIELDS = ("TILE_M", "TILE_N", "TILE_K", "TILE_O", "TILES_Q", "CTA_MMA", "STAGES_KV", "RESCALE_THRESHOLD", "SCHEDULER_POLICY", "MASK_FLAGS", "PAGED_KV", "PAGE_SIZE", "SEQ_KV_LENS_PRESENT", "SOFTMAX_WARPGROUPS", "CORRECTION_WARPS", "SOFTMAX_REGS", "CORRECTION_REGS", "TOTAL_WARPS")
+KMOD_FLAGS = ("SOFTMAX_F16", "SCALE_PREFOLDED", "_FUSED_SHIFT_CVT", "PAGED_KV", "PAGE_SIZE", "POOL_PAGE_ROWS", "HALF_PAGES", "BENCH_PAGED64", "BENCH_CORR", "BENCH_CORRFAST", "BENCH_HOIST", "BENCH_ROWSUM_MMA", "BENCH_HALF", "BENCH_PREFOLDED", "FROST_SOURCE_DIGEST")
+# Adapter gates a paged bench run bypasses (cc 10.7 + fp8 + paged declines; the bench kernel IS the paged body)
+BYPASS_MSGS = ("Rubin paged KV requires", "SM107 sibling", "multiple of 128", "F8_128x4 SF atoms", "not wired in the paged-KV")
+PAGE = 64  # the bench kernels' page (TILE_N / CTA_MMA rows)
+POOL_PAGE = 128  # page size DECLARED to the adapter: its native MXFP8 binder sizes paged scale factors per whole F8_128x4 atom set
+SF_TILE_BYTES = 512  # F8_128x4 atom set of one 128-row x 128-d K/V tile (128 * 128 / 32)
 
 
 # ----------------------------------------------------------------------------------------------------
@@ -78,7 +82,8 @@ def parse_config(s, d, defaults):
     if c["cga"] != "auto":
         c["cga"] = int(c["cga"])
     if c["sf"] == "auto":
-        # the d128 bench loader keeps the K/V scale factors dense (tile-indexed); the d256 one pages them
+        # d128 bench loader (K1): K/V scale factors stay dense / tile-indexed, shipped in the prefix of per-pool-page
+        # (n_pages128, H_kv, 1, 512) buffers; the d256 loader's contract follows K2's report (placeholder 'paged').
         c["sf"] = "dense" if d == 128 else "paged"
     if not c["name"]:
         parts = [f"corr{c['corr']}", f"p{c['paged']}", "half" if c["half"] else "f32", "pf" if c["prefolded"] else "scale", c["kernel"][:4]]
@@ -97,13 +102,16 @@ def lever_env(c, kv_ramp):
         "BENCH_CORRFAST": str(c["corrfast"]),
         "BENCH_HOIST": str(c["hoist"]),
         "BENCH_ROWSUM_MMA": str(c["rowsum_mma"]),
+        # HALF / prefolded always travel through TemplateParams here (the env overrides stay off)
+        "BENCH_HALF": "0",
+        "BENCH_PREFOLDED": "0",
         "BENCH_KV_RAMP": "1" if kv_ramp else "0",
     }
 
 
 def cache_suffix(c, d, env):
     kfile = os.path.splitext(os.path.basename((BENCH_KERNEL_FILES if c["kernel"] == "bench" else PRODUCT_KERNEL_FILES)[d]))[0]
-    levers = "_".join(f"{k[6:].lower()}{env[k]}" for k in LEVER_ENV if k != "BENCH_KV_RAMP")
+    levers = "_".join(f"{k[6:].lower()}{env[k]}" for k in LEVER_ENV if k not in ("BENCH_KV_RAMP", "BENCH_HALF", "BENCH_PREFOLDED"))
     return f"_{kfile}_{levers}_half{c['half']}pf{c['prefolded']}"
 
 
@@ -164,7 +172,7 @@ def quantize_mx(x, b, h, s, d, *, columnwise):
     return data_d, swz_d.contiguous(), dq_d.reshape(b, h, s, d)
 
 
-def build_case(c, d, S, causal, B, HQ, HKV, kv_ramp, seed=1234, keep_ref=True):
+def build_case(c, d, S, causal, B, HQ, HKV, kv_ramp, seed=1234, keep_ref=True, kv_growth=1.0):
     import torch
 
     dev = "cuda"
@@ -180,6 +188,11 @@ def build_case(c, d, S, causal, B, HQ, HKV, kv_ramp, seed=1234, keep_ref=True):
         ramp = torch.pow(2.0, ((t // 32) % 4 - 2).float()).view(1, 1, S, 1)
         kf = kf * ramp
         vf = vf * ramp
+    if kv_growth != 1.0:
+        # K tile t (128 rows) x growth**t: the running row max grows on every tile, so the correction's rescale path
+        # really executes (random inputs never rescale at threshold 4) -- validates corr=always vs default.
+        t = torch.arange(S, device=dev)
+        kf = kf * torch.pow(torch.tensor(float(kv_growth), device=dev), (t // 128).float()).view(1, 1, S, 1)
     prefolded = bool(c["prefolded"])
     q_in = qf * (scale * LOG2E) if prefolded else qf
     ref_scale = LN2 if prefolded else scale
@@ -193,29 +206,48 @@ def build_case(c, d, S, causal, B, HQ, HKV, kv_ramp, seed=1234, keep_ref=True):
     if keep_ref:
         case["ref_inputs"] = (qb, dqq, kb, dqk, vb, dqv)  # dequantize lazily: data.float() * dq
     if c["paged"]:
-        P = c["paged"]
-        max_pages = S // P
-        num_pages = B * max_pages + 7  # 7 dead pages
-        bt = torch.randperm(num_pages, device=dev, generator=g)[: B * max_pages].to(torch.int32).view(B, max_pages).contiguous()
-        k_pool = torch.zeros(num_pages, HKV, P, d, device=dev, dtype=torch.float8_e4m3fn)  # HND pools
-        v_pool = torch.zeros(num_pages, HKV, P, d, device=dev, dtype=torch.float8_e4m3fn)
-        kd = k8.view(B, HKV, max_pages, P, d).permute(0, 2, 1, 3, 4)  # (B, pages, H, P, D)
-        vd = v8.view(B, HKV, max_pages, P, d).permute(0, 2, 1, 3, 4)
-        k_pool[bt.view(-1).long()] = kd.reshape(B * max_pages, HKV, P, d)
-        v_pool[bt.view(-1).long()] = vd.reshape(B * max_pages, HKV, P, d)
-        case.update(k=k_pool, v=v_pool, adapter=dict(pertensor_fp8=False, seq_kv_lens_present=True, paged_page_size=P, paged_max_seq_len_kv=S), paged=dict(bt=bt, seq_kv_lens=torch.full((B,), S, dtype=torch.int32, device=dev)))
-        if c["sf"] == "paged":
-            case["exec_extra"].update(build_paged_sf(sf_k, sf_v, bt, B, HKV, S, d, P))
+        # Paged K/V behind a RANDOM block table of 64-row pages (the bench kernels' page = TILE_N / CTA_MMA rows).
+        # Adapter contract (K1 report): the native MXFP8 binder admits pools only at whole-F8_128x4-atom page sizes, so
+        # the plan is declared paged_page_size=128 over NHD pools (the 64-row-page pool viewed as 128-row pages), the
+        # block tables stay the (B, S/64) int32 tables of 64-row page ids (the kernel addresses half-pages: pool page
+        # p >> 1, row (p & 1) * 64), and the DENSE tile-indexed SF_K / SF_V bytes ride in the prefix of
+        # (n_pages128, H_kv, 1, 512) uint8 buffers.  HND pools would work too (the kernel addresses TMA coordinates).
+        assert S % POOL_PAGE == 0, "S must be a multiple of 128"
+        n_pages = B * (S // PAGE) + 8  # even; >= 8 dead pages
+        bt = torch.randperm(n_pages, device=dev, generator=g)[: B * (S // PAGE)].to(torch.int32).view(B, S // PAGE).contiguous()
+        pools = []
+        for x8 in (k8, v8):
+            pool = torch.zeros(n_pages, PAGE, HKV, d, device=dev, dtype=torch.float8_e4m3fn)  # NHD: [page, row, head, d]
+            xd = x8.view(B, HKV, S // PAGE, PAGE, d).permute(0, 2, 3, 1, 4).reshape(B * (S // PAGE), PAGE, HKV, d)
+            pool[bt.view(-1).long()] = xd
+            pools.append(pool.view(n_pages // 2, POOL_PAGE, HKV, d).permute(0, 2, 1, 3))  # (n_pages128, H_kv, 128, D) container
+        sf_k_buf, sf_v_buf = build_paged_sf(c, sf_k, sf_v, bt, B, HKV, S, d, n_pages)
+        case.update(
+            k=pools[0],
+            v=pools[1],
+            exec_extra=dict(sf_q=sf_q, sf_k=sf_k_buf, sf_v=sf_v_buf),
+            adapter=dict(pertensor_fp8=False, seq_kv_lens_present=True, paged_page_size=POOL_PAGE, paged_max_seq_len_kv=S),
+            paged=dict(bt=bt, seq_kv_lens=torch.full((B,), S, dtype=torch.int32, device=dev), n_pages=n_pages),
+        )
     return case
 
 
-def build_paged_sf(sf_k, sf_v, bt, B, HKV, S, d, P):
-    """Scale factors for a bench kernel that reads K/V SF per page (d256 loader).
+def build_paged_sf(c, sf_k, sf_v, bt, B, HKV, S, d, n_pages):
+    """K/V scale-factor buffers for the paged bench kernels.
 
-    TODO(K2 report): the per-page SF pool layout is the kernel's contract; until the d256 bench kernel lands
-    this returns the dense (tile-indexed) tensors unchanged, which is also what the d128 loader expects.
+    sf=dense (d128, K1): the dense F8_128x4-swizzled bytes in the prefix of (n_pages128, H_kv, 1, 512) buffers -- the
+    kernel keeps tile-indexed SF, the buffer shape only satisfies the binder's per-page sizing.
+    sf=paged (d256, K2 -- TODO once rep_K2 states the per-page SF layout): placeholder = the same prefix layout.
     """
-    return dict(sf_k=sf_k, sf_v=sf_v)
+    import torch
+
+    out = []
+    for sf in (sf_k, sf_v):
+        buf = torch.zeros(n_pages // 2, HKV, 1, SF_TILE_BYTES * (d // 128), device=sf.device, dtype=sf.dtype)
+        assert sf.numel() == B * HKV * (S // 128) * SF_TILE_BYTES * (d // 128) <= buf.numel(), (sf.shape, buf.shape)
+        buf.view(-1)[: sf.numel()] = sf.reshape(-1)
+        out.append(buf)
+    return out
 
 
 # ----------------------------------------------------------------------------------------------------
@@ -248,42 +280,32 @@ def make_api(case, c):
         kw["cga"] = c["cga"]
     kw.update(case["adapter"])
     api = SdpaFwdDslSm100(**kw)
+    bypassed = []
     if c["paged"]:
-        # Bench-only bypass of the cc 10.7 MXFP8 paged gates (the bench kernel implements the page-64 loader).
+        # Bench-only bypass of the cc 10.7 MXFP8 paged declines (the bench kernel implements the page-64 loader).
         orig = api._not_implemented_error_if
 
         def _lenient(cond, msg):
             if cond and msg and any(s in msg for s in BYPASS_MSGS):
+                bypassed.append(msg[:80])
                 return
             return orig(cond, msg)
 
         api._not_implemented_error_if = _lenient
-        if c["sf"] == "dense":
-            # The prepared binder sizes K/V scale factors per page; the d128 loader keeps them DENSE, so present
-            # the plan as unpaged to that byte-count check only.
-            from cudnn.sdpa.fwd import prepared as _prepared
-
-            if not getattr(_prepared, "_bench_dense_sf_patched", False):
-                _orig_bind = _prepared._bind_mxfp8_scales
-
-                class _DenseSFView:
-                    paged = False
-
-                    def __init__(self, spec):
-                        self._spec = spec
-
-                    def __getattr__(self, name):
-                        return getattr(self._spec, name)
-
-                _prepared._bind_mxfp8_scales = lambda spec, facts: _orig_bind(_DenseSFView(spec), facts)
-                _prepared._bench_dense_sf_patched = True
-    try:
-        api.check_support()
-    except NotImplementedError as e:
-        if not (c["paged"] and any(s in str(e) for s in BYPASS_MSGS)):
-            raise
-        print(f"[bench] bypassing paged gate: {e}", file=sys.stderr, flush=True)
+    if c["paged"] and c["prefolded"]:
+        # prefolded + paged is a direct `raise` in check_support (routing to the SM100 paged half bodies); this bench
+        # kernel IS the paged body: run the remaining checks with the flag off, restore it for compile() (TemplateParams
+        # carries prefolded=True) and pin scale_softmax to 1/log2(e) as the prefolded contract does.
+        api.softmax_scale_prefolded = False
+        ok = api.check_support()
+        api.softmax_scale_prefolded = True
+        api.scale_softmax = 1.0 / LOG2E
+        bypassed.append("prefolded-on-paged routing decline (flag toggled around check_support)")
+    else:
+        ok = api.check_support()
+    assert ok, "check_support declined"
     api.compile()
+    api._bench_bypassed = bypassed
     return api
 
 
@@ -334,6 +356,7 @@ def api_meta(api, c):
         cfg={k: getattr(cfg, k, None) for k in CFG_FIELDS} if cfg is not None else None,
         kmod={k: getattr(km, k, None) for k in KMOD_FLAGS if hasattr(km, k)},
         cta_mma=getattr(cfg, "CTA_MMA", None) if cfg is not None else None,
+        bypassed=getattr(api, "_bench_bypassed", []),
     )
 
 
@@ -385,9 +408,10 @@ def validate(case):
 
 
 def rescale_stats(case, threshold, tile=128):
-    """Emulate the kernel's lazy-threshold rescale rule on the actual logits (log2 units): a correction warp
-    (32 consecutive rows of a 128-row sub-tile) rescales on a step iff ANY of its rows raises its running max
-    by more than `threshold` on a step other than its first live step.  corr=never is exact iff this is 0."""
+    """Emulate the kernel's online-max rule on the actual logits (log2 units): a correction warp (32 consecutive rows
+    of a 128-row sub-tile) rescales on a step iff ANY of its rows moves its running max on a step other than its first
+    live step -- under the product threshold rule (`default`, `cur - m > threshold`) and under the `always` ratchet
+    (threshold 0).  corr=never is exact iff the default count is 0."""
     import torch
 
     qb, dqq, kb, dqk, _, _ = case["ref_inputs"]
@@ -398,28 +422,32 @@ def rescale_stats(case, threshold, tile=128):
     grp = H // k.shape[1]
     causal = case["causal"]
     n_tiles = S // tile
-    resc = live_total = 0
-    for b in range(B):
-        for h in range(H):
-            qh = q[b, h]
-            kh = k[b, h // grp]
-            m = torch.full((S,), float("-inf"), device=q.device)
-            first = torch.ones((S,), dtype=torch.bool, device=q.device)
-            rows = torch.arange(S, device=q.device)[:, None]
-            for t in range(n_tiles):
-                s_blk = (qh @ kh[t * tile : (t + 1) * tile].T) * scale_log2
-                if causal:
-                    cols = (t * tile + torch.arange(tile, device=q.device))[None, :]
-                    s_blk = s_blk.masked_fill(cols > rows, float("-inf"))
-                cur = s_blk.amax(dim=1)
-                live = torch.isfinite(cur)
-                upd = live & (first | ((cur - m) > threshold))
-                m = torch.where(upd, cur, m)
-                resc_rows = upd & ~first & live
-                first = first & ~live
-                live_total += int(live.view(-1, 32).any(dim=1).sum())
-                resc += int(resc_rows.view(-1, 32).any(dim=1).sum())
-    return dict(threshold=threshold, warp_steps_rescaled=resc, warp_steps_live=live_total, pct=100.0 * resc / max(live_total, 1))
+    out = dict(threshold=threshold)
+    for name, th in (("default", threshold), ("always", 0.0)):
+        resc = live_total = 0
+        for b in range(B):
+            for h in range(H):
+                qh = q[b, h]
+                kh = k[b, h // grp]
+                m = torch.full((S,), float("-inf"), device=q.device)
+                first = torch.ones((S,), dtype=torch.bool, device=q.device)
+                rows = torch.arange(S, device=q.device)[:, None]
+                for t in range(n_tiles):
+                    s_blk = (qh @ kh[t * tile : (t + 1) * tile].T) * scale_log2
+                    if causal:
+                        cols = (t * tile + torch.arange(tile, device=q.device))[None, :]
+                        s_blk = s_blk.masked_fill(cols > rows, float("-inf"))
+                    cur = s_blk.amax(dim=1)
+                    live = torch.isfinite(cur)
+                    upd = live & (first | ((cur - m) > th))
+                    m = torch.where(upd, cur, m)
+                    resc_rows = upd & ~first & live
+                    first = first & ~live
+                    live_total += int(live.view(-1, 32).any(dim=1).sum())
+                    resc += int(resc_rows.view(-1, 32).any(dim=1).sum())
+        out[name] = dict(warp_steps_rescaled=resc, warp_steps_live=live_total, pct=100.0 * resc / max(live_total, 1))
+    out.update(warp_steps_rescaled=out["default"]["warp_steps_rescaled"], warp_steps_live=out["default"]["warp_steps_live"], pct=out["default"]["pct"])
+    return out
 
 
 # ----------------------------------------------------------------------------------------------------
@@ -447,7 +475,7 @@ def worker_main(args):
                 state.clear()
                 torch.cuda.empty_cache()
                 t0 = time.time()
-                case = build_case(c, args.d, spec["S"], spec["causal"], args.batch, args.heads[0], args.heads[1], args.kv_ramp, seed=args.seed, keep_ref=spec.get("keep_ref", True))
+                case = build_case(c, args.d, spec["S"], spec["causal"], args.batch, args.heads[0], args.heads[1], args.kv_ramp, seed=args.seed, keep_ref=spec.get("keep_ref", True), kv_growth=args.kv_growth)
                 t1 = time.time()
                 api = make_api(case, c)
                 ws_bytes = api.scratch_workspace_bytes()
@@ -541,7 +569,7 @@ def coordinator_main(args):
     for c in configs:
         env = dict(os.environ)
         env.update(lever_env(c, args.kv_ramp))
-        cmd = [sys.executable, os.path.abspath(__file__), "--worker", "--config", config_to_string(c), "--d", str(args.d), "--batch", str(args.batch), "--heads", str(args.heads[0]), str(args.heads[1]), "--sched", args.sched, "--seed", str(args.seed)]
+        cmd = [sys.executable, os.path.abspath(__file__), "--worker", "--config", config_to_string(c), "--d", str(args.d), "--batch", str(args.batch), "--heads", str(args.heads[0]), str(args.heads[1]), "--sched", args.sched, "--seed", str(args.seed), "--kv-growth", str(args.kv_growth)]
         if args.kv_ramp:
             cmd.append("--kv-ramp")
         workers.append(Worker(c["name"], cmd, env, os.path.join(args.log_dir, f"worker_{c['name']}.log")))
@@ -555,7 +583,7 @@ def coordinator_main(args):
                 w.send("BUILD " + json.dumps(dict(S=S, causal=causal, keep_ref=keep_ref, warmup=args.warmup)))
             for w in workers:
                 metas[w.name] = w.expect("READY", timeout=args.build_timeout)
-                print(f"[bench] {w.name} S={S}: {metas[w.name]['kernel_file']} cta_mma={metas[w.name]['cta_mma']} compile {metas[w.name]['compile_s']} s kmod={metas[w.name]['kmod']}", flush=True)
+                print(f"[bench] {w.name} S={S}: {metas[w.name]['kernel_file']} cta_mma={metas[w.name]['cta_mma']} compile {metas[w.name]['compile_s']} s kmod={metas[w.name]['kmod']} bypassed={metas[w.name].get('bypassed')}", flush=True)
             samples = {w.name: [] for w in workers}
             clocks = [gpu_clocks()]
             t_start = time.time()
@@ -601,6 +629,7 @@ def coordinator_main(args):
                     host=os.uname().nodename,
                 )
                 rec.update(metas[w.name])
+                rec["kv_growth"] = args.kv_growth
                 if c["corr"] == "never":
                     rec["timing_only"] = True  # exact only when no step rescales -- see rescale_stats below
                 if keep_ref and args.validate != "none":
@@ -649,7 +678,7 @@ def ncu_run_main(args):
     assert torch.cuda.get_device_capability() == (10, 7)
     causal = args.mask == "causal"
     for S in args.seqlens:
-        case = build_case(c, args.d, S, causal, args.batch, args.heads[0], args.heads[1], args.kv_ramp, seed=args.seed, keep_ref=args.validate != "none")
+        case = build_case(c, args.d, S, causal, args.batch, args.heads[0], args.heads[1], args.kv_ramp, seed=args.seed, keep_ref=args.validate != "none", kv_growth=args.kv_growth)
         api = make_api(case, c)
         ws_bytes = api.scratch_workspace_bytes()
         ws = torch.empty(max(ws_bytes, 1), dtype=torch.uint8, device="cuda") if ws_bytes else None
@@ -687,6 +716,7 @@ def main():
     ap.add_argument("--validate", choices=["all", "first", "none"], default="first")
     ap.add_argument("--rescale-stats", action="store_true", help="emulate the rescale rule on the inputs for every config (always on for corr=never)")
     ap.add_argument("--kv-ramp", action="store_true", help="K/V x 2^((t//32)%%4-2): scale-factor mapping stress (validation only)")
+    ap.add_argument("--kv-growth", type=float, default=1.0, help="K tile t x g**t: forces rescales (validation of corr=always vs default; e.g. 1.3)")
     ap.add_argument("--dump-o", default=None, help="path prefix: save each config's O (.pt) for bitwise A/B")
     ap.add_argument("--seed", type=int, default=1234)
     ap.add_argument("--out", default=None, help="append JSON lines here")

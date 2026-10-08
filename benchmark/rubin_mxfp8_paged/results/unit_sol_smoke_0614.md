@@ -2,6 +2,23 @@
 
 Constants: tc_mac_per_clk = 16384 (PerfSim gr100 math-SOL (17408 cyc = 32 kv steps x 544) + silicon 6.9 PF/s @ 45 % tensor-active; Blackwell = 8192); xu_lanes_per_clk = 32 (ncu-consistent (fp32 EX2 at 62-68 % MUFU, 770 clk/step); CUDA guide table says 16 for exp2 on cc 10.x); issue_per_clk = 4 (4 SMSP schedulers x 1 warp-instruction/clk); fma_winst_per_clk = 2 (fmaheavy + fmalite, 16 lanes each per SMSP -> 2 clk per warp-instruction per pipe); alu_winst_per_clk = 2 (16 lanes/clk/SMSP); smem_bytes_per_clk = 128 (32 banks x 4 B (plan.md); TMA writes + UMMA operand reads); tmem_bytes_per_clk = 512 (ASSUMED 128 lanes x 32 bit per clock for tcgen05.ld/st); l2_bytes_per_clk_sm = 64 (ASSUMED fallback; replaced by the ncu-derived peak when an ncu row is present); dram_bytes_per_s = 8e+12 (ASSUMED fallback; replaced by the ncu-derived peak when an ncu row is present)
 
+### corralways_p64_half_pf_benc_cf1h1 d128 S=32768 none (cta_mma 2, TILES_Q 2, f16 exp, rowsum-MMA 1, corr always, paged 64)
+measured 3594.7 us @ 2364 MHz, 9709 steps/SM -> **875 clk per 128x128 step**; MMA util 31.1 %; binding unit by SOL: tmem (48 %)
+
+| unit | SOL clk/step | util = SOL/measured | util over SM-active | ncu % (cross-check, of SM-active) | how |
+|---|---|---|---|---|---|
+| tensor | 272 | 31.1 % | 31.1 % |  | BMM1 2048k + BMM2 2048k + rowsum 256k MAC / 16384 |
+| mufu | 256 | 29.2 % | 29.2 % |  | 16384 exp as f16x2 pairs / 32 lanes |
+| issue | 412 | 47.0 % | 47.0 % |  | 1646 warp-instr / 4 (static estimate) |
+| fma | 256 | 29.2 % | 29.2 % |  | 512 FMA-pipe warp-instr (FFMA2/FHADD2/HFMA2) / 2 (static estimate) |
+| alu | 30 | 3.4 % | 3.4 % |  | 60 integer/logic ALU warp-instr / 2 (static estimate) |
+| cvt | 256 | 29.2 % | 29.2 % |  | 512 F2FP/I2F convert+pack warp-instr / 2 (static estimate; ncu pipe attribution of F2FP differs) |
+| xu_inst | 260 | 29.7 % | 29.7 % |  | 260 MUFU warp-instr x 32 lanes / 32 (static estimate) |
+| smem | 338 | 38.6 % | 38.6 % |  | reads 34 KiB (Q 16 + K/2 8 + V/2 8 + ones 2) + TMA writes 8.2 KiB / 128 B |
+| tmem | 418 | 47.8 % | 47.8 % |  | 209 KiB tcgen05.ld/st / 512 B (assumed) |
+| l2 | 132 | 15.1 % | 15.1 % |  | 8.2 KiB K/V(+SF) per step per SM / 64 B/clk/SM |
+| dram | 14 | 1.6 % | 1.6 % |  | 472 MB whole kernel / 8.0 TB/s |
+
 ### corrdefault_p0_f32_scale_prod d128 S=8192 causal (cta_mma 2, TILES_Q 2, f32 exp, rowsum-MMA 1, corr default, paged 0)
 measured 158.6 us @ 2382 MHz, 308 steps/SM -> **1226 clk per 128x128 step**; MMA util 22.2 %; binding unit by SOL: xu_inst (42 %)
 
@@ -71,6 +88,57 @@ measured 172.2 us @ 2364 MHz, 607 steps/SM -> **671 clk per 128x128 step**; MMA 
 | dram | 57 | 8.6 % | 9.3 % |  | 118 MB whole kernel / 8.0 TB/s |
 
 ncu-derived L2 sector peak 57.8 TB/s = 118 B/clk/SM (lts__t_sectors / pct_of_peak); ncu smsp__inst_executed.sum 145 M vs SASS-page executed 192 M (the SASS page counts every pipe of a multi-pipe instruction; issue SOL uses the SASS count = upper bound)
+
+### corrdefault_p0_half_pf_prod d128 S=32768 none (cta_mma 2, TILES_Q 2, f16 exp, rowsum-MMA 1, corr default, paged 0)
+measured 2417.8 us @ 2364 MHz, 9709 steps/SM -> **589 clk per 128x128 step**; MMA util 46.2 %; binding unit by SOL: issue (58 %)
+
+| unit | SOL clk/step | util = SOL/measured | util over SM-active | ncu % (cross-check, of SM-active) | how |
+|---|---|---|---|---|---|
+| tensor | 272 | 46.2 % | 46.2 % |  | BMM1 2048k + BMM2 2048k + rowsum 256k MAC / 16384 |
+| mufu | 256 | 43.5 % | 43.5 % |  | 16384 exp as f16x2 pairs / 32 lanes |
+| issue | 340 | 57.7 % | 57.7 % |  | 1358 warp-instr / 4 (static estimate) |
+| fma | 128 | 21.7 % | 21.7 % |  | 256 FMA-pipe warp-instr (FFMA2/FHADD2/HFMA2) / 2 (static estimate) |
+| alu | 30 | 5.1 % | 5.1 % |  | 60 integer/logic ALU warp-instr / 2 (static estimate) |
+| cvt | 256 | 43.5 % | 43.5 % |  | 512 F2FP/I2F convert+pack warp-instr / 2 (static estimate; ncu pipe attribution of F2FP differs) |
+| xu_inst | 260 | 44.2 % | 44.2 % |  | 260 MUFU warp-instr x 32 lanes / 32 (static estimate) |
+| smem | 338 | 57.4 % | 57.4 % |  | reads 34 KiB (Q 16 + K/2 8 + V/2 8 + ones 2) + TMA writes 8.2 KiB / 128 B |
+| tmem | 162 | 27.5 % | 27.5 % |  | 81 KiB tcgen05.ld/st / 512 B (assumed) |
+| l2 | 132 | 22.4 % | 22.4 % |  | 8.2 KiB K/V(+SF) per step per SM / 64 B/clk/SM |
+| dram | 14 | 2.4 % | 2.4 % |  | 472 MB whole kernel / 8.0 TB/s |
+
+### corrdefault_p64_half_pf_benc_cf1h1 d128 S=32768 none (cta_mma 2, TILES_Q 2, f16 exp, rowsum-MMA 1, corr default, paged 64)
+measured 2515.9 us @ 2364 MHz, 9709 steps/SM -> **613 clk per 128x128 step**; MMA util 44.4 %; binding unit by SOL: issue (55 %)
+
+| unit | SOL clk/step | util = SOL/measured | util over SM-active | ncu % (cross-check, of SM-active) | how |
+|---|---|---|---|---|---|
+| tensor | 272 | 44.4 % | 44.4 % |  | BMM1 2048k + BMM2 2048k + rowsum 256k MAC / 16384 |
+| mufu | 256 | 41.8 % | 41.8 % |  | 16384 exp as f16x2 pairs / 32 lanes |
+| issue | 340 | 55.4 % | 55.4 % |  | 1358 warp-instr / 4 (static estimate) |
+| fma | 128 | 20.9 % | 20.9 % |  | 256 FMA-pipe warp-instr (FFMA2/FHADD2/HFMA2) / 2 (static estimate) |
+| alu | 30 | 4.9 % | 4.9 % |  | 60 integer/logic ALU warp-instr / 2 (static estimate) |
+| cvt | 256 | 41.8 % | 41.8 % |  | 512 F2FP/I2F convert+pack warp-instr / 2 (static estimate; ncu pipe attribution of F2FP differs) |
+| xu_inst | 260 | 42.4 % | 42.4 % |  | 260 MUFU warp-instr x 32 lanes / 32 (static estimate) |
+| smem | 338 | 55.2 % | 55.2 % |  | reads 34 KiB (Q 16 + K/2 8 + V/2 8 + ones 2) + TMA writes 8.2 KiB / 128 B |
+| tmem | 162 | 26.4 % | 26.4 % |  | 81 KiB tcgen05.ld/st / 512 B (assumed) |
+| l2 | 132 | 21.5 % | 21.5 % |  | 8.2 KiB K/V(+SF) per step per SM / 64 B/clk/SM |
+| dram | 14 | 2.3 % | 2.3 % |  | 472 MB whole kernel / 8.0 TB/s |
+
+### corrnever_p64_half_pf_benc_cf1h1 d128 S=32768 none (cta_mma 2, TILES_Q 2, f16 exp, rowsum-MMA 1, corr never, paged 64)
+measured 2364.6 us @ 2364 MHz, 9709 steps/SM -> **576 clk per 128x128 step**; MMA util 47.2 %; binding unit by SOL: issue (59 %)
+
+| unit | SOL clk/step | util = SOL/measured | util over SM-active | ncu % (cross-check, of SM-active) | how |
+|---|---|---|---|---|---|
+| tensor | 272 | 47.2 % | 47.2 % |  | BMM1 2048k + BMM2 2048k + rowsum 256k MAC / 16384 |
+| mufu | 256 | 44.5 % | 44.5 % |  | 16384 exp as f16x2 pairs / 32 lanes |
+| issue | 340 | 59.0 % | 59.0 % |  | 1358 warp-instr / 4 (static estimate) |
+| fma | 128 | 22.2 % | 22.2 % |  | 256 FMA-pipe warp-instr (FFMA2/FHADD2/HFMA2) / 2 (static estimate) |
+| alu | 30 | 5.2 % | 5.2 % |  | 60 integer/logic ALU warp-instr / 2 (static estimate) |
+| cvt | 256 | 44.5 % | 44.5 % |  | 512 F2FP/I2F convert+pack warp-instr / 2 (static estimate; ncu pipe attribution of F2FP differs) |
+| xu_inst | 260 | 45.2 % | 45.2 % |  | 260 MUFU warp-instr x 32 lanes / 32 (static estimate) |
+| smem | 338 | 58.7 % | 58.7 % |  | reads 34 KiB (Q 16 + K/2 8 + V/2 8 + ones 2) + TMA writes 8.2 KiB / 128 B |
+| tmem | 162 | 28.1 % | 28.1 % |  | 81 KiB tcgen05.ld/st / 512 B (assumed) |
+| l2 | 132 | 22.9 % | 22.9 % |  | 8.2 KiB K/V(+SF) per step per SM / 64 B/clk/SM |
+| dram | 14 | 2.5 % | 2.5 % |  | 472 MB whole kernel / 8.0 TB/s |
 
 ### corrdefault_p0_f32_scale_prod d256 S=8192 causal (cta_mma 1, TILES_Q 1, f32 exp, rowsum-MMA 0, corr default, paged 0)
 measured 214.5 us @ 2364 MHz, 308 steps/SM -> **1646 clk per 128x128 step**; MMA util 31.1 %; binding unit by SOL: smem (79 %)
