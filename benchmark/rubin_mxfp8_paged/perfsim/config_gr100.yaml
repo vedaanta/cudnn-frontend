@@ -1,0 +1,594 @@
+all:
+  retryTimeoutMinutes: 240
+  retryIntervalMinutes: 5
+cuda2ctlAmodel_single_step:
+  lsfQueue: o_cpu_64G_48H
+  lsfTimeout: -1
+  compress: 1
+APIC_Capture:
+  lsfQueue: o_cpu_32G_24H
+  lsfTimeout: -1
+  cuda_capturer: null
+  cuda_replayer: null
+  capture:
+    options:
+    - --capture_mode=discrete
+    - --no_use_local_storage
+    - --minimize_nvbit=0
+  apic_amodel_args: {}
+  postprocess:
+    options: []
+Trace3D_Gen:
+  lsfQueue: o_cpu_16G_24H
+  lsfTimeout: -1
+  cuda_replayer: null
+  cuda_replay_options: -MergeUVACtx -NoClearMem
+  cuda_replay_env:
+    CUDA_FORCE_PTX_JIT: 0
+    CUDA_TSG_CHANNEL_COUNT: 1
+  cuda2ctl_args: {}
+  htg_args: {}
+  SSAF_args:
+    pmMode: PM_KERNEL
+  knobs:
+    ga100:
+      knobsCap:
+        AmpereComputeWarpState::ignoreMisalignedAddrError: 1
+        Shader::checkUninitializedRegisters: 0
+        ChannelObject::shareSubchannelsAcrossTSGs: 1
+        Shader::checkUninitializedLocalMemory: 0
+        Shader::uninitializedValue: 0
+        AmpereCompute::uninitializedPredicateCheck: 1
+        AmpereCompute::uninitializedCCCheck: 1
+        AmpereProgram::refshaderNoPrintCountersAndKnobs: 1
+        AmpereComputeWarpState::ignoreApiRetOnEmptyStackError: 1
+        AmpereProgram::refShaderDriverMode: 1
+        AmpereComputeClassFE::logMethods: 0
+        AmpereShaderState3D::ignoreMisalignedAddrError: 1
+        AmpereQmd::pointerSanityCheck: 0
+        AmpereQmd::ignoreSanityChecks: 1
+      knobsRep:
+        AmpereComputeWarpState::ignoreMisalignedAddrError: 1
+        Shader::checkUninitializedRegisters: 0
+        ChannelObject::shareSubchannelsAcrossTSGs: 1
+        Shader::checkUninitializedLocalMemory: 0
+        Shader::uninitializedValue: 0
+        AmpereCompute::uninitializedPredicateCheck: 1
+        AmpereCompute::uninitializedCCCheck: 1
+        AmpereProgram::refshaderNoPrintCountersAndKnobs: 1
+        AmpereComputeWarpState::ignoreApiRetOnEmptyStackError: 1
+        AmpereProgram::refShaderDriverMode: 1
+        AmpereComputeClassFE::logMethods: 0
+        AmpereShaderState3D::ignoreMisalignedAddrError: 1
+        AmpereQmd::pointerSanityCheck: 0
+        AmpereQmd::ignoreSanityChecks: 1
+    ga10x:
+      knobsCap:
+        AmpereComputeWarpState::ignoreMisalignedAddrError: 1
+        Shader::checkUninitializedRegisters: 0
+        ChannelObject::shareSubchannelsAcrossTSGs: 1
+        Shader::checkUninitializedLocalMemory: 0
+        Shader::uninitializedValue: 0
+        AmpereCompute::uninitializedPredicateCheck: 1
+        AmpereCompute::uninitializedCCCheck: 1
+        AmpereProgram::refshaderNoPrintCountersAndKnobs: 1
+        AmpereComputeWarpState::ignoreApiRetOnEmptyStackError: 1
+        AmpereProgram::refShaderDriverMode: 1
+        AmpereComputeClassFE::logMethods: 0
+        AmpereShaderState3D::ignoreMisalignedAddrError: 1
+        AmpereQmd::pointerSanityCheck: 0
+        AmpereQmd::ignoreSanityChecks: 1
+      knobsRep:
+        AmpereComputeWarpState::ignoreMisalignedAddrError: 1
+        Shader::checkUninitializedRegisters: 0
+        ChannelObject::shareSubchannelsAcrossTSGs: 1
+        Shader::checkUninitializedLocalMemory: 0
+        Shader::uninitializedValue: 0
+        AmpereCompute::uninitializedPredicateCheck: 1
+        AmpereCompute::uninitializedCCCheck: 1
+        AmpereProgram::refshaderNoPrintCountersAndKnobs: 1
+        AmpereComputeWarpState::ignoreApiRetOnEmptyStackError: 1
+        AmpereProgram::refShaderDriverMode: 1
+        AmpereComputeClassFE::logMethods: 0
+        AmpereShaderState3D::ignoreMisalignedAddrError: 1
+        AmpereQmd::pointerSanityCheck: 0
+        AmpereQmd::ignoreSanityChecks: 1
+    ga10b:
+      knobsCap:
+        AmpereComputeWarpState::ignoreMisalignedAddrError: 1
+        Shader::checkUninitializedRegisters: 0
+        ChannelObject::shareSubchannelsAcrossTSGs: 1
+        Shader::checkUninitializedLocalMemory: 0
+        Shader::uninitializedValue: 0
+        AmpereCompute::uninitializedPredicateCheck: 1
+        AmpereCompute::uninitializedCCCheck: 1
+        AmpereProgram::refshaderNoPrintCountersAndKnobs: 1
+        AmpereComputeWarpState::ignoreApiRetOnEmptyStackError: 1
+        AmpereProgram::refShaderDriverMode: 1
+        AmpereComputeClassFE::logMethods: 0
+        AmpereShaderState3D::ignoreMisalignedAddrError: 1
+        AmpereQmd::pointerSanityCheck: 0
+        AmpereQmd::ignoreSanityChecks: 1
+      knobsRep:
+        AmpereComputeWarpState::ignoreMisalignedAddrError: 1
+        Shader::checkUninitializedRegisters: 0
+        ChannelObject::shareSubchannelsAcrossTSGs: 1
+        Shader::checkUninitializedLocalMemory: 0
+        Shader::uninitializedValue: 0
+        AmpereCompute::uninitializedPredicateCheck: 1
+        AmpereCompute::uninitializedCCCheck: 1
+        AmpereProgram::refshaderNoPrintCountersAndKnobs: 1
+        AmpereComputeWarpState::ignoreApiRetOnEmptyStackError: 1
+        AmpereProgram::refShaderDriverMode: 1
+        AmpereComputeClassFE::logMethods: 0
+        AmpereShaderState3D::ignoreMisalignedAddrError: 1
+        AmpereQmd::pointerSanityCheck: 0
+        AmpereQmd::ignoreSanityChecks: 1
+    ad10x:
+      knobsCap:
+        AdaComputeWarpState::ignoreMisalignedAddrError: 1
+        Shader::checkUninitializedRegisters: 0
+        ChannelObject::shareSubchannelsAcrossTSGs: 1
+        Shader::checkUninitializedLocalMemory: 0
+        Shader::uninitializedValue: 0
+        AdaCompute::uninitializedPredicateCheck: 1
+        AdaCompute::uninitializedCCCheck: 1
+        AdaProgram::refshaderNoPrintCountersAndKnobs: 1
+        AdaComputeWarpState::ignoreApiRetOnEmptyStackError: 1
+        AdaProgram::refShaderDriverMode: 1
+        AdaComputeClassFE::logMethods: 0
+        AdaShaderState3D::ignoreMisalignedAddrError: 1
+        AdaQmd::pointerSanityCheck: 0
+        AdaQmd::ignoreSanityChecks: 1
+      knobsRep:
+        AdaComputeWarpState::ignoreMisalignedAddrError: 1
+        Shader::checkUninitializedRegisters: 0
+        ChannelObject::shareSubchannelsAcrossTSGs: 1
+        Shader::checkUninitializedLocalMemory: 0
+        Shader::uninitializedValue: 0
+        AdaCompute::uninitializedPredicateCheck: 1
+        AdaCompute::uninitializedCCCheck: 1
+        AdaProgram::refshaderNoPrintCountersAndKnobs: 1
+        AdaComputeWarpState::ignoreApiRetOnEmptyStackError: 1
+        AdaProgram::refShaderDriverMode: 1
+        AdaComputeClassFE::logMethods: 0
+        AdaShaderState3D::ignoreMisalignedAddrError: 1
+        AdaQmd::pointerSanityCheck: 0
+        AdaQmd::ignoreSanityChecks: 1
+    gh100:
+      knobsCap:
+        ChannelObject::shareSubchannelsAcrossTSGs: 1
+        Compute::uninitializedCCCheck: 1
+        Compute::uninitializedPredicateCheck: 1
+        ComputeClassFE::logMethods: 0
+        ComputeWarpState::ignoreApiRetOnEmptyStackError: 1
+        ComputeWarpState::ignoreMisalignedAddrError: 1
+        Program::refShaderDriverMode: 1
+        Program::refshaderNoPrintCountersAndKnobs: 1
+        Qmd::ignoreSanityChecks: 1
+        Qmd::pointerSanityCheck: 0
+        Shader::checkUninitializedLocalMemory: 0
+        Shader::checkUninitializedRegisters: 0
+        Shader::uninitializedValue: 0
+        ShaderState3D::ignoreMisalignedAddrError: 1
+      knobsRep:
+        ChannelObject::shareSubchannelsAcrossTSGs: 1
+        Compute::uninitializedCCCheck: 1
+        Compute::uninitializedPredicateCheck: 1
+        ComputeClassFE::logMethods: 0
+        ComputeWarpState::ignoreApiRetOnEmptyStackError: 1
+        ComputeWarpState::ignoreMisalignedAddrError: 1
+        Program::refShaderDriverMode: 1
+        Program::refshaderNoPrintCountersAndKnobs: 1
+        Qmd::ignoreSanityChecks: 1
+        Qmd::pointerSanityCheck: 0
+        Shader::checkUninitializedLocalMemory: 0
+        Shader::checkUninitializedRegisters: 0
+        Shader::uninitializedValue: 0
+        ShaderState3D::ignoreMisalignedAddrError: 1
+    gb100:
+      knobsCap:
+        ChannelObject::shareSubchannelsAcrossTSGs: 1
+        Compute::uninitializedCCCheck: 1
+        Compute::uninitializedPredicateCheck: 1
+        ComputeClassFE::logMethods: 0
+        ComputeWarpState::ignoreApiRetOnEmptyStackError: 1
+        ComputeWarpState::ignoreMisalignedAddrError: 1
+        Program::refShaderDriverMode: 1
+        Program::refshaderNoPrintCountersAndKnobs: 1
+        Qmd::ignoreSanityChecks: 1
+        Qmd::pointerSanityCheck: 0
+        Shader::checkUninitializedLocalMemory: 0
+        Shader::checkUninitializedRegisters: 0
+        Shader::uninitializedValue: 0
+        ShaderState3D::ignoreMisalignedAddrError: 1
+      knobsRep:
+        ChannelObject::shareSubchannelsAcrossTSGs: 1
+        Compute::uninitializedCCCheck: 1
+        Compute::uninitializedPredicateCheck: 1
+        ComputeClassFE::logMethods: 0
+        ComputeWarpState::ignoreApiRetOnEmptyStackError: 1
+        ComputeWarpState::ignoreMisalignedAddrError: 1
+        Program::refShaderDriverMode: 1
+        Program::refshaderNoPrintCountersAndKnobs: 1
+        Qmd::ignoreSanityChecks: 1
+        Qmd::pointerSanityCheck: 0
+        Shader::checkUninitializedLocalMemory: 0
+        Shader::checkUninitializedRegisters: 0
+        Shader::uninitializedValue: 0
+        ShaderState3D::ignoreMisalignedAddrError: 1
+    gb10x:
+      knobsCap:
+        ChannelObject::shareSubchannelsAcrossTSGs: 1
+        Compute::uninitializedCCCheck: 1
+        Compute::uninitializedPredicateCheck: 1
+        ComputeClassFE::logMethods: 0
+        ComputeWarpState::ignoreApiRetOnEmptyStackError: 1
+        ComputeWarpState::ignoreMisalignedAddrError: 1
+        Program::refShaderDriverMode: 1
+        Program::refshaderNoPrintCountersAndKnobs: 1
+        Qmd::ignoreSanityChecks: 1
+        Qmd::pointerSanityCheck: 0
+        Shader::checkUninitializedLocalMemory: 0
+        Shader::checkUninitializedRegisters: 0
+        Shader::uninitializedValue: 0
+        ShaderState3D::ignoreMisalignedAddrError: 1
+      knobsRep:
+        ChannelObject::shareSubchannelsAcrossTSGs: 1
+        Compute::uninitializedCCCheck: 1
+        Compute::uninitializedPredicateCheck: 1
+        ComputeClassFE::logMethods: 0
+        ComputeWarpState::ignoreApiRetOnEmptyStackError: 1
+        ComputeWarpState::ignoreMisalignedAddrError: 1
+        Program::refShaderDriverMode: 1
+        Program::refshaderNoPrintCountersAndKnobs: 1
+        Qmd::ignoreSanityChecks: 1
+        Qmd::pointerSanityCheck: 0
+        Shader::checkUninitializedLocalMemory: 0
+        Shader::checkUninitializedRegisters: 0
+        Shader::uninitializedValue: 0
+        ShaderState3D::ignoreMisalignedAddrError: 1
+    gb10b:
+      knobsCap:
+        ChannelObject::shareSubchannelsAcrossTSGs: 1
+        Compute::uninitializedCCCheck: 1
+        Compute::uninitializedPredicateCheck: 1
+        ComputeClassFE::logMethods: 0
+        ComputeWarpState::ignoreApiRetOnEmptyStackError: 1
+        ComputeWarpState::ignoreMisalignedAddrError: 1
+        Program::refShaderDriverMode: 1
+        Program::refshaderNoPrintCountersAndKnobs: 1
+        Qmd::ignoreSanityChecks: 1
+        Qmd::pointerSanityCheck: 0
+        Shader::checkUninitializedLocalMemory: 0
+        Shader::checkUninitializedRegisters: 0
+        Shader::uninitializedValue: 0
+        ShaderState3D::ignoreMisalignedAddrError: 1
+      knobsRep:
+        ChannelObject::shareSubchannelsAcrossTSGs: 1
+        Compute::uninitializedCCCheck: 1
+        Compute::uninitializedPredicateCheck: 1
+        ComputeClassFE::logMethods: 0
+        ComputeWarpState::ignoreApiRetOnEmptyStackError: 1
+        ComputeWarpState::ignoreMisalignedAddrError: 1
+        Program::refShaderDriverMode: 1
+        Program::refshaderNoPrintCountersAndKnobs: 1
+        Qmd::ignoreSanityChecks: 1
+        Qmd::pointerSanityCheck: 0
+        Shader::checkUninitializedLocalMemory: 0
+        Shader::checkUninitializedRegisters: 0
+        Shader::uninitializedValue: 0
+        ShaderState3D::ignoreMisalignedAddrError: 1
+    gb11x:
+      knobsCap:
+        ChannelObject::shareSubchannelsAcrossTSGs: 1
+        Compute::uninitializedCCCheck: 1
+        Compute::uninitializedPredicateCheck: 1
+        ComputeClassFE::logMethods: 0
+        ComputeWarpState::ignoreApiRetOnEmptyStackError: 1
+        ComputeWarpState::ignoreMisalignedAddrError: 1
+        Program::refShaderDriverMode: 1
+        Program::refshaderNoPrintCountersAndKnobs: 1
+        Qmd::ignoreSanityChecks: 1
+        Qmd::pointerSanityCheck: 0
+        Shader::checkUninitializedLocalMemory: 0
+        Shader::checkUninitializedRegisters: 0
+        Shader::uninitializedValue: 0
+        ShaderState3D::ignoreMisalignedAddrError: 1
+      knobsRep:
+        ChannelObject::shareSubchannelsAcrossTSGs: 1
+        Compute::uninitializedCCCheck: 1
+        Compute::uninitializedPredicateCheck: 1
+        ComputeClassFE::logMethods: 0
+        ComputeWarpState::ignoreApiRetOnEmptyStackError: 1
+        ComputeWarpState::ignoreMisalignedAddrError: 1
+        Program::refShaderDriverMode: 1
+        Program::refshaderNoPrintCountersAndKnobs: 1
+        Qmd::ignoreSanityChecks: 1
+        Qmd::pointerSanityCheck: 0
+        Shader::checkUninitializedLocalMemory: 0
+        Shader::checkUninitializedRegisters: 0
+        Shader::uninitializedValue: 0
+        ShaderState3D::ignoreMisalignedAddrError: 1
+    gb12x:
+      knobsCap:
+        ChannelObject::shareSubchannelsAcrossTSGs: 1
+        Compute::uninitializedCCCheck: 1
+        Compute::uninitializedPredicateCheck: 1
+        ComputeClassFE::logMethods: 0
+        ComputeWarpState::ignoreApiRetOnEmptyStackError: 1
+        ComputeWarpState::ignoreMisalignedAddrError: 1
+        Program::refShaderDriverMode: 1
+        Program::refshaderNoPrintCountersAndKnobs: 1
+        Qmd::ignoreSanityChecks: 1
+        Qmd::pointerSanityCheck: 0
+        Shader::checkUninitializedLocalMemory: 0
+        Shader::checkUninitializedRegisters: 0
+        Shader::uninitializedValue: 0
+        ShaderState3D::ignoreMisalignedAddrError: 1
+      knobsRep:
+        ChannelObject::shareSubchannelsAcrossTSGs: 1
+        Compute::uninitializedCCCheck: 1
+        Compute::uninitializedPredicateCheck: 1
+        ComputeClassFE::logMethods: 0
+        ComputeWarpState::ignoreApiRetOnEmptyStackError: 1
+        ComputeWarpState::ignoreMisalignedAddrError: 1
+        Program::refShaderDriverMode: 1
+        Program::refshaderNoPrintCountersAndKnobs: 1
+        Qmd::ignoreSanityChecks: 1
+        Qmd::pointerSanityCheck: 0
+        Shader::checkUninitializedLocalMemory: 0
+        Shader::checkUninitializedRegisters: 0
+        Shader::uninitializedValue: 0
+        ShaderState3D::ignoreMisalignedAddrError: 1
+    gb20x:
+      knobsCap:
+        ChannelObject::shareSubchannelsAcrossTSGs: 1
+        Compute::uninitializedCCCheck: 1
+        Compute::uninitializedPredicateCheck: 1
+        ComputeClassFE::logMethods: 0
+        ComputeWarpState::ignoreApiRetOnEmptyStackError: 1
+        ComputeWarpState::ignoreMisalignedAddrError: 1
+        Program::refShaderDriverMode: 1
+        Program::refshaderNoPrintCountersAndKnobs: 1
+        Qmd::ignoreSanityChecks: 1
+        Qmd::pointerSanityCheck: 0
+        Shader::checkUninitializedLocalMemory: 0
+        Shader::checkUninitializedRegisters: 0
+        Shader::uninitializedValue: 0
+        ShaderState3D::ignoreMisalignedAddrError: 1
+      knobsRep:
+        ChannelObject::shareSubchannelsAcrossTSGs: 1
+        Compute::uninitializedCCCheck: 1
+        Compute::uninitializedPredicateCheck: 1
+        ComputeClassFE::logMethods: 0
+        ComputeWarpState::ignoreApiRetOnEmptyStackError: 1
+        ComputeWarpState::ignoreMisalignedAddrError: 1
+        Program::refShaderDriverMode: 1
+        Program::refshaderNoPrintCountersAndKnobs: 1
+        Qmd::ignoreSanityChecks: 1
+        Qmd::pointerSanityCheck: 0
+        Shader::checkUninitializedLocalMemory: 0
+        Shader::checkUninitializedRegisters: 0
+        Shader::uninitializedValue: 0
+        ShaderState3D::ignoreMisalignedAddrError: 1
+    gb20y:
+      knobsCap:
+        ChannelObject::shareSubchannelsAcrossTSGs: 1
+        Compute::uninitializedCCCheck: 1
+        Compute::uninitializedPredicateCheck: 1
+        ComputeClassFE::logMethods: 0
+        ComputeWarpState::ignoreApiRetOnEmptyStackError: 1
+        ComputeWarpState::ignoreMisalignedAddrError: 1
+        Program::refShaderDriverMode: 1
+        Program::refshaderNoPrintCountersAndKnobs: 1
+        Qmd::ignoreSanityChecks: 1
+        Qmd::pointerSanityCheck: 0
+        Shader::checkUninitializedLocalMemory: 0
+        Shader::checkUninitializedRegisters: 0
+        Shader::uninitializedValue: 0
+        ShaderState3D::ignoreMisalignedAddrError: 1
+      knobsRep:
+        ChannelObject::shareSubchannelsAcrossTSGs: 1
+        Compute::uninitializedCCCheck: 1
+        Compute::uninitializedPredicateCheck: 1
+        ComputeClassFE::logMethods: 0
+        ComputeWarpState::ignoreApiRetOnEmptyStackError: 1
+        ComputeWarpState::ignoreMisalignedAddrError: 1
+        Program::refShaderDriverMode: 1
+        Program::refshaderNoPrintCountersAndKnobs: 1
+        Qmd::ignoreSanityChecks: 1
+        Qmd::pointerSanityCheck: 0
+        Shader::checkUninitializedLocalMemory: 0
+        Shader::checkUninitializedRegisters: 0
+        Shader::uninitializedValue: 0
+        ShaderState3D::ignoreMisalignedAddrError: 1
+    gr100:
+      knobsCap:
+        ChannelObject::shareSubchannelsAcrossTSGs: 1
+        ComputeClassFE::logMethods: 0
+        ComputeWarpState::ignoreApiRetOnEmptyStackError: 1
+        ComputeWarpState::ignoreMisalignedAddrError: 1
+        # GR100 (Rubin SM) has 576 TMEM columns = 288KB/SM; Blackwell amodel's
+        # GR100 GpuConfig wrongly defaults to Blackwell's 256KB -> TMEM-OOB on
+        # mxfp8 SDPA scale-factor UTCCP (addr 0x10c00 > 0x10000/subpartition).
+        GpuConfig::tensorMemorySizeInKB: 288
+        Program::refShaderDriverMode: 1
+        Program::refshaderNoPrintCountersAndKnobs: 1
+        Qmd::ignoreSanityChecks: 1
+        Qmd::pointerSanityCheck: 0
+        Shader::checkUninitializedLocalMemory: 0
+        Shader::checkUninitializedRegisters: 0
+        Shader::uninitializedValue: 0
+        ShaderState3D::ignoreMisalignedAddrError: 1
+      knobsRep:
+        ChannelObject::shareSubchannelsAcrossTSGs: 1
+        ComputeClassFE::logMethods: 0
+        ComputeWarpState::ignoreApiRetOnEmptyStackError: 1
+        ComputeWarpState::ignoreMisalignedAddrError: 1
+        GpuConfig::tensorMemorySizeInKB: 288
+        Program::refShaderDriverMode: 1
+        Program::refshaderNoPrintCountersAndKnobs: 1
+        Qmd::ignoreSanityChecks: 1
+        Qmd::pointerSanityCheck: 0
+        Shader::checkUninitializedLocalMemory: 0
+        Shader::checkUninitializedRegisters: 0
+        Shader::uninitializedValue: 0
+        ShaderState3D::ignoreMisalignedAddrError: 1
+    gr10x:
+      knobsCap:
+        ChannelObject::shareSubchannelsAcrossTSGs: 1
+        Compute::uninitializedCCCheck: 1
+        Compute::uninitializedPredicateCheck: 1
+        ComputeClassFE::logMethods: 0
+        ComputeWarpState::ignoreApiRetOnEmptyStackError: 1
+        ComputeWarpState::ignoreMisalignedAddrError: 1
+        Program::refShaderDriverMode: 1
+        Program::refshaderNoPrintCountersAndKnobs: 1
+        Qmd::ignoreSanityChecks: 1
+        Qmd::pointerSanityCheck: 0
+        Shader::checkUninitializedLocalMemory: 0
+        Shader::checkUninitializedRegisters: 0
+        Shader::uninitializedValue: 0
+        ShaderState3D::ignoreMisalignedAddrError: 1
+      knobsRep:
+        ChannelObject::shareSubchannelsAcrossTSGs: 1
+        Compute::uninitializedCCCheck: 1
+        Compute::uninitializedPredicateCheck: 1
+        ComputeClassFE::logMethods: 0
+        ComputeWarpState::ignoreApiRetOnEmptyStackError: 1
+        ComputeWarpState::ignoreMisalignedAddrError: 1
+        Program::refShaderDriverMode: 1
+        Program::refshaderNoPrintCountersAndKnobs: 1
+        Qmd::ignoreSanityChecks: 1
+        Qmd::pointerSanityCheck: 0
+        Shader::checkUninitializedLocalMemory: 0
+        Shader::checkUninitializedRegisters: 0
+        Shader::uninitializedValue: 0
+        ShaderState3D::ignoreMisalignedAddrError: 1
+    gr150:
+      knobsCap:
+        ChannelObject::shareSubchannelsAcrossTSGs: 1
+        Compute::uninitializedCCCheck: 1
+        Compute::uninitializedPredicateCheck: 1
+        ComputeClassFE::logMethods: 0
+        ComputeWarpState::ignoreApiRetOnEmptyStackError: 1
+        ComputeWarpState::ignoreMisalignedAddrError: 1
+        Program::refShaderDriverMode: 1
+        Program::refshaderNoPrintCountersAndKnobs: 1
+        Qmd::ignoreSanityChecks: 1
+        Qmd::pointerSanityCheck: 0
+        Shader::checkUninitializedLocalMemory: 0
+        Shader::checkUninitializedRegisters: 0
+        Shader::uninitializedValue: 0
+        ShaderState3D::ignoreMisalignedAddrError: 1
+      knobsRep:
+        ChannelObject::shareSubchannelsAcrossTSGs: 1
+        Compute::uninitializedCCCheck: 1
+        Compute::uninitializedPredicateCheck: 1
+        ComputeClassFE::logMethods: 0
+        ComputeWarpState::ignoreApiRetOnEmptyStackError: 1
+        ComputeWarpState::ignoreMisalignedAddrError: 1
+        Program::refShaderDriverMode: 1
+        Program::refshaderNoPrintCountersAndKnobs: 1
+        Qmd::ignoreSanityChecks: 1
+        Qmd::pointerSanityCheck: 0
+        Shader::checkUninitializedLocalMemory: 0
+        Shader::checkUninitializedRegisters: 0
+        Shader::uninitializedValue: 0
+        ShaderState3D::ignoreMisalignedAddrError: 1
+    fn100:
+      knobsCap:
+        ChannelObject::shareSubchannelsAcrossTSGs: 1
+        Compute::uninitializedCCCheck: 1
+        Compute::uninitializedPredicateCheck: 1
+        ComputeClassFE::logMethods: 0
+        ComputeWarpState::ignoreApiRetOnEmptyStackError: 1
+        ComputeWarpState::ignoreMisalignedAddrError: 1
+        Program::refShaderDriverMode: 1
+        Program::refshaderNoPrintCountersAndKnobs: 1
+        Qmd::ignoreSanityChecks: 1
+        Qmd::pointerSanityCheck: 0
+        Shader::checkUninitializedLocalMemory: 0
+        Shader::checkUninitializedRegisters: 0
+        Shader::uninitializedValue: 0
+        ShaderState3D::ignoreMisalignedAddrError: 1
+      knobsRep:
+        ChannelObject::shareSubchannelsAcrossTSGs: 1
+        Compute::uninitializedCCCheck: 1
+        Compute::uninitializedPredicateCheck: 1
+        ComputeClassFE::logMethods: 0
+        ComputeWarpState::ignoreApiRetOnEmptyStackError: 1
+        ComputeWarpState::ignoreMisalignedAddrError: 1
+        Program::refShaderDriverMode: 1
+        Program::refshaderNoPrintCountersAndKnobs: 1
+        Qmd::ignoreSanityChecks: 1
+        Qmd::pointerSanityCheck: 0
+        Shader::checkUninitializedLocalMemory: 0
+        Shader::checkUninitializedRegisters: 0
+        Shader::uninitializedValue: 0
+        ShaderState3D::ignoreMisalignedAddrError: 1
+FastACE:
+  ranges: null
+  create_fastace:
+    -queue: o_cpu_8G_24H
+Checkpoints:
+  mods_check_crc: true
+  perfgen:
+    -PERFSIM:knob:
+    - "'NVPerfsim::PerfSim::NoOutputTimeout 1 9000000'"
+    - "'NVPerfsim::L2C::cleanLTCBackDoorOnePMTrigger 0'"
+    - "'NVPerfsim::L2C::cleanLTCBackDoorTwoPMTrigger 0'"
+    -debug: 0
+    -dont-fail-on-p4-check: null
+    -queue:
+    - PERFSIM o_cpu_64G_48H
+    - REPORT o_cpu_4G_4H
+    - FINAL o_cpu_4G_4H
+    -rc:
+    - ${chip}/${chip}_flow.perfsim.rc
+    -target: PERFSIM
+PerfSim:
+  enableMorph: false
+  pic: false
+  dgpu: false
+  numThreads: 4
+  FastACE:
+    mods_check_crc: true
+    perfgen: {}
+  skyline:
+    tpcs_per_plural_vgpc: null
+    singleton_tpcs: null
+    singleton_tpc_assignments: null
+  perfgen:
+    -PERFSIM:knob:
+    - "'NVPerfsim::PerfSim::NoOutputTimeout 1 9000000'"
+    - "'NVPerfsim::L2C::cleanLTCBackDoorOnePMTrigger 0'"
+    - "'NVPerfsim::L2C::cleanLTCBackDoorTwoPMTrigger 0'"
+    - "'NVPerfsim::ugpu_localization 1'"
+    - "'NVPerfsim::FB::secTop 0xFFFFFFFF'"
+    -debug: 0
+    -dont-fail-on-p4-check: null
+    -queue:
+    - PERFSIM o_cpu_64G_48H
+    - REPORT o_cpu_4G_48H
+    - FINAL o_cpu_4G_48H
+    -PERFSIM:run_type: app_perf
+    -PERFSIM:run_catalyze_for_app_trace: null
+    -PERFSIM:generate_all_nvpdms_if_perfalyze_is_disabled: null
+    -PERFSIM:generate-nvpdms-for-instance: -1
+    -no-perfalyze: null
+    -rc:
+    - ${chip}/${chip}_flow.perfsim.rc
+    - /home/scratch.vagarwalla_gpu/perfsim/perfsim_glueviz_memsys_fb.rc
+    -target: PERFSIM
+    -mdiagArgsMore:
+    - "'-utl_script +begin /home/scratch.vagarwalla_gpu/perfsim/ugpu_localization_perfsim.py\
+      \ +end'"
+PIC_Analysis:
+  lsfQueue: o_cpu_64G_4H
+  lsfTimeout: -1
+  lsfCpus: 8
+  pic-perfsim:
+    --dump-all-morph-tpc: false
+    --barrier-analysis: true
