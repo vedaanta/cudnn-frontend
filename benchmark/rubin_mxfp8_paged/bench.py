@@ -28,6 +28,7 @@ Config string keys (comma separated key=val): corr, paged (0|64), half (0|1), pr
 kernel (product|bench|auto), corrfast (0|1|auto), hoist (0|1|auto), rowsum_mma (0|1), cga (1|2|auto),
 sched (natural|lpt|lpt_l2), sf (dense|paged: scale-factor layout the paged bench kernel expects), name.
 """
+
 import argparse
 import json
 import math
@@ -43,8 +44,43 @@ LN2 = math.log(2.0)
 PRODUCT_KERNEL_FILES = {128: "sm107/prefill_d128_mxfp8.py", 256: "sm107/prefill_d256_mxfp8.py"}
 BENCH_KERNEL_FILES = {128: "sm107/prefill_d128_mxfp8_bench.py", 256: "sm107/prefill_d256_mxfp8_bench.py"}
 LEVER_ENV = ("BENCH_PAGED64", "BENCH_CORR", "BENCH_CORRFAST", "BENCH_HOIST", "BENCH_ROWSUM_MMA", "BENCH_HALF", "BENCH_PREFOLDED", "BENCH_KV_RAMP")
-CFG_FIELDS = ("TILE_M", "TILE_N", "TILE_K", "TILE_O", "TILES_Q", "CTA_MMA", "STAGES_KV", "RESCALE_THRESHOLD", "SCHEDULER_POLICY", "MASK_FLAGS", "PAGED_KV", "PAGE_SIZE", "SEQ_KV_LENS_PRESENT", "SOFTMAX_WARPGROUPS", "CORRECTION_WARPS", "SOFTMAX_REGS", "CORRECTION_REGS", "TOTAL_WARPS")
-KMOD_FLAGS = ("SOFTMAX_F16", "SCALE_PREFOLDED", "_FUSED_SHIFT_CVT", "PAGED_KV", "PAGE_SIZE", "POOL_PAGE_ROWS", "HALF_PAGES", "BENCH_PAGED64", "BENCH_CORR", "BENCH_CORRFAST", "BENCH_HOIST", "BENCH_ROWSUM_MMA", "BENCH_HALF", "BENCH_PREFOLDED", "FROST_SOURCE_DIGEST")
+CFG_FIELDS = (
+    "TILE_M",
+    "TILE_N",
+    "TILE_K",
+    "TILE_O",
+    "TILES_Q",
+    "CTA_MMA",
+    "STAGES_KV",
+    "RESCALE_THRESHOLD",
+    "SCHEDULER_POLICY",
+    "MASK_FLAGS",
+    "PAGED_KV",
+    "PAGE_SIZE",
+    "SEQ_KV_LENS_PRESENT",
+    "SOFTMAX_WARPGROUPS",
+    "CORRECTION_WARPS",
+    "SOFTMAX_REGS",
+    "CORRECTION_REGS",
+    "TOTAL_WARPS",
+)
+KMOD_FLAGS = (
+    "SOFTMAX_F16",
+    "SCALE_PREFOLDED",
+    "_FUSED_SHIFT_CVT",
+    "PAGED_KV",
+    "PAGE_SIZE",
+    "POOL_PAGE_ROWS",
+    "HALF_PAGES",
+    "BENCH_PAGED64",
+    "BENCH_CORR",
+    "BENCH_CORRFAST",
+    "BENCH_HOIST",
+    "BENCH_ROWSUM_MMA",
+    "BENCH_HALF",
+    "BENCH_PREFOLDED",
+    "FROST_SOURCE_DIGEST",
+)
 # Adapter gates a paged bench run bypasses (cc 10.7 + fp8 + paged declines; the bench kernel IS the paged body)
 BYPASS_MSGS = ("Rubin paged KV requires", "SM107 sibling", "multiple of 128", "F8_128x4 SF atoms", "not wired in the paged-KV")
 PAGE = 64  # the bench kernels' page (TILE_N / CTA_MMA rows)
@@ -57,7 +93,20 @@ SF_TILE_BYTES = 512  # F8_128x4 atom set of one 128-row x 128-d K/V tile (128 * 
 # ----------------------------------------------------------------------------------------------------
 def parse_config(s, d, defaults):
     """'corr=always,paged=64' -> dict with every key resolved (auto -> concrete where possible)."""
-    c = dict(corr="default", paged=0, half=1, prefolded=1, kernel="auto", corrfast="auto", hoist="auto", rowsum_mma=0, cga="auto", sched=defaults.get("sched", "natural"), sf="auto", name=None)
+    c = dict(
+        corr="default",
+        paged=0,
+        half=1,
+        prefolded=1,
+        kernel="auto",
+        corrfast="auto",
+        hoist="auto",
+        rowsum_mma=0,
+        cga="auto",
+        sched=defaults.get("sched", "natural"),
+        sf="auto",
+        name=None,
+    )
     for kv in filter(None, (s or "").split(",")):
         k, _, v = kv.partition("=")
         k = k.strip().lower()
@@ -77,14 +126,23 @@ def parse_config(s, d, defaults):
         raise SystemExit(f"config {s!r} needs the bench kernel (corr/paged/rowsum_mma/corrfast/hoist levers)")
     for k in ("corrfast", "hoist"):
         if c[k] == "auto":
-            c[k] = 1 if c["kernel"] == "bench" else 0
+            # d128 one-off levers (correction fast path, TMEM-base hoist); the d256 bench kernel has no implementation
+            # of either and raises at import when one is set to 1
+            c[k] = 1 if (c["kernel"] == "bench" and d == 128) else 0
         c[k] = int(c[k])
+    if d == 256 and (c["corrfast"] or c["hoist"]):
+        raise SystemExit(f"config {s!r}: corrfast / hoist are d128-only levers (the d256 bench kernel raises at import)")
+    if c["cga"] == "auto" and c["kernel"] == "bench" and d == 256:
+        # The adapter pins quantized d256 to cga1 (a policy line, not a descriptor-window limit); the d256 bench kernel's
+        # loader geometry is cga2 (validated, 6-12 % faster than cga1), so the bench runs cga2 unless told otherwise
+        # (make_api bypasses the policy check; `cga=1` in the config string selects the adapter's choice).
+        c["cga"] = 2
     if c["cga"] != "auto":
         c["cga"] = int(c["cga"])
     if c["sf"] == "auto":
-        # d128 bench loader (K1): K/V scale factors stay dense / tile-indexed, shipped in the prefix of per-pool-page
-        # (n_pages128, H_kv, 1, 512) buffers; the d256 loader's contract follows K2's report (placeholder 'paged').
-        c["sf"] = "dense" if d == 128 else "paged"
+        # Both bench loaders (d128, d256) keep the K/V scale factors dense / tile-indexed and ship them in the prefix of
+        # per-pool-page (n_pages128, H_kv, 1, 4 * d) uint8 buffers: 512 B per 128-row tile at d128, 1024 B at d256.
+        c["sf"] = "dense"
     if not c["name"]:
         parts = [f"corr{c['corr']}", f"p{c['paged']}", "half" if c["half"] else "f32", "pf" if c["prefolded"] else "scale", c["kernel"][:4]]
         if c["kernel"] == "bench":
@@ -133,7 +191,9 @@ def apply_env(c, d, kv_ramp):
 # ----------------------------------------------------------------------------------------------------
 def gpu_clocks():
     try:
-        out = subprocess.check_output(["nvidia-smi", "--query-gpu=clocks.sm,clocks.mem,temperature.gpu,power.draw", "--format=csv,noheader"], text=True, timeout=10)
+        out = subprocess.check_output(
+            ["nvidia-smi", "--query-gpu=clocks.sm,clocks.mem,temperature.gpu,power.draw", "--format=csv,noheader"], text=True, timeout=10
+        )
         return out.strip().splitlines()[0]
     except Exception as e:  # noqa: BLE001
         return f"n/a ({e})"
@@ -202,7 +262,22 @@ def build_case(c, d, S, causal, B, HQ, HKV, kv_ramp, seed=1234, keep_ref=True, k
     del qf, kf, vf, q_in
     qb, kb, vb = bshd(q8), bshd(k8), bshd(v8)
     o = torch.empty(B, S, HQ, d, device=dev, dtype=torch.bfloat16).transpose(1, 2)
-    case = dict(d=d, S=S, causal=causal, scale=scale, ref_scale=ref_scale, o=o, q=qb, k=kb, v=vb, B=B, HQ=HQ, HKV=HKV, adapter=dict(pertensor_fp8=False), exec_extra=dict(sf_q=sf_q, sf_k=sf_k, sf_v=sf_v))
+    case = dict(
+        d=d,
+        S=S,
+        causal=causal,
+        scale=scale,
+        ref_scale=ref_scale,
+        o=o,
+        q=qb,
+        k=kb,
+        v=vb,
+        B=B,
+        HQ=HQ,
+        HKV=HKV,
+        adapter=dict(pertensor_fp8=False),
+        exec_extra=dict(sf_q=sf_q, sf_k=sf_k, sf_v=sf_v),
+    )
     if keep_ref:
         case["ref_inputs"] = (qb, dqq, kb, dqk, vb, dqv)  # dequantize lazily: data.float() * dq
     if c["paged"]:
@@ -235,9 +310,9 @@ def build_case(c, d, S, causal, B, HQ, HKV, kv_ramp, seed=1234, keep_ref=True, k
 def build_paged_sf(c, sf_k, sf_v, bt, B, HKV, S, d, n_pages):
     """K/V scale-factor buffers for the paged bench kernels.
 
-    sf=dense (d128, K1): the dense F8_128x4-swizzled bytes in the prefix of (n_pages128, H_kv, 1, 512) buffers -- the
-    kernel keeps tile-indexed SF, the buffer shape only satisfies the binder's per-page sizing.
-    sf=paged (d256, K2 -- TODO once rep_K2 states the per-page SF layout): placeholder = the same prefix layout.
+    sf=dense (both head dims): the dense F8_128x4-swizzled bytes in the prefix of (n_pages128, H_kv, 1, 4 * d) buffers
+    (512 B per 128-row tile at d128, 1024 B at d256) -- the kernels keep tile-indexed SF (a 64-row page cannot hold a
+    whole F8_128x4 atom set), the buffer shape only satisfies the native binder's per-pool-page sizing.
     """
     import torch
 
@@ -292,6 +367,18 @@ def make_api(case, c):
             return orig(cond, msg)
 
         api._not_implemented_error_if = _lenient
+    if c["kernel"] == "bench" and d == 256 and c["cga"] == 2:
+        # Bench-only bypass of the adapter's quantized-d256 cga policy (it pins cga to 1; the d256 bench kernel's loader
+        # geometry is cga2, validated against the fp32 reference in every mode).
+        orig_ve = api._value_error_if
+
+        def _lenient_cga(cond, msg):
+            if cond and msg and "only supports cga in" in msg:
+                bypassed.append(msg[:80])
+                return
+            return orig_ve(cond, msg)
+
+        api._value_error_if = _lenient_cga
     if c["paged"] and c["prefolded"]:
         # prefolded + paged is a direct `raise` in check_support (routing to the SM100 paged half bodies); this bench
         # kernel IS the paged body: run the remaining checks with the flag off, restore it for compile() (TemplateParams
@@ -466,7 +553,16 @@ def worker_main(args):
     def say(tag, payload):
         print(f"{tag} {json.dumps(payload)}", flush=True)
 
-    say("HELLO", dict(config=c, env=env, device=torch.cuda.get_device_name(), sm_count=props.multi_processor_count, cache_dirs={k: os.environ.get(k) for k in ("CUTE_DSL_CACHE_DIR", "XDG_CACHE_HOME")}))
+    say(
+        "HELLO",
+        dict(
+            config=c,
+            env=env,
+            device=torch.cuda.get_device_name(),
+            sm_count=props.multi_processor_count,
+            cache_dirs={k: os.environ.get(k) for k in ("CUTE_DSL_CACHE_DIR", "XDG_CACHE_HOME")},
+        ),
+    )
     for line in sys.stdin:
         cmd, _, arg = line.strip().partition(" ")
         try:
@@ -475,7 +571,19 @@ def worker_main(args):
                 state.clear()
                 torch.cuda.empty_cache()
                 t0 = time.time()
-                case = build_case(c, args.d, spec["S"], spec["causal"], args.batch, args.heads[0], args.heads[1], args.kv_ramp, seed=args.seed, keep_ref=spec.get("keep_ref", True), kv_growth=args.kv_growth)
+                case = build_case(
+                    c,
+                    args.d,
+                    spec["S"],
+                    spec["causal"],
+                    args.batch,
+                    args.heads[0],
+                    args.heads[1],
+                    args.kv_ramp,
+                    seed=args.seed,
+                    keep_ref=spec.get("keep_ref", True),
+                    kv_growth=args.kv_growth,
+                )
                 t1 = time.time()
                 api = make_api(case, c)
                 ws_bytes = api.scratch_workspace_bytes()
@@ -564,12 +672,34 @@ def coordinator_main(args):
     if len(set(names)) != len(names):
         raise SystemExit(f"duplicate config names: {names}")
     os.makedirs(args.log_dir, exist_ok=True)
-    print(f"[bench] d={args.d} heads {args.heads} B={args.batch} mask={args.mask} seqlens={args.seqlens} configs={names} | rounds={args.rounds} x reps={args.reps}, cooldown {args.cooldown_ms} ms | clocks {gpu_clocks()}", flush=True)
+    print(
+        f"[bench] d={args.d} heads {args.heads} B={args.batch} mask={args.mask} seqlens={args.seqlens} configs={names} | rounds={args.rounds} x reps={args.reps}, cooldown {args.cooldown_ms} ms | clocks {gpu_clocks()}",
+        flush=True,
+    )
     workers = []
     for c in configs:
         env = dict(os.environ)
         env.update(lever_env(c, args.kv_ramp))
-        cmd = [sys.executable, os.path.abspath(__file__), "--worker", "--config", config_to_string(c), "--d", str(args.d), "--batch", str(args.batch), "--heads", str(args.heads[0]), str(args.heads[1]), "--sched", args.sched, "--seed", str(args.seed), "--kv-growth", str(args.kv_growth)]
+        cmd = [
+            sys.executable,
+            os.path.abspath(__file__),
+            "--worker",
+            "--config",
+            config_to_string(c),
+            "--d",
+            str(args.d),
+            "--batch",
+            str(args.batch),
+            "--heads",
+            str(args.heads[0]),
+            str(args.heads[1]),
+            "--sched",
+            args.sched,
+            "--seed",
+            str(args.seed),
+            "--kv-growth",
+            str(args.kv_growth),
+        ]
         if args.kv_ramp:
             cmd.append("--kv-ramp")
         workers.append(Worker(c["name"], cmd, env, os.path.join(args.log_dir, f"worker_{c['name']}.log")))
@@ -583,7 +713,10 @@ def coordinator_main(args):
                 w.send("BUILD " + json.dumps(dict(S=S, causal=causal, keep_ref=keep_ref, warmup=args.warmup)))
             for w in workers:
                 metas[w.name] = w.expect("READY", timeout=args.build_timeout)
-                print(f"[bench] {w.name} S={S}: {metas[w.name]['kernel_file']} cta_mma={metas[w.name]['cta_mma']} compile {metas[w.name]['compile_s']} s kmod={metas[w.name]['kmod']} bypassed={metas[w.name].get('bypassed')}", flush=True)
+                print(
+                    f"[bench] {w.name} S={S}: {metas[w.name]['kernel_file']} cta_mma={metas[w.name]['cta_mma']} compile {metas[w.name]['compile_s']} s kmod={metas[w.name]['kmod']} bypassed={metas[w.name].get('bypassed')}",
+                    flush=True,
+                )
             samples = {w.name: [] for w in workers}
             clocks = [gpu_clocks()]
             t_start = time.time()
@@ -678,7 +811,19 @@ def ncu_run_main(args):
     assert torch.cuda.get_device_capability() == (10, 7)
     causal = args.mask == "causal"
     for S in args.seqlens:
-        case = build_case(c, args.d, S, causal, args.batch, args.heads[0], args.heads[1], args.kv_ramp, seed=args.seed, keep_ref=args.validate != "none", kv_growth=args.kv_growth)
+        case = build_case(
+            c,
+            args.d,
+            S,
+            causal,
+            args.batch,
+            args.heads[0],
+            args.heads[1],
+            args.kv_ramp,
+            seed=args.seed,
+            keep_ref=args.validate != "none",
+            kv_growth=args.kv_growth,
+        )
         api = make_api(case, c)
         ws_bytes = api.scratch_workspace_bytes()
         ws = torch.empty(max(ws_bytes, 1), dtype=torch.uint8, device="cuda") if ws_bytes else None
@@ -702,7 +847,9 @@ def main():
     ap.add_argument("--corr", choices=["default", "always", "never"], default=None, help="shorthand for the single config (see --config)")
     ap.add_argument("--paged", type=int, choices=[0, 64], default=None)
     ap.add_argument("--kernel", choices=["product", "bench", "auto"], default=None)
-    ap.add_argument("--config", default="", help="one config string key=val,... (default: trick stack on the product kernel: corr=default,paged=0,half=1,prefolded=1)")
+    ap.add_argument(
+        "--config", default="", help="one config string key=val,... (default: trick stack on the product kernel: corr=default,paged=0,half=1,prefolded=1)"
+    )
     ap.add_argument("--configs", nargs="*", default=None, help="several config strings, interleaved round-robin in one cell")
     ap.add_argument("--mask", choices=["none", "causal"], default="none")
     ap.add_argument("--seqlens", type=int, nargs="+", default=[8192, 16384, 32768])
@@ -728,7 +875,11 @@ def main():
     ap.add_argument("--worker", action="store_true", help=argparse.SUPPRESS)
     args = ap.parse_args()
     if args.corr or args.paged is not None or args.kernel:
-        extra = [f"corr={args.corr}" if args.corr else "", f"paged={args.paged}" if args.paged is not None else "", f"kernel={args.kernel}" if args.kernel else ""]
+        extra = [
+            f"corr={args.corr}" if args.corr else "",
+            f"paged={args.paged}" if args.paged is not None else "",
+            f"kernel={args.kernel}" if args.kernel else "",
+        ]
         args.config = ",".join(filter(None, [args.config, *extra]))
     if args.print_name:
         for s in args.configs or [args.config]:
