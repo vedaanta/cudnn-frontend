@@ -18,8 +18,8 @@
   "steps_per_sm": 308.14814814814815,
   "step_clk": 1954.3489182692308,
   "mma_util_pct": 26.197983134630157,
-  "binding_unit": "smem",
-  "binding_pct": 39.70631818842383,
+  "binding_unit": "tmem",
+  "binding_pct": 34.48718873582173,
   "inst_per_step": {
    "total": 1934,
    "fma": 768,
@@ -80,10 +80,10 @@
    },
    {
     "unit": "smem",
-    "sol_clk": 776.0,
-    "util_pct": 39.70631818842383,
-    "util_active_pct": 39.70631818842383,
-    "detail": "reads 64 KiB (Q 32 + K/2 16 + V/2 16) + TMA writes 33.0 KiB / 128 B"
+    "sol_clk": 388.0,
+    "util_pct": 19.853159094211914,
+    "util_active_pct": 19.853159094211914,
+    "detail": "reads 64 KiB (Q 32 + K/2 16 + V/2 16) + TMA writes 33.0 KiB / 256 B"
    },
    {
     "unit": "tmem",
@@ -115,7 +115,7 @@
    "issue_per_clk": 4,
    "fma_winst_per_clk": 2,
    "alu_winst_per_clk": 2,
-   "smem_bytes_per_clk": 128,
+   "smem_bytes_per_clk": 256,
    "tmem_bytes_per_clk": 512,
    "l2_bytes_per_clk_sm": 117.6938352572014,
    "dram_bytes_per_s": 8000000000000.0
@@ -216,10 +216,10 @@
    },
    {
     "unit": "smem",
-    "sol_clk": 776.0,
-    "util_pct": 44.505228499273954,
-    "util_active_pct": 44.77856866674893,
-    "detail": "reads 64 KiB (Q 32 + K/2 16 + V/2 16) + TMA writes 33.0 KiB / 128 B"
+    "sol_clk": 388.0,
+    "util_pct": 22.252614249636977,
+    "util_active_pct": 22.389284333374466,
+    "detail": "reads 64 KiB (Q 32 + K/2 16 + V/2 16) + TMA writes 33.0 KiB / 256 B"
    },
    {
     "unit": "tmem",
@@ -269,7 +269,7 @@
    "issue_per_clk": 4,
    "fma_winst_per_clk": 2,
    "alu_winst_per_clk": 2,
-   "smem_bytes_per_clk": 128,
+   "smem_bytes_per_clk": 256,
    "tmem_bytes_per_clk": 512,
    "l2_bytes_per_clk_sm": 117.6938352572014,
    "dram_bytes_per_s": 8000000000000.0
@@ -294,8 +294,8 @@
   "steps_per_sm": 4873.481481481482,
   "step_clk": 1652.0753204036962,
   "mma_util_pct": 30.99132307568696,
-  "binding_unit": "smem",
-  "binding_pct": 46.97122403658805,
+  "binding_unit": "tmem",
+  "binding_pct": 40.79717139260354,
   "inst_per_step": {
    "total": 1934,
    "fma": 768,
@@ -356,10 +356,10 @@
    },
    {
     "unit": "smem",
-    "sol_clk": 776.0,
-    "util_pct": 46.97122403658805,
-    "util_active_pct": 46.97122403658805,
-    "detail": "reads 64 KiB (Q 32 + K/2 16 + V/2 16) + TMA writes 33.0 KiB / 128 B"
+    "sol_clk": 388.0,
+    "util_pct": 23.485612018294024,
+    "util_active_pct": 23.485612018294024,
+    "detail": "reads 64 KiB (Q 32 + K/2 16 + V/2 16) + TMA writes 33.0 KiB / 256 B"
    },
    {
     "unit": "tmem",
@@ -391,7 +391,7 @@
    "issue_per_clk": 4,
    "fma_winst_per_clk": 2,
    "alu_winst_per_clk": 2,
-   "smem_bytes_per_clk": 128,
+   "smem_bytes_per_clk": 256,
    "tmem_bytes_per_clk": 512,
    "l2_bytes_per_clk_sm": 117.6938352572014,
    "dram_bytes_per_s": 8000000000000.0
@@ -416,8 +416,8 @@
   "steps_per_sm": 606.8148148148148,
   "step_clk": 1844.6385498046875,
   "mma_util_pct": 27.756115150808878,
-  "binding_unit": "smem",
-  "binding_pct": 42.067862025444704,
+  "binding_unit": "tmem",
+  "binding_pct": 36.5383234602445,
   "inst_per_step": {
    "total": 1934,
    "fma": 768,
@@ -478,10 +478,10 @@
    },
    {
     "unit": "smem",
-    "sol_clk": 776.0,
-    "util_pct": 42.067862025444704,
-    "util_active_pct": 42.067862025444704,
-    "detail": "reads 64 KiB (Q 32 + K/2 16 + V/2 16) + TMA writes 33.0 KiB / 128 B"
+    "sol_clk": 388.0,
+    "util_pct": 21.033931012722352,
+    "util_active_pct": 21.033931012722352,
+    "detail": "reads 64 KiB (Q 32 + K/2 16 + V/2 16) + TMA writes 33.0 KiB / 256 B"
    },
    {
     "unit": "tmem",
@@ -513,7 +513,7 @@
    "issue_per_clk": 4,
    "fma_winst_per_clk": 2,
    "alu_winst_per_clk": 2,
-   "smem_bytes_per_clk": 128,
+   "smem_bytes_per_clk": 256,
    "tmem_bytes_per_clk": 512,
    "l2_bytes_per_clk_sm": 117.6938352572014,
    "dram_bytes_per_s": 8000000000000.0
@@ -614,10 +614,10 @@
    },
    {
     "unit": "smem",
-    "sol_clk": 776.0,
-    "util_pct": 46.40396190853471,
-    "util_active_pct": 47.123307395469084,
-    "detail": "reads 64 KiB (Q 32 + K/2 16 + V/2 16) + TMA writes 33.0 KiB / 128 B"
+    "sol_clk": 388.0,
+    "util_pct": 23.201980954267356,
+    "util_active_pct": 23.561653697734542,
+    "detail": "reads 64 KiB (Q 32 + K/2 16 + V/2 16) + TMA writes 33.0 KiB / 256 B"
    },
    {
     "unit": "tmem",
@@ -667,7 +667,7 @@
    "issue_per_clk": 4,
    "fma_winst_per_clk": 2,
    "alu_winst_per_clk": 2,
-   "smem_bytes_per_clk": 128,
+   "smem_bytes_per_clk": 256,
    "tmem_bytes_per_clk": 512,
    "l2_bytes_per_clk_sm": 117.16765261770064,
    "dram_bytes_per_s": 8000000000000.0
@@ -692,8 +692,8 @@
   "steps_per_sm": 9709.037037037036,
   "step_clk": 1626.72722946167,
   "mma_util_pct": 31.47423801158325,
-  "binding_unit": "smem",
-  "binding_pct": 47.70314198630586,
+  "binding_unit": "tmem",
+  "binding_pct": 41.43288363243576,
   "inst_per_step": {
    "total": 1934,
    "fma": 768,
@@ -754,10 +754,10 @@
    },
    {
     "unit": "smem",
-    "sol_clk": 776.0,
-    "util_pct": 47.70314198630586,
-    "util_active_pct": 47.70314198630586,
-    "detail": "reads 64 KiB (Q 32 + K/2 16 + V/2 16) + TMA writes 33.0 KiB / 128 B"
+    "sol_clk": 388.0,
+    "util_pct": 23.85157099315293,
+    "util_active_pct": 23.85157099315293,
+    "detail": "reads 64 KiB (Q 32 + K/2 16 + V/2 16) + TMA writes 33.0 KiB / 256 B"
    },
    {
     "unit": "tmem",
@@ -789,7 +789,7 @@
    "issue_per_clk": 4,
    "fma_winst_per_clk": 2,
    "alu_winst_per_clk": 2,
-   "smem_bytes_per_clk": 128,
+   "smem_bytes_per_clk": 256,
    "tmem_bytes_per_clk": 512,
    "l2_bytes_per_clk_sm": 117.6938352572014,
    "dram_bytes_per_s": 8000000000000.0
@@ -814,8 +814,8 @@
   "steps_per_sm": 308.14814814814815,
   "step_clk": 1962.250701923077,
   "mma_util_pct": 26.90787672964218,
-  "binding_unit": "smem",
-  "binding_pct": 40.361815094463275,
+  "binding_unit": "tmem",
+  "binding_pct": 34.34831234049021,
   "inst_per_step": {
    "total": 1934,
    "fma": 768,
@@ -876,10 +876,10 @@
    },
    {
     "unit": "smem",
-    "sol_clk": 792.0,
-    "util_pct": 40.361815094463275,
-    "util_active_pct": 40.361815094463275,
-    "detail": "reads 66 KiB (Q 32 + K/2 16 + V/2 16 + ones 2) + TMA writes 33.0 KiB / 128 B"
+    "sol_clk": 396.0,
+    "util_pct": 20.180907547231637,
+    "util_active_pct": 20.180907547231637,
+    "detail": "reads 66 KiB (Q 32 + K/2 16 + V/2 16 + ones 2) + TMA writes 33.0 KiB / 256 B"
    },
    {
     "unit": "tmem",
@@ -911,7 +911,7 @@
    "issue_per_clk": 4,
    "fma_winst_per_clk": 2,
    "alu_winst_per_clk": 2,
-   "smem_bytes_per_clk": 128,
+   "smem_bytes_per_clk": 256,
    "tmem_bytes_per_clk": 512,
    "l2_bytes_per_clk_sm": 117.6938352572014,
    "dram_bytes_per_s": 8000000000000.0
@@ -936,8 +936,8 @@
   "steps_per_sm": 1223.111111111111,
   "step_clk": 1756.0044549418606,
   "mma_util_pct": 30.06826084717886,
-  "binding_unit": "smem",
-  "binding_pct": 45.10239127076829,
+  "binding_unit": "tmem",
+  "binding_pct": 38.38259055113362,
   "inst_per_step": {
    "total": 2665.7951187015506,
    "fma": 882.3101229408915,
@@ -1012,10 +1012,10 @@
    },
    {
     "unit": "smem",
-    "sol_clk": 792.0,
-    "util_pct": 45.10239127076829,
-    "util_active_pct": 45.39186861211731,
-    "detail": "reads 66 KiB (Q 32 + K/2 16 + V/2 16 + ones 2) + TMA writes 33.0 KiB / 128 B"
+    "sol_clk": 396.0,
+    "util_pct": 22.551195635384143,
+    "util_active_pct": 22.695934306058653,
+    "detail": "reads 66 KiB (Q 32 + K/2 16 + V/2 16 + ones 2) + TMA writes 33.0 KiB / 256 B"
    },
    {
     "unit": "tmem",
@@ -1065,7 +1065,7 @@
    "issue_per_clk": 4,
    "fma_winst_per_clk": 2,
    "alu_winst_per_clk": 2,
-   "smem_bytes_per_clk": 128,
+   "smem_bytes_per_clk": 256,
    "tmem_bytes_per_clk": 512,
    "l2_bytes_per_clk_sm": 117.60403526493246,
    "dram_bytes_per_s": 8000000000000.0
@@ -1090,8 +1090,8 @@
   "steps_per_sm": 4873.481481481482,
   "step_clk": 1670.192840770914,
   "mma_util_pct": 31.61311598942611,
-  "binding_unit": "smem",
-  "binding_pct": 47.419673984139166,
+  "binding_unit": "tmem",
+  "binding_pct": 40.35462154710833,
   "inst_per_step": {
    "total": 1934,
    "fma": 768,
@@ -1152,10 +1152,10 @@
    },
    {
     "unit": "smem",
-    "sol_clk": 792.0,
-    "util_pct": 47.419673984139166,
-    "util_active_pct": 47.419673984139166,
-    "detail": "reads 66 KiB (Q 32 + K/2 16 + V/2 16 + ones 2) + TMA writes 33.0 KiB / 128 B"
+    "sol_clk": 396.0,
+    "util_pct": 23.709836992069583,
+    "util_active_pct": 23.709836992069583,
+    "detail": "reads 66 KiB (Q 32 + K/2 16 + V/2 16 + ones 2) + TMA writes 33.0 KiB / 256 B"
    },
    {
     "unit": "tmem",
@@ -1187,7 +1187,7 @@
    "issue_per_clk": 4,
    "fma_winst_per_clk": 2,
    "alu_winst_per_clk": 2,
-   "smem_bytes_per_clk": 128,
+   "smem_bytes_per_clk": 256,
    "tmem_bytes_per_clk": 512,
    "l2_bytes_per_clk_sm": 117.6938352572014,
    "dram_bytes_per_s": 8000000000000.0
@@ -1212,8 +1212,8 @@
   "steps_per_sm": 606.8148148148148,
   "step_clk": 1862.8706689453127,
   "mma_util_pct": 28.34335248291465,
-  "binding_unit": "smem",
-  "binding_pct": 42.51502872437197,
+  "binding_unit": "tmem",
+  "binding_pct": 36.18071888917514,
   "inst_per_step": {
    "total": 1934,
    "fma": 768,
@@ -1274,10 +1274,10 @@
    },
    {
     "unit": "smem",
-    "sol_clk": 792.0,
-    "util_pct": 42.51502872437197,
-    "util_active_pct": 42.51502872437197,
-    "detail": "reads 66 KiB (Q 32 + K/2 16 + V/2 16 + ones 2) + TMA writes 33.0 KiB / 128 B"
+    "sol_clk": 396.0,
+    "util_pct": 21.257514362185987,
+    "util_active_pct": 21.257514362185987,
+    "detail": "reads 66 KiB (Q 32 + K/2 16 + V/2 16 + ones 2) + TMA writes 33.0 KiB / 256 B"
    },
    {
     "unit": "tmem",
@@ -1309,7 +1309,7 @@
    "issue_per_clk": 4,
    "fma_winst_per_clk": 2,
    "alu_winst_per_clk": 2,
-   "smem_bytes_per_clk": 128,
+   "smem_bytes_per_clk": 256,
    "tmem_bytes_per_clk": 512,
    "l2_bytes_per_clk_sm": 117.6938352572014,
    "dram_bytes_per_s": 8000000000000.0
@@ -1334,8 +1334,8 @@
   "steps_per_sm": 2427.259259259259,
   "step_clk": 1697.4765197753907,
   "mma_util_pct": 31.104995789271047,
-  "binding_unit": "smem",
-  "binding_pct": 46.65749368390657,
+  "binding_unit": "tmem",
+  "binding_pct": 39.70599841281948,
   "inst_per_step": {
    "total": 2597.987720489502,
    "fma": 848.1118621826172,
@@ -1410,10 +1410,10 @@
    },
    {
     "unit": "smem",
-    "sol_clk": 792.0,
-    "util_pct": 46.65749368390657,
-    "util_active_pct": 47.37262687956729,
-    "detail": "reads 66 KiB (Q 32 + K/2 16 + V/2 16 + ones 2) + TMA writes 33.0 KiB / 128 B"
+    "sol_clk": 396.0,
+    "util_pct": 23.328746841953286,
+    "util_active_pct": 23.686313439783646,
+    "detail": "reads 66 KiB (Q 32 + K/2 16 + V/2 16 + ones 2) + TMA writes 33.0 KiB / 256 B"
    },
    {
     "unit": "tmem",
@@ -1463,7 +1463,7 @@
    "issue_per_clk": 4,
    "fma_winst_per_clk": 2,
    "alu_winst_per_clk": 2,
-   "smem_bytes_per_clk": 128,
+   "smem_bytes_per_clk": 256,
    "tmem_bytes_per_clk": 512,
    "l2_bytes_per_clk_sm": 116.97657411352056,
    "dram_bytes_per_s": 8000000000000.0
@@ -1488,8 +1488,8 @@
   "steps_per_sm": 9709.037037037036,
   "step_clk": 1657.1993142700196,
   "mma_util_pct": 31.860983495070954,
-  "binding_unit": "smem",
-  "binding_pct": 47.79147524260643,
+  "binding_unit": "tmem",
+  "binding_pct": 40.671028173632244,
   "inst_per_step": {
    "total": 1934,
    "fma": 768,
@@ -1550,10 +1550,10 @@
    },
    {
     "unit": "smem",
-    "sol_clk": 792.0,
-    "util_pct": 47.79147524260643,
-    "util_active_pct": 47.79147524260643,
-    "detail": "reads 66 KiB (Q 32 + K/2 16 + V/2 16 + ones 2) + TMA writes 33.0 KiB / 128 B"
+    "sol_clk": 396.0,
+    "util_pct": 23.895737621303216,
+    "util_active_pct": 23.895737621303216,
+    "detail": "reads 66 KiB (Q 32 + K/2 16 + V/2 16 + ones 2) + TMA writes 33.0 KiB / 256 B"
    },
    {
     "unit": "tmem",
@@ -1585,7 +1585,7 @@
    "issue_per_clk": 4,
    "fma_winst_per_clk": 2,
    "alu_winst_per_clk": 2,
-   "smem_bytes_per_clk": 128,
+   "smem_bytes_per_clk": 256,
    "tmem_bytes_per_clk": 512,
    "l2_bytes_per_clk_sm": 117.6938352572014,
    "dram_bytes_per_s": 8000000000000.0
@@ -1610,8 +1610,8 @@
   "steps_per_sm": 308.14814814814815,
   "step_clk": 1369.3100625000002,
   "mma_util_pct": 37.39109307830709,
-  "binding_unit": "smem",
-  "binding_pct": 56.67087544680918,
+  "binding_unit": "tensor",
+  "binding_pct": 37.39109307830709,
   "inst_per_step": {
    "total": 1358,
    "fma": 256,
@@ -1672,10 +1672,10 @@
    },
    {
     "unit": "smem",
-    "sol_clk": 776.0,
-    "util_pct": 56.67087544680918,
-    "util_active_pct": 56.67087544680918,
-    "detail": "reads 64 KiB (Q 32 + K/2 16 + V/2 16) + TMA writes 33.0 KiB / 128 B"
+    "sol_clk": 388.0,
+    "util_pct": 28.33543772340459,
+    "util_active_pct": 28.33543772340459,
+    "detail": "reads 64 KiB (Q 32 + K/2 16 + V/2 16) + TMA writes 33.0 KiB / 256 B"
    },
    {
     "unit": "tmem",
@@ -1707,7 +1707,7 @@
    "issue_per_clk": 4,
    "fma_winst_per_clk": 2,
    "alu_winst_per_clk": 2,
-   "smem_bytes_per_clk": 128,
+   "smem_bytes_per_clk": 256,
    "tmem_bytes_per_clk": 512,
    "l2_bytes_per_clk_sm": 117.6938352572014,
    "dram_bytes_per_s": 8000000000000.0
@@ -1732,8 +1732,8 @@
   "steps_per_sm": 1223.111111111111,
   "step_clk": 1311.6012318313951,
   "mma_util_pct": 39.03625489014614,
-  "binding_unit": "smem",
-  "binding_pct": 59.164323817877744,
+  "binding_unit": "issue",
+  "binding_pct": 54.507714917309066,
   "inst_per_step": {
    "total": 2859.695441194283,
    "fma": 693.1493610707364,
@@ -1808,10 +1808,10 @@
    },
    {
     "unit": "smem",
-    "sol_clk": 776.0,
-    "util_pct": 59.164323817877744,
-    "util_active_pct": 59.995835422040166,
-    "detail": "reads 64 KiB (Q 32 + K/2 16 + V/2 16) + TMA writes 33.0 KiB / 128 B"
+    "sol_clk": 388.0,
+    "util_pct": 29.582161908938872,
+    "util_active_pct": 29.997917711020083,
+    "detail": "reads 64 KiB (Q 32 + K/2 16 + V/2 16) + TMA writes 33.0 KiB / 256 B"
    },
    {
     "unit": "tmem",
@@ -1861,7 +1861,7 @@
    "issue_per_clk": 4,
    "fma_winst_per_clk": 2,
    "alu_winst_per_clk": 2,
-   "smem_bytes_per_clk": 128,
+   "smem_bytes_per_clk": 256,
    "tmem_bytes_per_clk": 512,
    "l2_bytes_per_clk_sm": 121.15600788868856,
    "dram_bytes_per_s": 8000000000000.0
@@ -1886,8 +1886,8 @@
   "steps_per_sm": 4873.481481481482,
   "step_clk": 1331.562560493677,
   "mma_util_pct": 38.451066077599535,
-  "binding_unit": "smem",
-  "binding_pct": 58.277397023861795,
+  "binding_unit": "tensor",
+  "binding_pct": 38.451066077599535,
   "inst_per_step": {
    "total": 1358,
    "fma": 256,
@@ -1948,10 +1948,10 @@
    },
    {
     "unit": "smem",
-    "sol_clk": 776.0,
-    "util_pct": 58.277397023861795,
-    "util_active_pct": 58.277397023861795,
-    "detail": "reads 64 KiB (Q 32 + K/2 16 + V/2 16) + TMA writes 33.0 KiB / 128 B"
+    "sol_clk": 388.0,
+    "util_pct": 29.138698511930897,
+    "util_active_pct": 29.138698511930897,
+    "detail": "reads 64 KiB (Q 32 + K/2 16 + V/2 16) + TMA writes 33.0 KiB / 256 B"
    },
    {
     "unit": "tmem",
@@ -1983,7 +1983,7 @@
    "issue_per_clk": 4,
    "fma_winst_per_clk": 2,
    "alu_winst_per_clk": 2,
-   "smem_bytes_per_clk": 128,
+   "smem_bytes_per_clk": 256,
    "tmem_bytes_per_clk": 512,
    "l2_bytes_per_clk_sm": 117.6938352572014,
    "dram_bytes_per_s": 8000000000000.0
@@ -2008,8 +2008,8 @@
   "steps_per_sm": 606.8148148148148,
   "step_clk": 1272.6252905273439,
   "mma_util_pct": 40.23179515691065,
-  "binding_unit": "smem",
-  "binding_pct": 60.976314534692705,
+  "binding_unit": "tensor",
+  "binding_pct": 40.23179515691065,
   "inst_per_step": {
    "total": 1358,
    "fma": 256,
@@ -2070,10 +2070,10 @@
    },
    {
     "unit": "smem",
-    "sol_clk": 776.0,
-    "util_pct": 60.976314534692705,
-    "util_active_pct": 60.976314534692705,
-    "detail": "reads 64 KiB (Q 32 + K/2 16 + V/2 16) + TMA writes 33.0 KiB / 128 B"
+    "sol_clk": 388.0,
+    "util_pct": 30.488157267346352,
+    "util_active_pct": 30.488157267346352,
+    "detail": "reads 64 KiB (Q 32 + K/2 16 + V/2 16) + TMA writes 33.0 KiB / 256 B"
    },
    {
     "unit": "tmem",
@@ -2105,7 +2105,7 @@
    "issue_per_clk": 4,
    "fma_winst_per_clk": 2,
    "alu_winst_per_clk": 2,
-   "smem_bytes_per_clk": 128,
+   "smem_bytes_per_clk": 256,
    "tmem_bytes_per_clk": 512,
    "l2_bytes_per_clk_sm": 117.6938352572014,
    "dram_bytes_per_s": 8000000000000.0
@@ -2130,8 +2130,8 @@
   "steps_per_sm": 2427.259259259259,
   "step_clk": 1083.0385217285157,
   "mma_util_pct": 47.27440342406792,
-  "binding_unit": "smem",
-  "binding_pct": 71.65026768960294,
+  "binding_unit": "issue",
+  "binding_pct": 63.38751110524191,
   "inst_per_step": {
    "total": 2746.044652938843,
    "fma": 652.232536315918,
@@ -2206,10 +2206,10 @@
    },
    {
     "unit": "smem",
-    "sol_clk": 776.0,
-    "util_pct": 71.65026768960294,
-    "util_active_pct": 72.95882237742846,
-    "detail": "reads 64 KiB (Q 32 + K/2 16 + V/2 16) + TMA writes 33.0 KiB / 128 B"
+    "sol_clk": 388.0,
+    "util_pct": 35.82513384480147,
+    "util_active_pct": 36.47941118871423,
+    "detail": "reads 64 KiB (Q 32 + K/2 16 + V/2 16) + TMA writes 33.0 KiB / 256 B"
    },
    {
     "unit": "tmem",
@@ -2259,7 +2259,7 @@
    "issue_per_clk": 4,
    "fma_winst_per_clk": 2,
    "alu_winst_per_clk": 2,
-   "smem_bytes_per_clk": 128,
+   "smem_bytes_per_clk": 256,
    "tmem_bytes_per_clk": 512,
    "l2_bytes_per_clk_sm": 122.70837888733067,
    "dram_bytes_per_s": 8000000000000.0
@@ -2284,8 +2284,8 @@
   "steps_per_sm": 9709.037037037036,
   "step_clk": 1028.5223428344727,
   "mma_util_pct": 49.78015339841769,
-  "binding_unit": "smem",
-  "binding_pct": 75.4480449944768,
+  "binding_unit": "tensor",
+  "binding_pct": 49.78015339841769,
   "inst_per_step": {
    "total": 1358,
    "fma": 256,
@@ -2346,10 +2346,10 @@
    },
    {
     "unit": "smem",
-    "sol_clk": 776.0,
-    "util_pct": 75.4480449944768,
-    "util_active_pct": 75.4480449944768,
-    "detail": "reads 64 KiB (Q 32 + K/2 16 + V/2 16) + TMA writes 33.0 KiB / 128 B"
+    "sol_clk": 388.0,
+    "util_pct": 37.7240224972384,
+    "util_active_pct": 37.7240224972384,
+    "detail": "reads 64 KiB (Q 32 + K/2 16 + V/2 16) + TMA writes 33.0 KiB / 256 B"
    },
    {
     "unit": "tmem",
@@ -2381,7 +2381,7 @@
    "issue_per_clk": 4,
    "fma_winst_per_clk": 2,
    "alu_winst_per_clk": 2,
-   "smem_bytes_per_clk": 128,
+   "smem_bytes_per_clk": 256,
    "tmem_bytes_per_clk": 512,
    "l2_bytes_per_clk_sm": 117.6938352572014,
    "dram_bytes_per_s": 8000000000000.0
@@ -2407,7 +2407,7 @@
   "step_clk": 1443.648201923077,
   "mma_util_pct": 35.46570413193236,
   "binding_unit": "smem",
-  "binding_pct": 89.7725635839538,
+  "binding_pct": 44.8862817919769,
   "inst_per_step": {
    "total": 1358,
    "fma": 256,
@@ -2468,10 +2468,10 @@
    },
    {
     "unit": "smem",
-    "sol_clk": 1296.0,
-    "util_pct": 89.7725635839538,
-    "util_active_pct": 89.7725635839538,
-    "detail": "reads 96 KiB (Q 32 + K/1 32 + V/1 32) + TMA writes 66.0 KiB / 128 B"
+    "sol_clk": 648.0,
+    "util_pct": 44.8862817919769,
+    "util_active_pct": 44.8862817919769,
+    "detail": "reads 96 KiB (Q 32 + K/1 32 + V/1 32) + TMA writes 66.0 KiB / 256 B"
    },
    {
     "unit": "tmem",
@@ -2503,7 +2503,7 @@
    "issue_per_clk": 4,
    "fma_winst_per_clk": 2,
    "alu_winst_per_clk": 2,
-   "smem_bytes_per_clk": 128,
+   "smem_bytes_per_clk": 256,
    "tmem_bytes_per_clk": 512,
    "l2_bytes_per_clk_sm": 117.6938352572014,
    "dram_bytes_per_s": 8000000000000.0
@@ -2528,8 +2528,8 @@
   "steps_per_sm": 1223.111111111111,
   "step_clk": 1407.2929796511628,
   "mma_util_pct": 36.381905360382994,
-  "binding_unit": "smem",
-  "binding_pct": 92.09169794346946,
+  "binding_unit": "issue",
+  "binding_pct": 55.25242508251529,
   "inst_per_step": {
    "total": 3110.2539970930234,
    "fma": 676.3468386627907,
@@ -2604,10 +2604,10 @@
    },
    {
     "unit": "smem",
-    "sol_clk": 1296.0,
-    "util_pct": 92.09169794346946,
-    "util_active_pct": 93.42002890994695,
-    "detail": "reads 96 KiB (Q 32 + K/1 32 + V/1 32) + TMA writes 66.0 KiB / 128 B"
+    "sol_clk": 648.0,
+    "util_pct": 46.04584897173473,
+    "util_active_pct": 46.710014454973475,
+    "detail": "reads 96 KiB (Q 32 + K/1 32 + V/1 32) + TMA writes 66.0 KiB / 256 B"
    },
    {
     "unit": "tmem",
@@ -2657,7 +2657,7 @@
    "issue_per_clk": 4,
    "fma_winst_per_clk": 2,
    "alu_winst_per_clk": 2,
-   "smem_bytes_per_clk": 128,
+   "smem_bytes_per_clk": 256,
    "tmem_bytes_per_clk": 512,
    "l2_bytes_per_clk_sm": 119.56883333363768,
    "dram_bytes_per_s": 8000000000000.0
@@ -2683,7 +2683,7 @@
   "step_clk": 1435.0482845938716,
   "mma_util_pct": 35.67824201433748,
   "binding_unit": "smem",
-  "binding_pct": 90.31055009879175,
+  "binding_pct": 45.155275049395875,
   "inst_per_step": {
    "total": 1358,
    "fma": 256,
@@ -2744,10 +2744,10 @@
    },
    {
     "unit": "smem",
-    "sol_clk": 1296.0,
-    "util_pct": 90.31055009879175,
-    "util_active_pct": 90.31055009879175,
-    "detail": "reads 96 KiB (Q 32 + K/1 32 + V/1 32) + TMA writes 66.0 KiB / 128 B"
+    "sol_clk": 648.0,
+    "util_pct": 45.155275049395875,
+    "util_active_pct": 45.155275049395875,
+    "detail": "reads 96 KiB (Q 32 + K/1 32 + V/1 32) + TMA writes 66.0 KiB / 256 B"
    },
    {
     "unit": "tmem",
@@ -2779,7 +2779,7 @@
    "issue_per_clk": 4,
    "fma_winst_per_clk": 2,
    "alu_winst_per_clk": 2,
-   "smem_bytes_per_clk": 128,
+   "smem_bytes_per_clk": 256,
    "tmem_bytes_per_clk": 512,
    "l2_bytes_per_clk_sm": 117.6938352572014,
    "dram_bytes_per_s": 8000000000000.0
@@ -2805,7 +2805,7 @@
   "step_clk": 1389.6536791992185,
   "mma_util_pct": 36.8437120459421,
   "binding_unit": "smem",
-  "binding_pct": 93.26064611629093,
+  "binding_pct": 46.630323058145464,
   "inst_per_step": {
    "total": 1358,
    "fma": 256,
@@ -2866,10 +2866,10 @@
    },
    {
     "unit": "smem",
-    "sol_clk": 1296.0,
-    "util_pct": 93.26064611629093,
-    "util_active_pct": 93.26064611629093,
-    "detail": "reads 96 KiB (Q 32 + K/1 32 + V/1 32) + TMA writes 66.0 KiB / 128 B"
+    "sol_clk": 648.0,
+    "util_pct": 46.630323058145464,
+    "util_active_pct": 46.630323058145464,
+    "detail": "reads 96 KiB (Q 32 + K/1 32 + V/1 32) + TMA writes 66.0 KiB / 256 B"
    },
    {
     "unit": "tmem",
@@ -2901,7 +2901,7 @@
    "issue_per_clk": 4,
    "fma_winst_per_clk": 2,
    "alu_winst_per_clk": 2,
-   "smem_bytes_per_clk": 128,
+   "smem_bytes_per_clk": 256,
    "tmem_bytes_per_clk": 512,
    "l2_bytes_per_clk_sm": 117.6938352572014,
    "dram_bytes_per_s": 8000000000000.0
@@ -2926,8 +2926,8 @@
   "steps_per_sm": 2427.259259259259,
   "step_clk": 1197.914507446289,
   "mma_util_pct": 42.74094660490257,
-  "binding_unit": "smem",
-  "binding_pct": 108.18802109365963,
+  "binding_unit": "issue",
+  "binding_pct": 62.988489244006686,
   "inst_per_step": {
    "total": 3018.1930027008057,
    "fma": 652.2323303222656,
@@ -3002,10 +3002,10 @@
    },
    {
     "unit": "smem",
-    "sol_clk": 1296.0,
-    "util_pct": 108.18802109365963,
-    "util_active_pct": 110.77549476897852,
-    "detail": "reads 96 KiB (Q 32 + K/1 32 + V/1 32) + TMA writes 66.0 KiB / 128 B"
+    "sol_clk": 648.0,
+    "util_pct": 54.094010546829814,
+    "util_active_pct": 55.38774738448926,
+    "detail": "reads 96 KiB (Q 32 + K/1 32 + V/1 32) + TMA writes 66.0 KiB / 256 B"
    },
    {
     "unit": "tmem",
@@ -3055,7 +3055,7 @@
    "issue_per_clk": 4,
    "fma_winst_per_clk": 2,
    "alu_winst_per_clk": 2,
-   "smem_bytes_per_clk": 128,
+   "smem_bytes_per_clk": 256,
    "tmem_bytes_per_clk": 512,
    "l2_bytes_per_clk_sm": 120.13593144340814,
    "dram_bytes_per_s": 8000000000000.0
@@ -3081,7 +3081,7 @@
   "step_clk": 1172.0783674621582,
   "mma_util_pct": 43.68308589370245,
   "binding_unit": "smem",
-  "binding_pct": 110.57281116843433,
+  "binding_pct": 55.286405584217164,
   "inst_per_step": {
    "total": 1358,
    "fma": 256,
@@ -3142,10 +3142,10 @@
    },
    {
     "unit": "smem",
-    "sol_clk": 1296.0,
-    "util_pct": 110.57281116843433,
-    "util_active_pct": 110.57281116843433,
-    "detail": "reads 96 KiB (Q 32 + K/1 32 + V/1 32) + TMA writes 66.0 KiB / 128 B"
+    "sol_clk": 648.0,
+    "util_pct": 55.286405584217164,
+    "util_active_pct": 55.286405584217164,
+    "detail": "reads 96 KiB (Q 32 + K/1 32 + V/1 32) + TMA writes 66.0 KiB / 256 B"
    },
    {
     "unit": "tmem",
@@ -3177,7 +3177,7 @@
    "issue_per_clk": 4,
    "fma_winst_per_clk": 2,
    "alu_winst_per_clk": 2,
-   "smem_bytes_per_clk": 128,
+   "smem_bytes_per_clk": 256,
    "tmem_bytes_per_clk": 512,
    "l2_bytes_per_clk_sm": 117.6938352572014,
    "dram_bytes_per_s": 8000000000000.0
@@ -3202,8 +3202,8 @@
   "steps_per_sm": 308.14814814814815,
   "step_clk": 1506.2487403846153,
   "mma_util_pct": 33.99172967070914,
-  "binding_unit": "smem",
-  "binding_pct": 51.51871528216854,
+  "binding_unit": "tensor",
+  "binding_pct": 33.99172967070914,
   "inst_per_step": {
    "total": 1358,
    "fma": 256,
@@ -3264,10 +3264,10 @@
    },
    {
     "unit": "smem",
-    "sol_clk": 776.0,
-    "util_pct": 51.51871528216854,
-    "util_active_pct": 51.51871528216854,
-    "detail": "reads 64 KiB (Q 32 + K/2 16 + V/2 16) + TMA writes 33.0 KiB / 128 B"
+    "sol_clk": 388.0,
+    "util_pct": 25.75935764108427,
+    "util_active_pct": 25.75935764108427,
+    "detail": "reads 64 KiB (Q 32 + K/2 16 + V/2 16) + TMA writes 33.0 KiB / 256 B"
    },
    {
     "unit": "tmem",
@@ -3299,7 +3299,7 @@
    "issue_per_clk": 4,
    "fma_winst_per_clk": 2,
    "alu_winst_per_clk": 2,
-   "smem_bytes_per_clk": 128,
+   "smem_bytes_per_clk": 256,
    "tmem_bytes_per_clk": 512,
    "l2_bytes_per_clk_sm": 117.6938352572014,
    "dram_bytes_per_s": 8000000000000.0
@@ -3324,8 +3324,8 @@
   "steps_per_sm": 1223.111111111111,
   "step_clk": 1484.7973037790698,
   "mma_util_pct": 34.48282123740864,
-  "binding_unit": "smem",
-  "binding_pct": 52.263025937947475,
+  "binding_unit": "issue",
+  "binding_pct": 49.20869331782127,
   "inst_per_step": {
    "total": 2922.597406431686,
    "fma": 693.2232164486434,
@@ -3400,10 +3400,10 @@
    },
    {
     "unit": "smem",
-    "sol_clk": 776.0,
-    "util_pct": 52.263025937947475,
-    "util_active_pct": 52.49514219362393,
-    "detail": "reads 64 KiB (Q 32 + K/2 16 + V/2 16) + TMA writes 33.0 KiB / 128 B"
+    "sol_clk": 388.0,
+    "util_pct": 26.131512968973738,
+    "util_active_pct": 26.247571096811964,
+    "detail": "reads 64 KiB (Q 32 + K/2 16 + V/2 16) + TMA writes 33.0 KiB / 256 B"
    },
    {
     "unit": "tmem",
@@ -3453,7 +3453,7 @@
    "issue_per_clk": 4,
    "fma_winst_per_clk": 2,
    "alu_winst_per_clk": 2,
-   "smem_bytes_per_clk": 128,
+   "smem_bytes_per_clk": 256,
    "tmem_bytes_per_clk": 512,
    "l2_bytes_per_clk_sm": 120.53332802465086,
    "dram_bytes_per_s": 8000000000000.0
@@ -3478,8 +3478,8 @@
   "steps_per_sm": 4873.481481481482,
   "step_clk": 1488.4015928988326,
   "mma_util_pct": 34.39931819763921,
-  "binding_unit": "smem",
-  "binding_pct": 52.13646664329693,
+  "binding_unit": "tensor",
+  "binding_pct": 34.39931819763921,
   "inst_per_step": {
    "total": 1358,
    "fma": 256,
@@ -3540,10 +3540,10 @@
    },
    {
     "unit": "smem",
-    "sol_clk": 776.0,
-    "util_pct": 52.13646664329693,
-    "util_active_pct": 52.13646664329693,
-    "detail": "reads 64 KiB (Q 32 + K/2 16 + V/2 16) + TMA writes 33.0 KiB / 128 B"
+    "sol_clk": 388.0,
+    "util_pct": 26.068233321648464,
+    "util_active_pct": 26.068233321648464,
+    "detail": "reads 64 KiB (Q 32 + K/2 16 + V/2 16) + TMA writes 33.0 KiB / 256 B"
    },
    {
     "unit": "tmem",
@@ -3575,7 +3575,7 @@
    "issue_per_clk": 4,
    "fma_winst_per_clk": 2,
    "alu_winst_per_clk": 2,
-   "smem_bytes_per_clk": 128,
+   "smem_bytes_per_clk": 256,
    "tmem_bytes_per_clk": 512,
    "l2_bytes_per_clk_sm": 117.6938352572014,
    "dram_bytes_per_s": 8000000000000.0
@@ -3600,8 +3600,8 @@
   "steps_per_sm": 606.8148148148148,
   "step_clk": 1409.794716796875,
   "mma_util_pct": 36.31734421329723,
-  "binding_unit": "smem",
-  "binding_pct": 55.043474823278615,
+  "binding_unit": "tensor",
+  "binding_pct": 36.31734421329723,
   "inst_per_step": {
    "total": 1358,
    "fma": 256,
@@ -3662,10 +3662,10 @@
    },
    {
     "unit": "smem",
-    "sol_clk": 776.0,
-    "util_pct": 55.043474823278615,
-    "util_active_pct": 55.043474823278615,
-    "detail": "reads 64 KiB (Q 32 + K/2 16 + V/2 16) + TMA writes 33.0 KiB / 128 B"
+    "sol_clk": 388.0,
+    "util_pct": 27.521737411639307,
+    "util_active_pct": 27.521737411639307,
+    "detail": "reads 64 KiB (Q 32 + K/2 16 + V/2 16) + TMA writes 33.0 KiB / 256 B"
    },
    {
     "unit": "tmem",
@@ -3697,7 +3697,7 @@
    "issue_per_clk": 4,
    "fma_winst_per_clk": 2,
    "alu_winst_per_clk": 2,
-   "smem_bytes_per_clk": 128,
+   "smem_bytes_per_clk": 256,
    "tmem_bytes_per_clk": 512,
    "l2_bytes_per_clk_sm": 117.6938352572014,
    "dram_bytes_per_s": 8000000000000.0
@@ -3722,8 +3722,8 @@
   "steps_per_sm": 2427.259259259259,
   "step_clk": 1169.5242150878905,
   "mma_util_pct": 43.7784864472877,
-  "binding_unit": "smem",
-  "binding_pct": 66.35176852167042,
+  "binding_unit": "issue",
+  "binding_pct": 60.861957644742,
   "inst_per_step": {
    "total": 2847.181329727173,
    "fma": 652.3297882080078,
@@ -3798,10 +3798,10 @@
    },
    {
     "unit": "smem",
-    "sol_clk": 776.0,
-    "util_pct": 66.35176852167042,
-    "util_active_pct": 68.31734185987071,
-    "detail": "reads 64 KiB (Q 32 + K/2 16 + V/2 16) + TMA writes 33.0 KiB / 128 B"
+    "sol_clk": 388.0,
+    "util_pct": 33.17588426083521,
+    "util_active_pct": 34.158670929935354,
+    "detail": "reads 64 KiB (Q 32 + K/2 16 + V/2 16) + TMA writes 33.0 KiB / 256 B"
    },
    {
     "unit": "tmem",
@@ -3851,7 +3851,7 @@
    "issue_per_clk": 4,
    "fma_winst_per_clk": 2,
    "alu_winst_per_clk": 2,
-   "smem_bytes_per_clk": 128,
+   "smem_bytes_per_clk": 256,
    "tmem_bytes_per_clk": 512,
    "l2_bytes_per_clk_sm": 120.46282644835823,
    "dram_bytes_per_s": 8000000000000.0
@@ -3876,8 +3876,8 @@
   "steps_per_sm": 9709.037037037036,
   "step_clk": 1148.3556729125976,
   "mma_util_pct": 44.58548967685282,
-  "binding_unit": "smem",
-  "binding_pct": 67.57488279148006,
+  "binding_unit": "tensor",
+  "binding_pct": 44.58548967685282,
   "inst_per_step": {
    "total": 1358,
    "fma": 256,
@@ -3938,10 +3938,10 @@
    },
    {
     "unit": "smem",
-    "sol_clk": 776.0,
-    "util_pct": 67.57488279148006,
-    "util_active_pct": 67.57488279148006,
-    "detail": "reads 64 KiB (Q 32 + K/2 16 + V/2 16) + TMA writes 33.0 KiB / 128 B"
+    "sol_clk": 388.0,
+    "util_pct": 33.78744139574003,
+    "util_active_pct": 33.78744139574003,
+    "detail": "reads 64 KiB (Q 32 + K/2 16 + V/2 16) + TMA writes 33.0 KiB / 256 B"
    },
    {
     "unit": "tmem",
@@ -3973,7 +3973,7 @@
    "issue_per_clk": 4,
    "fma_winst_per_clk": 2,
    "alu_winst_per_clk": 2,
-   "smem_bytes_per_clk": 128,
+   "smem_bytes_per_clk": 256,
    "tmem_bytes_per_clk": 512,
    "l2_bytes_per_clk_sm": 117.6938352572014,
    "dram_bytes_per_s": 8000000000000.0
@@ -3998,8 +3998,8 @@
   "steps_per_sm": 308.14814814814815,
   "step_clk": 1451.012971153846,
   "mma_util_pct": 36.38837215770265,
-  "binding_unit": "smem",
-  "binding_pct": 54.58255823655397,
+  "binding_unit": "tensor",
+  "binding_pct": 36.38837215770265,
   "inst_per_step": {
    "total": 1358,
    "fma": 256,
@@ -4060,10 +4060,10 @@
    },
    {
     "unit": "smem",
-    "sol_clk": 792.0,
-    "util_pct": 54.58255823655397,
-    "util_active_pct": 54.58255823655397,
-    "detail": "reads 66 KiB (Q 32 + K/2 16 + V/2 16 + ones 2) + TMA writes 33.0 KiB / 128 B"
+    "sol_clk": 396.0,
+    "util_pct": 27.291279118276986,
+    "util_active_pct": 27.291279118276986,
+    "detail": "reads 66 KiB (Q 32 + K/2 16 + V/2 16 + ones 2) + TMA writes 33.0 KiB / 256 B"
    },
    {
     "unit": "tmem",
@@ -4095,7 +4095,7 @@
    "issue_per_clk": 4,
    "fma_winst_per_clk": 2,
    "alu_winst_per_clk": 2,
-   "smem_bytes_per_clk": 128,
+   "smem_bytes_per_clk": 256,
    "tmem_bytes_per_clk": 512,
    "l2_bytes_per_clk_sm": 117.6938352572014,
    "dram_bytes_per_s": 8000000000000.0
@@ -4120,8 +4120,8 @@
   "steps_per_sm": 1223.111111111111,
   "step_clk": 1465.1796257267445,
   "mma_util_pct": 36.0365371404961,
-  "binding_unit": "smem",
-  "binding_pct": 54.05480571074415,
+  "binding_unit": "issue",
+  "binding_pct": 38.06322560411634,
   "inst_per_step": {
    "total": 2230.7785057836727,
    "fma": 346.4961694525194,
@@ -4196,10 +4196,10 @@
    },
    {
     "unit": "smem",
-    "sol_clk": 792.0,
-    "util_pct": 54.05480571074415,
-    "util_active_pct": 55.04740034086092,
-    "detail": "reads 66 KiB (Q 32 + K/2 16 + V/2 16 + ones 2) + TMA writes 33.0 KiB / 128 B"
+    "sol_clk": 396.0,
+    "util_pct": 27.027402855372074,
+    "util_active_pct": 27.52370017043046,
+    "detail": "reads 66 KiB (Q 32 + K/2 16 + V/2 16 + ones 2) + TMA writes 33.0 KiB / 256 B"
    },
    {
     "unit": "tmem",
@@ -4249,7 +4249,7 @@
    "issue_per_clk": 4,
    "fma_winst_per_clk": 2,
    "alu_winst_per_clk": 2,
-   "smem_bytes_per_clk": 128,
+   "smem_bytes_per_clk": 256,
    "tmem_bytes_per_clk": 512,
    "l2_bytes_per_clk_sm": 120.25381858546669,
    "dram_bytes_per_s": 8000000000000.0
@@ -4274,8 +4274,8 @@
   "steps_per_sm": 4873.481481481482,
   "step_clk": 1474.5381730301553,
   "mma_util_pct": 35.807821706980114,
-  "binding_unit": "smem",
-  "binding_pct": 53.711732560470175,
+  "binding_unit": "tensor",
+  "binding_pct": 35.807821706980114,
   "inst_per_step": {
    "total": 1358,
    "fma": 256,
@@ -4336,10 +4336,10 @@
    },
    {
     "unit": "smem",
-    "sol_clk": 792.0,
-    "util_pct": 53.711732560470175,
-    "util_active_pct": 53.711732560470175,
-    "detail": "reads 66 KiB (Q 32 + K/2 16 + V/2 16 + ones 2) + TMA writes 33.0 KiB / 128 B"
+    "sol_clk": 396.0,
+    "util_pct": 26.855866280235087,
+    "util_active_pct": 26.855866280235087,
+    "detail": "reads 66 KiB (Q 32 + K/2 16 + V/2 16 + ones 2) + TMA writes 33.0 KiB / 256 B"
    },
    {
     "unit": "tmem",
@@ -4371,7 +4371,7 @@
    "issue_per_clk": 4,
    "fma_winst_per_clk": 2,
    "alu_winst_per_clk": 2,
-   "smem_bytes_per_clk": 128,
+   "smem_bytes_per_clk": 256,
    "tmem_bytes_per_clk": 512,
    "l2_bytes_per_clk_sm": 117.6938352572014,
    "dram_bytes_per_s": 8000000000000.0
@@ -4396,8 +4396,8 @@
   "steps_per_sm": 606.8148148148148,
   "step_clk": 1415.092939453125,
   "mma_util_pct": 37.31203691851153,
-  "binding_unit": "smem",
-  "binding_pct": 55.9680553777673,
+  "binding_unit": "tensor",
+  "binding_pct": 37.31203691851153,
   "inst_per_step": {
    "total": 1358,
    "fma": 256,
@@ -4458,10 +4458,10 @@
    },
    {
     "unit": "smem",
-    "sol_clk": 792.0,
-    "util_pct": 55.9680553777673,
-    "util_active_pct": 55.9680553777673,
-    "detail": "reads 66 KiB (Q 32 + K/2 16 + V/2 16 + ones 2) + TMA writes 33.0 KiB / 128 B"
+    "sol_clk": 396.0,
+    "util_pct": 27.98402768888365,
+    "util_active_pct": 27.98402768888365,
+    "detail": "reads 66 KiB (Q 32 + K/2 16 + V/2 16 + ones 2) + TMA writes 33.0 KiB / 256 B"
    },
    {
     "unit": "tmem",
@@ -4493,7 +4493,7 @@
    "issue_per_clk": 4,
    "fma_winst_per_clk": 2,
    "alu_winst_per_clk": 2,
-   "smem_bytes_per_clk": 128,
+   "smem_bytes_per_clk": 256,
    "tmem_bytes_per_clk": 512,
    "l2_bytes_per_clk_sm": 117.6938352572014,
    "dram_bytes_per_s": 8000000000000.0
@@ -4518,8 +4518,8 @@
   "steps_per_sm": 2427.259259259259,
   "step_clk": 1174.033547973633,
   "mma_util_pct": 44.973161193845044,
-  "binding_unit": "smem",
-  "binding_pct": 67.45974179076757,
+  "binding_unit": "issue",
+  "binding_pct": 47.22495858006993,
   "inst_per_step": {
    "total": 2217.7474269866943,
    "fma": 312.3306121826172,
@@ -4594,10 +4594,10 @@
    },
    {
     "unit": "smem",
-    "sol_clk": 792.0,
-    "util_pct": 67.45974179076757,
-    "util_active_pct": 68.77544959552748,
-    "detail": "reads 66 KiB (Q 32 + K/2 16 + V/2 16 + ones 2) + TMA writes 33.0 KiB / 128 B"
+    "sol_clk": 396.0,
+    "util_pct": 33.72987089538378,
+    "util_active_pct": 34.38772479776374,
+    "detail": "reads 66 KiB (Q 32 + K/2 16 + V/2 16 + ones 2) + TMA writes 33.0 KiB / 256 B"
    },
    {
     "unit": "tmem",
@@ -4647,7 +4647,7 @@
    "issue_per_clk": 4,
    "fma_winst_per_clk": 2,
    "alu_winst_per_clk": 2,
-   "smem_bytes_per_clk": 128,
+   "smem_bytes_per_clk": 256,
    "tmem_bytes_per_clk": 512,
    "l2_bytes_per_clk_sm": 120.34782142508021,
    "dram_bytes_per_s": 8000000000000.0
@@ -4672,8 +4672,8 @@
   "steps_per_sm": 9709.037037037036,
   "step_clk": 1140.2305952453614,
   "mma_util_pct": 46.30642277112218,
-  "binding_unit": "smem",
-  "binding_pct": 69.45963415668326,
+  "binding_unit": "tensor",
+  "binding_pct": 46.30642277112218,
   "inst_per_step": {
    "total": 1358,
    "fma": 256,
@@ -4734,10 +4734,10 @@
    },
    {
     "unit": "smem",
-    "sol_clk": 792.0,
-    "util_pct": 69.45963415668326,
-    "util_active_pct": 69.45963415668326,
-    "detail": "reads 66 KiB (Q 32 + K/2 16 + V/2 16 + ones 2) + TMA writes 33.0 KiB / 128 B"
+    "sol_clk": 396.0,
+    "util_pct": 34.72981707834163,
+    "util_active_pct": 34.72981707834163,
+    "detail": "reads 66 KiB (Q 32 + K/2 16 + V/2 16 + ones 2) + TMA writes 33.0 KiB / 256 B"
    },
    {
     "unit": "tmem",
@@ -4769,7 +4769,7 @@
    "issue_per_clk": 4,
    "fma_winst_per_clk": 2,
    "alu_winst_per_clk": 2,
-   "smem_bytes_per_clk": 128,
+   "smem_bytes_per_clk": 256,
    "tmem_bytes_per_clk": 512,
    "l2_bytes_per_clk_sm": 117.6938352572014,
    "dram_bytes_per_s": 8000000000000.0
@@ -4794,8 +4794,8 @@
   "steps_per_sm": 308.14814814814815,
   "step_clk": 1502.6430721153847,
   "mma_util_pct": 34.07329455019672,
-  "binding_unit": "smem",
-  "binding_pct": 51.642337052641906,
+  "binding_unit": "tensor",
+  "binding_pct": 34.07329455019672,
   "inst_per_step": {
    "total": 1358,
    "fma": 256,
@@ -4856,10 +4856,10 @@
    },
    {
     "unit": "smem",
-    "sol_clk": 776.0,
-    "util_pct": 51.642337052641906,
-    "util_active_pct": 51.642337052641906,
-    "detail": "reads 64 KiB (Q 32 + K/2 16 + V/2 16) + TMA writes 33.0 KiB / 128 B"
+    "sol_clk": 388.0,
+    "util_pct": 25.821168526320953,
+    "util_active_pct": 25.821168526320953,
+    "detail": "reads 64 KiB (Q 32 + K/2 16 + V/2 16) + TMA writes 33.0 KiB / 256 B"
    },
    {
     "unit": "tmem",
@@ -4891,7 +4891,7 @@
    "issue_per_clk": 4,
    "fma_winst_per_clk": 2,
    "alu_winst_per_clk": 2,
-   "smem_bytes_per_clk": 128,
+   "smem_bytes_per_clk": 256,
    "tmem_bytes_per_clk": 512,
    "l2_bytes_per_clk_sm": 117.6938352572014,
    "dram_bytes_per_s": 8000000000000.0
@@ -4916,8 +4916,8 @@
   "steps_per_sm": 1223.111111111111,
   "step_clk": 1521.9259338662787,
   "mma_util_pct": 33.64158456116998,
-  "binding_unit": "smem",
-  "binding_pct": 50.98802660052325,
+  "binding_unit": "issue",
+  "binding_pct": 48.271124947013725,
   "inst_per_step": {
    "total": 2938.6030765503874,
    "fma": 689.4450248304264,
@@ -4992,10 +4992,10 @@
    },
    {
     "unit": "smem",
-    "sol_clk": 776.0,
-    "util_pct": 50.98802660052325,
-    "util_active_pct": 51.14971717151076,
-    "detail": "reads 64 KiB (Q 32 + K/2 16 + V/2 16) + TMA writes 33.0 KiB / 128 B"
+    "sol_clk": 388.0,
+    "util_pct": 25.494013300261624,
+    "util_active_pct": 25.57485858575538,
+    "detail": "reads 64 KiB (Q 32 + K/2 16 + V/2 16) + TMA writes 33.0 KiB / 256 B"
    },
    {
     "unit": "tmem",
@@ -5045,7 +5045,7 @@
    "issue_per_clk": 4,
    "fma_winst_per_clk": 2,
    "alu_winst_per_clk": 2,
-   "smem_bytes_per_clk": 128,
+   "smem_bytes_per_clk": 256,
    "tmem_bytes_per_clk": 512,
    "l2_bytes_per_clk_sm": 120.02816335498486,
    "dram_bytes_per_s": 8000000000000.0
@@ -5070,8 +5070,8 @@
   "steps_per_sm": 4873.481481481482,
   "step_clk": 1523.8411119892994,
   "mma_util_pct": 33.59930349507432,
-  "binding_unit": "smem",
-  "binding_pct": 50.92394435972201,
+  "binding_unit": "tensor",
+  "binding_pct": 33.59930349507432,
   "inst_per_step": {
    "total": 1358,
    "fma": 256,
@@ -5132,10 +5132,10 @@
    },
    {
     "unit": "smem",
-    "sol_clk": 776.0,
-    "util_pct": 50.92394435972201,
-    "util_active_pct": 50.92394435972201,
-    "detail": "reads 64 KiB (Q 32 + K/2 16 + V/2 16) + TMA writes 33.0 KiB / 128 B"
+    "sol_clk": 388.0,
+    "util_pct": 25.461972179861004,
+    "util_active_pct": 25.461972179861004,
+    "detail": "reads 64 KiB (Q 32 + K/2 16 + V/2 16) + TMA writes 33.0 KiB / 256 B"
    },
    {
     "unit": "tmem",
@@ -5167,7 +5167,7 @@
    "issue_per_clk": 4,
    "fma_winst_per_clk": 2,
    "alu_winst_per_clk": 2,
-   "smem_bytes_per_clk": 128,
+   "smem_bytes_per_clk": 256,
    "tmem_bytes_per_clk": 512,
    "l2_bytes_per_clk_sm": 117.6938352572014,
    "dram_bytes_per_s": 8000000000000.0
@@ -5192,8 +5192,8 @@
   "steps_per_sm": 606.8148148148148,
   "step_clk": 1394.835029296875,
   "mma_util_pct": 36.70684986009385,
-  "binding_unit": "smem",
-  "binding_pct": 55.63381931920474,
+  "binding_unit": "tensor",
+  "binding_pct": 36.70684986009385,
   "inst_per_step": {
    "total": 1358,
    "fma": 256,
@@ -5254,10 +5254,10 @@
    },
    {
     "unit": "smem",
-    "sol_clk": 776.0,
-    "util_pct": 55.63381931920474,
-    "util_active_pct": 55.63381931920474,
-    "detail": "reads 64 KiB (Q 32 + K/2 16 + V/2 16) + TMA writes 33.0 KiB / 128 B"
+    "sol_clk": 388.0,
+    "util_pct": 27.81690965960237,
+    "util_active_pct": 27.81690965960237,
+    "detail": "reads 64 KiB (Q 32 + K/2 16 + V/2 16) + TMA writes 33.0 KiB / 256 B"
    },
    {
     "unit": "tmem",
@@ -5289,7 +5289,7 @@
    "issue_per_clk": 4,
    "fma_winst_per_clk": 2,
    "alu_winst_per_clk": 2,
-   "smem_bytes_per_clk": 128,
+   "smem_bytes_per_clk": 256,
    "tmem_bytes_per_clk": 512,
    "l2_bytes_per_clk_sm": 117.6938352572014,
    "dram_bytes_per_s": 8000000000000.0
@@ -5314,8 +5314,8 @@
   "steps_per_sm": 2427.259259259259,
   "step_clk": 1157.4960809326174,
   "mma_util_pct": 44.23341110472457,
-  "binding_unit": "smem",
-  "binding_pct": 67.04126370559817,
+  "binding_unit": "issue",
+  "binding_pct": 61.856232838375234,
   "inst_per_step": {
    "total": 2863.933883666992,
    "fma": 648.3610382080078,
@@ -5390,10 +5390,10 @@
    },
    {
     "unit": "smem",
-    "sol_clk": 776.0,
-    "util_pct": 67.04126370559817,
-    "util_active_pct": 69.1290266426179,
-    "detail": "reads 64 KiB (Q 32 + K/2 16 + V/2 16) + TMA writes 33.0 KiB / 128 B"
+    "sol_clk": 388.0,
+    "util_pct": 33.520631852799085,
+    "util_active_pct": 34.56451332130895,
+    "detail": "reads 64 KiB (Q 32 + K/2 16 + V/2 16) + TMA writes 33.0 KiB / 256 B"
    },
    {
     "unit": "tmem",
@@ -5443,7 +5443,7 @@
    "issue_per_clk": 4,
    "fma_winst_per_clk": 2,
    "alu_winst_per_clk": 2,
-   "smem_bytes_per_clk": 128,
+   "smem_bytes_per_clk": 256,
    "tmem_bytes_per_clk": 512,
    "l2_bytes_per_clk_sm": 120.6858428976598,
    "dram_bytes_per_s": 8000000000000.0
@@ -5468,8 +5468,8 @@
   "steps_per_sm": 9709.037037037036,
   "step_clk": 1135.51673538208,
   "mma_util_pct": 45.0896040583428,
-  "binding_unit": "smem",
-  "binding_pct": 68.3389311509258,
+  "binding_unit": "tensor",
+  "binding_pct": 45.0896040583428,
   "inst_per_step": {
    "total": 1358,
    "fma": 256,
@@ -5530,10 +5530,10 @@
    },
    {
     "unit": "smem",
-    "sol_clk": 776.0,
-    "util_pct": 68.3389311509258,
-    "util_active_pct": 68.3389311509258,
-    "detail": "reads 64 KiB (Q 32 + K/2 16 + V/2 16) + TMA writes 33.0 KiB / 128 B"
+    "sol_clk": 388.0,
+    "util_pct": 34.1694655754629,
+    "util_active_pct": 34.1694655754629,
+    "detail": "reads 64 KiB (Q 32 + K/2 16 + V/2 16) + TMA writes 33.0 KiB / 256 B"
    },
    {
     "unit": "tmem",
@@ -5565,7 +5565,7 @@
    "issue_per_clk": 4,
    "fma_winst_per_clk": 2,
    "alu_winst_per_clk": 2,
-   "smem_bytes_per_clk": 128,
+   "smem_bytes_per_clk": 256,
    "tmem_bytes_per_clk": 512,
    "l2_bytes_per_clk_sm": 117.6938352572014,
    "dram_bytes_per_s": 8000000000000.0
@@ -5590,8 +5590,8 @@
   "steps_per_sm": 308.14814814814815,
   "step_clk": 1476.406081730769,
   "mma_util_pct": 35.76251862773644,
-  "binding_unit": "smem",
-  "binding_pct": 53.64377794160466,
+  "binding_unit": "tensor",
+  "binding_pct": 35.76251862773644,
   "inst_per_step": {
    "total": 1358,
    "fma": 256,
@@ -5652,10 +5652,10 @@
    },
    {
     "unit": "smem",
-    "sol_clk": 792.0,
-    "util_pct": 53.64377794160466,
-    "util_active_pct": 53.64377794160466,
-    "detail": "reads 66 KiB (Q 32 + K/2 16 + V/2 16 + ones 2) + TMA writes 33.0 KiB / 128 B"
+    "sol_clk": 396.0,
+    "util_pct": 26.82188897080233,
+    "util_active_pct": 26.82188897080233,
+    "detail": "reads 66 KiB (Q 32 + K/2 16 + V/2 16 + ones 2) + TMA writes 33.0 KiB / 256 B"
    },
    {
     "unit": "tmem",
@@ -5687,7 +5687,7 @@
    "issue_per_clk": 4,
    "fma_winst_per_clk": 2,
    "alu_winst_per_clk": 2,
-   "smem_bytes_per_clk": 128,
+   "smem_bytes_per_clk": 256,
    "tmem_bytes_per_clk": 512,
    "l2_bytes_per_clk_sm": 117.6938352572014,
    "dram_bytes_per_s": 8000000000000.0
@@ -5712,8 +5712,8 @@
   "steps_per_sm": 1223.111111111111,
   "step_clk": 1501.4964898255814,
   "mma_util_pct": 35.16491737262297,
-  "binding_unit": "smem",
-  "binding_pct": 52.74737605893446,
+  "binding_unit": "issue",
+  "binding_pct": 38.31776092265789,
   "inst_per_step": {
    "total": 2301.3593409338664,
    "fma": 346.74898558624034,
@@ -5788,10 +5788,10 @@
    },
    {
     "unit": "smem",
-    "sol_clk": 792.0,
-    "util_pct": 52.74737605893446,
-    "util_active_pct": 53.29663140313986,
-    "detail": "reads 66 KiB (Q 32 + K/2 16 + V/2 16 + ones 2) + TMA writes 33.0 KiB / 128 B"
+    "sol_clk": 396.0,
+    "util_pct": 26.37368802946723,
+    "util_active_pct": 26.64831570156993,
+    "detail": "reads 66 KiB (Q 32 + K/2 16 + V/2 16 + ones 2) + TMA writes 33.0 KiB / 256 B"
    },
    {
     "unit": "tmem",
@@ -5841,7 +5841,7 @@
    "issue_per_clk": 4,
    "fma_winst_per_clk": 2,
    "alu_winst_per_clk": 2,
-   "smem_bytes_per_clk": 128,
+   "smem_bytes_per_clk": 256,
    "tmem_bytes_per_clk": 512,
    "l2_bytes_per_clk_sm": 119.79250728890231,
    "dram_bytes_per_s": 8000000000000.0
@@ -5866,8 +5866,8 @@
   "steps_per_sm": 4873.481481481482,
   "step_clk": 1498.4183745744162,
   "mma_util_pct": 35.237154653149766,
-  "binding_unit": "smem",
-  "binding_pct": 52.855731979724645,
+  "binding_unit": "tensor",
+  "binding_pct": 35.237154653149766,
   "inst_per_step": {
    "total": 1358,
    "fma": 256,
@@ -5928,10 +5928,10 @@
    },
    {
     "unit": "smem",
-    "sol_clk": 792.0,
-    "util_pct": 52.855731979724645,
-    "util_active_pct": 52.855731979724645,
-    "detail": "reads 66 KiB (Q 32 + K/2 16 + V/2 16 + ones 2) + TMA writes 33.0 KiB / 128 B"
+    "sol_clk": 396.0,
+    "util_pct": 26.427865989862322,
+    "util_active_pct": 26.427865989862322,
+    "detail": "reads 66 KiB (Q 32 + K/2 16 + V/2 16 + ones 2) + TMA writes 33.0 KiB / 256 B"
    },
    {
     "unit": "tmem",
@@ -5963,7 +5963,7 @@
    "issue_per_clk": 4,
    "fma_winst_per_clk": 2,
    "alu_winst_per_clk": 2,
-   "smem_bytes_per_clk": 128,
+   "smem_bytes_per_clk": 256,
    "tmem_bytes_per_clk": 512,
    "l2_bytes_per_clk_sm": 117.6938352572014,
    "dram_bytes_per_s": 8000000000000.0
@@ -5988,8 +5988,8 @@
   "steps_per_sm": 606.8148148148148,
   "step_clk": 1409.6778442382813,
   "mma_util_pct": 37.455366285146134,
-  "binding_unit": "smem",
-  "binding_pct": 56.1830494277192,
+  "binding_unit": "tensor",
+  "binding_pct": 37.455366285146134,
   "inst_per_step": {
    "total": 1358,
    "fma": 256,
@@ -6050,10 +6050,10 @@
    },
    {
     "unit": "smem",
-    "sol_clk": 792.0,
-    "util_pct": 56.1830494277192,
-    "util_active_pct": 56.1830494277192,
-    "detail": "reads 66 KiB (Q 32 + K/2 16 + V/2 16 + ones 2) + TMA writes 33.0 KiB / 128 B"
+    "sol_clk": 396.0,
+    "util_pct": 28.0915247138596,
+    "util_active_pct": 28.0915247138596,
+    "detail": "reads 66 KiB (Q 32 + K/2 16 + V/2 16 + ones 2) + TMA writes 33.0 KiB / 256 B"
    },
    {
     "unit": "tmem",
@@ -6085,7 +6085,7 @@
    "issue_per_clk": 4,
    "fma_winst_per_clk": 2,
    "alu_winst_per_clk": 2,
-   "smem_bytes_per_clk": 128,
+   "smem_bytes_per_clk": 256,
    "tmem_bytes_per_clk": 512,
    "l2_bytes_per_clk_sm": 117.6938352572014,
    "dram_bytes_per_s": 8000000000000.0
@@ -6110,8 +6110,8 @@
   "steps_per_sm": 2427.259259259259,
   "step_clk": 1167.371812133789,
   "mma_util_pct": 45.22980549229567,
-  "binding_unit": "smem",
-  "binding_pct": 67.8447082384435,
+  "binding_unit": "issue",
+  "binding_pct": 45.823304240950904,
   "inst_per_step": {
    "total": 2139.713348388672,
    "fma": 308.3618621826172,
@@ -6186,10 +6186,10 @@
    },
    {
     "unit": "smem",
-    "sol_clk": 792.0,
-    "util_pct": 67.8447082384435,
-    "util_active_pct": 70.23887707864223,
-    "detail": "reads 66 KiB (Q 32 + K/2 16 + V/2 16 + ones 2) + TMA writes 33.0 KiB / 128 B"
+    "sol_clk": 396.0,
+    "util_pct": 33.92235411922175,
+    "util_active_pct": 35.119438539321116,
+    "detail": "reads 66 KiB (Q 32 + K/2 16 + V/2 16 + ones 2) + TMA writes 33.0 KiB / 256 B"
    },
    {
     "unit": "tmem",
@@ -6239,7 +6239,7 @@
    "issue_per_clk": 4,
    "fma_winst_per_clk": 2,
    "alu_winst_per_clk": 2,
-   "smem_bytes_per_clk": 128,
+   "smem_bytes_per_clk": 256,
    "tmem_bytes_per_clk": 512,
    "l2_bytes_per_clk_sm": 120.203362594044,
    "dram_bytes_per_s": 8000000000000.0
@@ -6264,8 +6264,8 @@
   "steps_per_sm": 9709.037037037036,
   "step_clk": 1155.088019256592,
   "mma_util_pct": 45.7108022243896,
-  "binding_unit": "smem",
-  "binding_pct": 68.56620333658441,
+  "binding_unit": "tensor",
+  "binding_pct": 45.7108022243896,
   "inst_per_step": {
    "total": 1358,
    "fma": 256,
@@ -6326,10 +6326,10 @@
    },
    {
     "unit": "smem",
-    "sol_clk": 792.0,
-    "util_pct": 68.56620333658441,
-    "util_active_pct": 68.56620333658441,
-    "detail": "reads 66 KiB (Q 32 + K/2 16 + V/2 16 + ones 2) + TMA writes 33.0 KiB / 128 B"
+    "sol_clk": 396.0,
+    "util_pct": 34.283101668292204,
+    "util_active_pct": 34.283101668292204,
+    "detail": "reads 66 KiB (Q 32 + K/2 16 + V/2 16 + ones 2) + TMA writes 33.0 KiB / 256 B"
    },
    {
     "unit": "tmem",
@@ -6361,7 +6361,7 @@
    "issue_per_clk": 4,
    "fma_winst_per_clk": 2,
    "alu_winst_per_clk": 2,
-   "smem_bytes_per_clk": 128,
+   "smem_bytes_per_clk": 256,
    "tmem_bytes_per_clk": 512,
    "l2_bytes_per_clk_sm": 117.6938352572014,
    "dram_bytes_per_s": 8000000000000.0

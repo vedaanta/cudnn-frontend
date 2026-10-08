@@ -80,10 +80,10 @@
    },
    {
     "unit": "smem",
-    "sol_clk": 338.0,
-    "util_pct": 32.16881349936366,
-    "util_active_pct": 32.16881349936366,
-    "detail": "reads 34 KiB (Q 16 + K/2 8 + V/2 8 + ones 2) + TMA writes 8.2 KiB / 128 B"
+    "sol_clk": 169.0,
+    "util_pct": 16.08440674968183,
+    "util_active_pct": 16.08440674968183,
+    "detail": "reads 34 KiB (Q 16 + K/2 8 + V/2 8 + ones 2) + TMA writes 8.2 KiB / 256 B"
    },
    {
     "unit": "tmem",
@@ -115,7 +115,7 @@
    "issue_per_clk": 4,
    "fma_winst_per_clk": 2,
    "alu_winst_per_clk": 2,
-   "smem_bytes_per_clk": 128,
+   "smem_bytes_per_clk": 256,
    "tmem_bytes_per_clk": 512,
    "l2_bytes_per_clk_sm": 117.22684144918682,
    "dram_bytes_per_s": 8000000000000.0
@@ -216,10 +216,10 @@
    },
    {
     "unit": "smem",
-    "sol_clk": 338.0,
-    "util_pct": 37.64540934764893,
-    "util_active_pct": 38.34099316781962,
-    "detail": "reads 34 KiB (Q 16 + K/2 8 + V/2 8 + ones 2) + TMA writes 8.2 KiB / 128 B"
+    "sol_clk": 169.0,
+    "util_pct": 18.822704673824465,
+    "util_active_pct": 19.17049658390981,
+    "detail": "reads 34 KiB (Q 16 + K/2 8 + V/2 8 + ones 2) + TMA writes 8.2 KiB / 256 B"
    },
    {
     "unit": "tmem",
@@ -269,7 +269,7 @@
    "issue_per_clk": 4,
    "fma_winst_per_clk": 2,
    "alu_winst_per_clk": 2,
-   "smem_bytes_per_clk": 128,
+   "smem_bytes_per_clk": 256,
    "tmem_bytes_per_clk": 512,
    "l2_bytes_per_clk_sm": 117.22684144918682,
    "dram_bytes_per_s": 8000000000000.0
@@ -356,10 +356,10 @@
    },
    {
     "unit": "smem",
-    "sol_clk": 338.0,
-    "util_pct": 40.0034820306905,
-    "util_active_pct": 40.0034820306905,
-    "detail": "reads 34 KiB (Q 16 + K/2 8 + V/2 8 + ones 2) + TMA writes 8.2 KiB / 128 B"
+    "sol_clk": 169.0,
+    "util_pct": 20.00174101534525,
+    "util_active_pct": 20.00174101534525,
+    "detail": "reads 34 KiB (Q 16 + K/2 8 + V/2 8 + ones 2) + TMA writes 8.2 KiB / 256 B"
    },
    {
     "unit": "tmem",
@@ -391,7 +391,7 @@
    "issue_per_clk": 4,
    "fma_winst_per_clk": 2,
    "alu_winst_per_clk": 2,
-   "smem_bytes_per_clk": 128,
+   "smem_bytes_per_clk": 256,
    "tmem_bytes_per_clk": 512,
    "l2_bytes_per_clk_sm": 117.22684144918682,
    "dram_bytes_per_s": 8000000000000.0
@@ -478,10 +478,10 @@
    },
    {
     "unit": "smem",
-    "sol_clk": 338.0,
-    "util_pct": 34.84244433802315,
-    "util_active_pct": 34.84244433802315,
-    "detail": "reads 34 KiB (Q 16 + K/2 8 + V/2 8 + ones 2) + TMA writes 8.2 KiB / 128 B"
+    "sol_clk": 169.0,
+    "util_pct": 17.421222169011575,
+    "util_active_pct": 17.421222169011575,
+    "detail": "reads 34 KiB (Q 16 + K/2 8 + V/2 8 + ones 2) + TMA writes 8.2 KiB / 256 B"
    },
    {
     "unit": "tmem",
@@ -513,7 +513,7 @@
    "issue_per_clk": 4,
    "fma_winst_per_clk": 2,
    "alu_winst_per_clk": 2,
-   "smem_bytes_per_clk": 128,
+   "smem_bytes_per_clk": 256,
    "tmem_bytes_per_clk": 512,
    "l2_bytes_per_clk_sm": 117.22684144918682,
    "dram_bytes_per_s": 8000000000000.0
@@ -614,10 +614,10 @@
    },
    {
     "unit": "smem",
-    "sol_clk": 338.0,
-    "util_pct": 36.4784135073048,
-    "util_active_pct": 38.553526055003275,
-    "detail": "reads 34 KiB (Q 16 + K/2 8 + V/2 8 + ones 2) + TMA writes 8.2 KiB / 128 B"
+    "sol_clk": 169.0,
+    "util_pct": 18.2392067536524,
+    "util_active_pct": 19.276763027501637,
+    "detail": "reads 34 KiB (Q 16 + K/2 8 + V/2 8 + ones 2) + TMA writes 8.2 KiB / 256 B"
    },
    {
     "unit": "tmem",
@@ -667,7 +667,7 @@
    "issue_per_clk": 4,
    "fma_winst_per_clk": 2,
    "alu_winst_per_clk": 2,
-   "smem_bytes_per_clk": 128,
+   "smem_bytes_per_clk": 256,
    "tmem_bytes_per_clk": 512,
    "l2_bytes_per_clk_sm": 116.54695129978244,
    "dram_bytes_per_s": 8000000000000.0
@@ -754,10 +754,10 @@
    },
    {
     "unit": "smem",
-    "sol_clk": 338.0,
-    "util_pct": 38.62005954562681,
-    "util_active_pct": 38.62005954562681,
-    "detail": "reads 34 KiB (Q 16 + K/2 8 + V/2 8 + ones 2) + TMA writes 8.2 KiB / 128 B"
+    "sol_clk": 169.0,
+    "util_pct": 19.310029772813404,
+    "util_active_pct": 19.310029772813404,
+    "detail": "reads 34 KiB (Q 16 + K/2 8 + V/2 8 + ones 2) + TMA writes 8.2 KiB / 256 B"
    },
    {
     "unit": "tmem",
@@ -789,7 +789,7 @@
    "issue_per_clk": 4,
    "fma_winst_per_clk": 2,
    "alu_winst_per_clk": 2,
-   "smem_bytes_per_clk": 128,
+   "smem_bytes_per_clk": 256,
    "tmem_bytes_per_clk": 512,
    "l2_bytes_per_clk_sm": 117.22684144918682,
    "dram_bytes_per_s": 8000000000000.0
@@ -876,10 +876,10 @@
    },
    {
     "unit": "smem",
-    "sol_clk": 338.0,
-    "util_pct": 42.24605136516296,
-    "util_active_pct": 42.24605136516296,
-    "detail": "reads 34 KiB (Q 16 + K/2 8 + V/2 8 + ones 2) + TMA writes 8.2 KiB / 128 B"
+    "sol_clk": 169.0,
+    "util_pct": 21.12302568258148,
+    "util_active_pct": 21.12302568258148,
+    "detail": "reads 34 KiB (Q 16 + K/2 8 + V/2 8 + ones 2) + TMA writes 8.2 KiB / 256 B"
    },
    {
     "unit": "tmem",
@@ -911,7 +911,7 @@
    "issue_per_clk": 4,
    "fma_winst_per_clk": 2,
    "alu_winst_per_clk": 2,
-   "smem_bytes_per_clk": 128,
+   "smem_bytes_per_clk": 256,
    "tmem_bytes_per_clk": 512,
    "l2_bytes_per_clk_sm": 117.22684144918682,
    "dram_bytes_per_s": 8000000000000.0
@@ -1012,10 +1012,10 @@
    },
    {
     "unit": "smem",
-    "sol_clk": 338.0,
-    "util_pct": 51.2989101154498,
-    "util_active_pct": 52.352736897103036,
-    "detail": "reads 34 KiB (Q 16 + K/2 8 + V/2 8 + ones 2) + TMA writes 8.2 KiB / 128 B"
+    "sol_clk": 169.0,
+    "util_pct": 25.6494550577249,
+    "util_active_pct": 26.176368448551518,
+    "detail": "reads 34 KiB (Q 16 + K/2 8 + V/2 8 + ones 2) + TMA writes 8.2 KiB / 256 B"
    },
    {
     "unit": "tmem",
@@ -1065,7 +1065,7 @@
    "issue_per_clk": 4,
    "fma_winst_per_clk": 2,
    "alu_winst_per_clk": 2,
-   "smem_bytes_per_clk": 128,
+   "smem_bytes_per_clk": 256,
    "tmem_bytes_per_clk": 512,
    "l2_bytes_per_clk_sm": 117.4064626234759,
    "dram_bytes_per_s": 8000000000000.0
@@ -1152,10 +1152,10 @@
    },
    {
     "unit": "smem",
-    "sol_clk": 338.0,
-    "util_pct": 55.4879199018596,
-    "util_active_pct": 55.4879199018596,
-    "detail": "reads 34 KiB (Q 16 + K/2 8 + V/2 8 + ones 2) + TMA writes 8.2 KiB / 128 B"
+    "sol_clk": 169.0,
+    "util_pct": 27.7439599509298,
+    "util_active_pct": 27.7439599509298,
+    "detail": "reads 34 KiB (Q 16 + K/2 8 + V/2 8 + ones 2) + TMA writes 8.2 KiB / 256 B"
    },
    {
     "unit": "tmem",
@@ -1187,7 +1187,7 @@
    "issue_per_clk": 4,
    "fma_winst_per_clk": 2,
    "alu_winst_per_clk": 2,
-   "smem_bytes_per_clk": 128,
+   "smem_bytes_per_clk": 256,
    "tmem_bytes_per_clk": 512,
    "l2_bytes_per_clk_sm": 117.22684144918682,
    "dram_bytes_per_s": 8000000000000.0
@@ -1274,10 +1274,10 @@
    },
    {
     "unit": "smem",
-    "sol_clk": 338.0,
-    "util_pct": 50.23517494419051,
-    "util_active_pct": 50.23517494419051,
-    "detail": "reads 34 KiB (Q 16 + K/2 8 + V/2 8 + ones 2) + TMA writes 8.2 KiB / 128 B"
+    "sol_clk": 169.0,
+    "util_pct": 25.117587472095256,
+    "util_active_pct": 25.117587472095256,
+    "detail": "reads 34 KiB (Q 16 + K/2 8 + V/2 8 + ones 2) + TMA writes 8.2 KiB / 256 B"
    },
    {
     "unit": "tmem",
@@ -1309,7 +1309,7 @@
    "issue_per_clk": 4,
    "fma_winst_per_clk": 2,
    "alu_winst_per_clk": 2,
-   "smem_bytes_per_clk": 128,
+   "smem_bytes_per_clk": 256,
    "tmem_bytes_per_clk": 512,
    "l2_bytes_per_clk_sm": 117.22684144918682,
    "dram_bytes_per_s": 8000000000000.0
@@ -1410,10 +1410,10 @@
    },
    {
     "unit": "smem",
-    "sol_clk": 338.0,
-    "util_pct": 54.11243374566465,
-    "util_active_pct": 57.005582244407165,
-    "detail": "reads 34 KiB (Q 16 + K/2 8 + V/2 8 + ones 2) + TMA writes 8.2 KiB / 128 B"
+    "sol_clk": 169.0,
+    "util_pct": 27.056216872832326,
+    "util_active_pct": 28.502791122203583,
+    "detail": "reads 34 KiB (Q 16 + K/2 8 + V/2 8 + ones 2) + TMA writes 8.2 KiB / 256 B"
    },
    {
     "unit": "tmem",
@@ -1463,7 +1463,7 @@
    "issue_per_clk": 4,
    "fma_winst_per_clk": 2,
    "alu_winst_per_clk": 2,
-   "smem_bytes_per_clk": 128,
+   "smem_bytes_per_clk": 256,
    "tmem_bytes_per_clk": 512,
    "l2_bytes_per_clk_sm": 116.6876664626925,
    "dram_bytes_per_s": 8000000000000.0
@@ -1550,10 +1550,10 @@
    },
    {
     "unit": "smem",
-    "sol_clk": 338.0,
-    "util_pct": 57.42587845887556,
-    "util_active_pct": 57.42587845887556,
-    "detail": "reads 34 KiB (Q 16 + K/2 8 + V/2 8 + ones 2) + TMA writes 8.2 KiB / 128 B"
+    "sol_clk": 169.0,
+    "util_pct": 28.71293922943778,
+    "util_active_pct": 28.71293922943778,
+    "detail": "reads 34 KiB (Q 16 + K/2 8 + V/2 8 + ones 2) + TMA writes 8.2 KiB / 256 B"
    },
    {
     "unit": "tmem",
@@ -1585,7 +1585,7 @@
    "issue_per_clk": 4,
    "fma_winst_per_clk": 2,
    "alu_winst_per_clk": 2,
-   "smem_bytes_per_clk": 128,
+   "smem_bytes_per_clk": 256,
    "tmem_bytes_per_clk": 512,
    "l2_bytes_per_clk_sm": 117.22684144918682,
    "dram_bytes_per_s": 8000000000000.0
@@ -1672,10 +1672,10 @@
    },
    {
     "unit": "smem",
-    "sol_clk": 338.0,
-    "util_pct": 42.42504282015259,
-    "util_active_pct": 42.42504282015259,
-    "detail": "reads 34 KiB (Q 16 + K/2 8 + V/2 8 + ones 2) + TMA writes 8.2 KiB / 128 B"
+    "sol_clk": 169.0,
+    "util_pct": 21.212521410076295,
+    "util_active_pct": 21.212521410076295,
+    "detail": "reads 34 KiB (Q 16 + K/2 8 + V/2 8 + ones 2) + TMA writes 8.2 KiB / 256 B"
    },
    {
     "unit": "tmem",
@@ -1707,7 +1707,7 @@
    "issue_per_clk": 4,
    "fma_winst_per_clk": 2,
    "alu_winst_per_clk": 2,
-   "smem_bytes_per_clk": 128,
+   "smem_bytes_per_clk": 256,
    "tmem_bytes_per_clk": 512,
    "l2_bytes_per_clk_sm": 117.22684144918682,
    "dram_bytes_per_s": 8000000000000.0
@@ -1808,10 +1808,10 @@
    },
    {
     "unit": "smem",
-    "sol_clk": 338.0,
-    "util_pct": 52.54115628637435,
-    "util_active_pct": 53.64250211873129,
-    "detail": "reads 34 KiB (Q 16 + K/2 8 + V/2 8 + ones 2) + TMA writes 8.2 KiB / 128 B"
+    "sol_clk": 169.0,
+    "util_pct": 26.270578143187176,
+    "util_active_pct": 26.821251059365643,
+    "detail": "reads 34 KiB (Q 16 + K/2 8 + V/2 8 + ones 2) + TMA writes 8.2 KiB / 256 B"
    },
    {
     "unit": "tmem",
@@ -1861,7 +1861,7 @@
    "issue_per_clk": 4,
    "fma_winst_per_clk": 2,
    "alu_winst_per_clk": 2,
-   "smem_bytes_per_clk": 128,
+   "smem_bytes_per_clk": 256,
    "tmem_bytes_per_clk": 512,
    "l2_bytes_per_clk_sm": 117.84500855524915,
    "dram_bytes_per_s": 8000000000000.0
@@ -1948,10 +1948,10 @@
    },
    {
     "unit": "smem",
-    "sol_clk": 338.0,
-    "util_pct": 57.13400829390061,
-    "util_active_pct": 57.13400829390061,
-    "detail": "reads 34 KiB (Q 16 + K/2 8 + V/2 8 + ones 2) + TMA writes 8.2 KiB / 128 B"
+    "sol_clk": 169.0,
+    "util_pct": 28.567004146950303,
+    "util_active_pct": 28.567004146950303,
+    "detail": "reads 34 KiB (Q 16 + K/2 8 + V/2 8 + ones 2) + TMA writes 8.2 KiB / 256 B"
    },
    {
     "unit": "tmem",
@@ -1983,7 +1983,7 @@
    "issue_per_clk": 4,
    "fma_winst_per_clk": 2,
    "alu_winst_per_clk": 2,
-   "smem_bytes_per_clk": 128,
+   "smem_bytes_per_clk": 256,
    "tmem_bytes_per_clk": 512,
    "l2_bytes_per_clk_sm": 117.22684144918682,
    "dram_bytes_per_s": 8000000000000.0
@@ -2070,10 +2070,10 @@
    },
    {
     "unit": "smem",
-    "sol_clk": 338.0,
-    "util_pct": 47.83656097817247,
-    "util_active_pct": 47.83656097817247,
-    "detail": "reads 34 KiB (Q 16 + K/2 8 + V/2 8 + ones 2) + TMA writes 8.2 KiB / 128 B"
+    "sol_clk": 169.0,
+    "util_pct": 23.918280489086236,
+    "util_active_pct": 23.918280489086236,
+    "detail": "reads 34 KiB (Q 16 + K/2 8 + V/2 8 + ones 2) + TMA writes 8.2 KiB / 256 B"
    },
    {
     "unit": "tmem",
@@ -2105,7 +2105,7 @@
    "issue_per_clk": 4,
    "fma_winst_per_clk": 2,
    "alu_winst_per_clk": 2,
-   "smem_bytes_per_clk": 128,
+   "smem_bytes_per_clk": 256,
    "tmem_bytes_per_clk": 512,
    "l2_bytes_per_clk_sm": 117.22684144918682,
    "dram_bytes_per_s": 8000000000000.0
@@ -2206,10 +2206,10 @@
    },
    {
     "unit": "smem",
-    "sol_clk": 338.0,
-    "util_pct": 51.56145461607941,
-    "util_active_pct": 54.51794047550567,
-    "detail": "reads 34 KiB (Q 16 + K/2 8 + V/2 8 + ones 2) + TMA writes 8.2 KiB / 128 B"
+    "sol_clk": 169.0,
+    "util_pct": 25.780727308039705,
+    "util_active_pct": 27.258970237752834,
+    "detail": "reads 34 KiB (Q 16 + K/2 8 + V/2 8 + ones 2) + TMA writes 8.2 KiB / 256 B"
    },
    {
     "unit": "tmem",
@@ -2259,7 +2259,7 @@
    "issue_per_clk": 4,
    "fma_winst_per_clk": 2,
    "alu_winst_per_clk": 2,
-   "smem_bytes_per_clk": 128,
+   "smem_bytes_per_clk": 256,
    "tmem_bytes_per_clk": 512,
    "l2_bytes_per_clk_sm": 117.46510531807404,
    "dram_bytes_per_s": 8000000000000.0
@@ -2346,10 +2346,10 @@
    },
    {
     "unit": "smem",
-    "sol_clk": 338.0,
-    "util_pct": 55.16921137014183,
-    "util_active_pct": 55.16921137014183,
-    "detail": "reads 34 KiB (Q 16 + K/2 8 + V/2 8 + ones 2) + TMA writes 8.2 KiB / 128 B"
+    "sol_clk": 169.0,
+    "util_pct": 27.584605685070915,
+    "util_active_pct": 27.584605685070915,
+    "detail": "reads 34 KiB (Q 16 + K/2 8 + V/2 8 + ones 2) + TMA writes 8.2 KiB / 256 B"
    },
    {
     "unit": "tmem",
@@ -2381,7 +2381,7 @@
    "issue_per_clk": 4,
    "fma_winst_per_clk": 2,
    "alu_winst_per_clk": 2,
-   "smem_bytes_per_clk": 128,
+   "smem_bytes_per_clk": 256,
    "tmem_bytes_per_clk": 512,
    "l2_bytes_per_clk_sm": 117.22684144918682,
    "dram_bytes_per_s": 8000000000000.0
@@ -2468,10 +2468,10 @@
    },
    {
     "unit": "smem",
-    "sol_clk": 338.0,
-    "util_pct": 42.61379917664035,
-    "util_active_pct": 42.61379917664035,
-    "detail": "reads 34 KiB (Q 16 + K/2 8 + V/2 8 + ones 2) + TMA writes 8.2 KiB / 128 B"
+    "sol_clk": 169.0,
+    "util_pct": 21.306899588320174,
+    "util_active_pct": 21.306899588320174,
+    "detail": "reads 34 KiB (Q 16 + K/2 8 + V/2 8 + ones 2) + TMA writes 8.2 KiB / 256 B"
    },
    {
     "unit": "tmem",
@@ -2503,7 +2503,7 @@
    "issue_per_clk": 4,
    "fma_winst_per_clk": 2,
    "alu_winst_per_clk": 2,
-   "smem_bytes_per_clk": 128,
+   "smem_bytes_per_clk": 256,
    "tmem_bytes_per_clk": 512,
    "l2_bytes_per_clk_sm": 117.22684144918682,
    "dram_bytes_per_s": 8000000000000.0
@@ -2604,10 +2604,10 @@
    },
    {
     "unit": "smem",
-    "sol_clk": 338.0,
-    "util_pct": 52.560105970055396,
-    "util_active_pct": 53.740519019584156,
-    "detail": "reads 34 KiB (Q 16 + K/2 8 + V/2 8 + ones 2) + TMA writes 8.2 KiB / 128 B"
+    "sol_clk": 169.0,
+    "util_pct": 26.280052985027698,
+    "util_active_pct": 26.870259509792078,
+    "detail": "reads 34 KiB (Q 16 + K/2 8 + V/2 8 + ones 2) + TMA writes 8.2 KiB / 256 B"
    },
    {
     "unit": "tmem",
@@ -2657,7 +2657,7 @@
    "issue_per_clk": 4,
    "fma_winst_per_clk": 2,
    "alu_winst_per_clk": 2,
-   "smem_bytes_per_clk": 128,
+   "smem_bytes_per_clk": 256,
    "tmem_bytes_per_clk": 512,
    "l2_bytes_per_clk_sm": 117.73529146751468,
    "dram_bytes_per_s": 8000000000000.0
@@ -2744,10 +2744,10 @@
    },
    {
     "unit": "smem",
-    "sol_clk": 338.0,
-    "util_pct": 57.065226258462516,
-    "util_active_pct": 57.065226258462516,
-    "detail": "reads 34 KiB (Q 16 + K/2 8 + V/2 8 + ones 2) + TMA writes 8.2 KiB / 128 B"
+    "sol_clk": 169.0,
+    "util_pct": 28.532613129231258,
+    "util_active_pct": 28.532613129231258,
+    "detail": "reads 34 KiB (Q 16 + K/2 8 + V/2 8 + ones 2) + TMA writes 8.2 KiB / 256 B"
    },
    {
     "unit": "tmem",
@@ -2779,7 +2779,7 @@
    "issue_per_clk": 4,
    "fma_winst_per_clk": 2,
    "alu_winst_per_clk": 2,
-   "smem_bytes_per_clk": 128,
+   "smem_bytes_per_clk": 256,
    "tmem_bytes_per_clk": 512,
    "l2_bytes_per_clk_sm": 117.22684144918682,
    "dram_bytes_per_s": 8000000000000.0
@@ -2866,10 +2866,10 @@
    },
    {
     "unit": "smem",
-    "sol_clk": 338.0,
-    "util_pct": 51.24397297626332,
-    "util_active_pct": 51.24397297626332,
-    "detail": "reads 34 KiB (Q 16 + K/2 8 + V/2 8 + ones 2) + TMA writes 8.2 KiB / 128 B"
+    "sol_clk": 169.0,
+    "util_pct": 25.62198648813166,
+    "util_active_pct": 25.62198648813166,
+    "detail": "reads 34 KiB (Q 16 + K/2 8 + V/2 8 + ones 2) + TMA writes 8.2 KiB / 256 B"
    },
    {
     "unit": "tmem",
@@ -2901,7 +2901,7 @@
    "issue_per_clk": 4,
    "fma_winst_per_clk": 2,
    "alu_winst_per_clk": 2,
-   "smem_bytes_per_clk": 128,
+   "smem_bytes_per_clk": 256,
    "tmem_bytes_per_clk": 512,
    "l2_bytes_per_clk_sm": 117.22684144918682,
    "dram_bytes_per_s": 8000000000000.0
@@ -3002,10 +3002,10 @@
    },
    {
     "unit": "smem",
-    "sol_clk": 338.0,
-    "util_pct": 55.48897280022476,
-    "util_active_pct": 58.753185863758276,
-    "detail": "reads 34 KiB (Q 16 + K/2 8 + V/2 8 + ones 2) + TMA writes 8.2 KiB / 128 B"
+    "sol_clk": 169.0,
+    "util_pct": 27.74448640011238,
+    "util_active_pct": 29.376592931879138,
+    "detail": "reads 34 KiB (Q 16 + K/2 8 + V/2 8 + ones 2) + TMA writes 8.2 KiB / 256 B"
    },
    {
     "unit": "tmem",
@@ -3055,7 +3055,7 @@
    "issue_per_clk": 4,
    "fma_winst_per_clk": 2,
    "alu_winst_per_clk": 2,
-   "smem_bytes_per_clk": 128,
+   "smem_bytes_per_clk": 256,
    "tmem_bytes_per_clk": 512,
    "l2_bytes_per_clk_sm": 117.33342215280445,
    "dram_bytes_per_s": 8000000000000.0
@@ -3142,10 +3142,10 @@
    },
    {
     "unit": "smem",
-    "sol_clk": 338.0,
-    "util_pct": 58.706456047203666,
-    "util_active_pct": 58.706456047203666,
-    "detail": "reads 34 KiB (Q 16 + K/2 8 + V/2 8 + ones 2) + TMA writes 8.2 KiB / 128 B"
+    "sol_clk": 169.0,
+    "util_pct": 29.353228023601833,
+    "util_active_pct": 29.353228023601833,
+    "detail": "reads 34 KiB (Q 16 + K/2 8 + V/2 8 + ones 2) + TMA writes 8.2 KiB / 256 B"
    },
    {
     "unit": "tmem",
@@ -3177,7 +3177,7 @@
    "issue_per_clk": 4,
    "fma_winst_per_clk": 2,
    "alu_winst_per_clk": 2,
-   "smem_bytes_per_clk": 128,
+   "smem_bytes_per_clk": 256,
    "tmem_bytes_per_clk": 512,
    "l2_bytes_per_clk_sm": 117.22684144918682,
    "dram_bytes_per_s": 8000000000000.0

@@ -1,6 +1,6 @@
 ## Per-unit SOL model (per 128x128 step per SM)
 
-Constants: tc_mac_per_clk = 16384 (PerfSim gr100 math-SOL (17408 cyc = 32 kv steps x 544) + silicon 6.9 PF/s @ 45 % tensor-active; Blackwell = 8192); xu_lanes_per_clk = 32 (ncu-consistent (fp32 EX2 at 62-68 % MUFU, 770 clk/step); CUDA guide table says 16 for exp2 on cc 10.x); issue_per_clk = 4 (4 SMSP schedulers x 1 warp-instruction/clk); fma_winst_per_clk = 2 (fmaheavy + fmalite, 16 lanes each per SMSP -> 2 clk per warp-instruction per pipe); alu_winst_per_clk = 2 (16 lanes/clk/SMSP); smem_bytes_per_clk = 128 (32 banks x 4 B (plan.md); TMA writes + UMMA operand reads); tmem_bytes_per_clk = 512 (ASSUMED 128 lanes x 32 bit per clock for tcgen05.ld/st); l2_bytes_per_clk_sm = 64 (ASSUMED fallback; replaced by the ncu-derived peak when an ncu row is present); dram_bytes_per_s = 8e+12 (ASSUMED fallback; replaced by the ncu-derived peak when an ncu row is present)
+Constants: tc_mac_per_clk = 16384 (PerfSim gr100 math-SOL (17408 cyc = 32 kv steps x 544) + silicon 6.9 PF/s @ 45 % tensor-active; Blackwell = 8192); xu_lanes_per_clk = 32 (ncu-consistent (fp32 EX2 at 62-68 % MUFU, 770 clk/step); CUDA guide table says 16 for exp2 on cc 10.x); issue_per_clk = 4 (4 SMSP schedulers x 1 warp-instruction/clk); fma_winst_per_clk = 2 (fmaheavy + fmalite, 16 lanes each per SMSP -> 2 clk per warp-instruction per pipe); alu_winst_per_clk = 2 (16 lanes/clk/SMSP); smem_bytes_per_clk = 256 (UTCQMMA operand feed at the 16384 MAC/clk tensor rate (LSU path alone is 128; silicon sustains 138 at d256 cga1); TMA writes + UMMA operand reads); tmem_bytes_per_clk = 512 (ASSUMED 128 lanes x 32 bit per clock for tcgen05.ld/st); l2_bytes_per_clk_sm = 64 (ASSUMED fallback; replaced by the ncu-derived peak when an ncu row is present); dram_bytes_per_s = 8e+12 (ASSUMED fallback; replaced by the ncu-derived peak when an ncu row is present)
 
 Records without an ncu row use the ncu-derived L2 / DRAM peaks of the same head dim: d128: L2 117 B/clk/SM, DRAM 8.0 TB/s
 
@@ -16,7 +16,7 @@ measured 137.0 us @ 2364 MHz, 308 steps/SM -> **1051 clk per 128x128 step**; MMA
 | alu | 30 | 2.9 % | 2.9 % |  | 60 integer/logic ALU warp-instr / 2 (static estimate) |
 | cvt | 256 | 24.4 % | 24.4 % |  | 512 F2FP/I2F convert+pack warp-instr / 2 (static estimate; ncu pipe attribution of F2FP differs) |
 | xu_inst | 260 | 24.7 % | 24.7 % |  | 260 MUFU warp-instr x 32 lanes / 32 (static estimate) |
-| smem | 338 | 32.2 % | 32.2 % |  | reads 34 KiB (Q 16 + K/2 8 + V/2 8 + ones 2) + TMA writes 8.2 KiB / 128 B |
+| smem | 169 | 16.1 % | 16.1 % |  | reads 34 KiB (Q 16 + K/2 8 + V/2 8 + ones 2) + TMA writes 8.2 KiB / 256 B |
 | tmem | 418 | 39.8 % | 39.8 % |  | 209 KiB tcgen05.ld/st / 512 B (assumed) |
 | l2 | 72 | 6.9 % | 6.9 % |  | 8.2 KiB K/V(+SF) per step per SM / 117 B/clk/SM |
 | dram | 113 | 10.8 % | 10.8 % |  | 118 MB whole kernel / 8.0 TB/s |
@@ -33,7 +33,7 @@ measured 464.5 us @ 2364 MHz, 1223 steps/SM -> **898 clk per 128x128 step**; MMA
 | alu | 110 | 12.2 % | 12.4 % | 12.5 | 219 integer/logic ALU warp-instr / 2 (ncu SASS executed) |
 | cvt | 133 | 14.8 % | 15.1 % |  | 266 F2FP/I2F convert+pack warp-instr / 2 (ncu SASS executed; ncu pipe attribution of F2FP differs) |
 | xu_inst | 266 | 29.7 % | 30.2 % | 30.8 | 266 MUFU warp-instr x 32 lanes / 32 (ncu SASS executed) |
-| smem | 338 | 37.6 % | 38.3 % | 31.1 | reads 34 KiB (Q 16 + K/2 8 + V/2 8 + ones 2) + TMA writes 8.2 KiB / 128 B |
+| smem | 169 | 18.8 % | 19.2 % | 31.1 | reads 34 KiB (Q 16 + K/2 8 + V/2 8 + ones 2) + TMA writes 8.2 KiB / 256 B |
 | tmem | 418 | 46.6 % | 47.4 % | 2.9 | 209 KiB tcgen05.ld/st / 512 B (assumed) |
 | l2 | 72 | 8.0 % | 8.2 % | 12.1 | 8.2 KiB K/V(+SF) per step per SM / 117 B/clk/SM |
 | dram | 57 | 6.3 % | 6.5 % |  | 236 MB whole kernel / 8.0 TB/s |
@@ -52,7 +52,7 @@ measured 1741.8 us @ 2364 MHz, 4873 steps/SM -> **845 clk per 128x128 step**; MM
 | alu | 30 | 3.6 % | 3.6 % |  | 60 integer/logic ALU warp-instr / 2 (static estimate) |
 | cvt | 256 | 30.3 % | 30.3 % |  | 512 F2FP/I2F convert+pack warp-instr / 2 (static estimate; ncu pipe attribution of F2FP differs) |
 | xu_inst | 260 | 30.8 % | 30.8 % |  | 260 MUFU warp-instr x 32 lanes / 32 (static estimate) |
-| smem | 338 | 40.0 % | 40.0 % |  | reads 34 KiB (Q 16 + K/2 8 + V/2 8 + ones 2) + TMA writes 8.2 KiB / 128 B |
+| smem | 169 | 20.0 % | 20.0 % |  | reads 34 KiB (Q 16 + K/2 8 + V/2 8 + ones 2) + TMA writes 8.2 KiB / 256 B |
 | tmem | 418 | 49.5 % | 49.5 % |  | 209 KiB tcgen05.ld/st / 512 B (assumed) |
 | l2 | 72 | 8.5 % | 8.5 % |  | 8.2 KiB K/V(+SF) per step per SM / 117 B/clk/SM |
 | dram | 29 | 3.4 % | 3.4 % |  | 472 MB whole kernel / 8.0 TB/s |
@@ -69,7 +69,7 @@ measured 249.0 us @ 2364 MHz, 607 steps/SM -> **970 clk per 128x128 step**; MMA 
 | alu | 30 | 3.1 % | 3.1 % |  | 60 integer/logic ALU warp-instr / 2 (static estimate) |
 | cvt | 256 | 26.4 % | 26.4 % |  | 512 F2FP/I2F convert+pack warp-instr / 2 (static estimate; ncu pipe attribution of F2FP differs) |
 | xu_inst | 260 | 26.8 % | 26.8 % |  | 260 MUFU warp-instr x 32 lanes / 32 (static estimate) |
-| smem | 338 | 34.8 % | 34.8 % |  | reads 34 KiB (Q 16 + K/2 8 + V/2 8 + ones 2) + TMA writes 8.2 KiB / 128 B |
+| smem | 169 | 17.4 % | 17.4 % |  | reads 34 KiB (Q 16 + K/2 8 + V/2 8 + ones 2) + TMA writes 8.2 KiB / 256 B |
 | tmem | 418 | 43.1 % | 43.1 % |  | 209 KiB tcgen05.ld/st / 512 B (assumed) |
 | l2 | 72 | 7.4 % | 7.4 % |  | 8.2 KiB K/V(+SF) per step per SM / 117 B/clk/SM |
 | dram | 57 | 5.9 % | 5.9 % |  | 118 MB whole kernel / 8.0 TB/s |
@@ -86,7 +86,7 @@ measured 951.4 us @ 2364 MHz, 2427 steps/SM -> **927 clk per 128x128 step**; MMA
 | alu | 102 | 11.0 % | 11.6 % | 10.1 | 204 integer/logic ALU warp-instr / 2 (ncu SASS executed) |
 | cvt | 129 | 13.9 % | 14.7 % |  | 258 F2FP/I2F convert+pack warp-instr / 2 (ncu SASS executed; ncu pipe attribution of F2FP differs) |
 | xu_inst | 260 | 28.1 % | 29.7 % | 30.2 | 260 MUFU warp-instr x 32 lanes / 32 (ncu SASS executed) |
-| smem | 338 | 36.5 % | 38.6 % | 29.4 | reads 34 KiB (Q 16 + K/2 8 + V/2 8 + ones 2) + TMA writes 8.2 KiB / 128 B |
+| smem | 169 | 18.2 % | 19.3 % | 29.4 | reads 34 KiB (Q 16 + K/2 8 + V/2 8 + ones 2) + TMA writes 8.2 KiB / 256 B |
 | tmem | 418 | 45.1 % | 47.7 % | 2.9 | 209 KiB tcgen05.ld/st / 512 B (assumed) |
 | l2 | 72 | 7.8 % | 8.3 % | 10.4 | 8.2 KiB K/V(+SF) per step per SM / 117 B/clk/SM |
 | dram | 29 | 3.1 % | 3.3 % |  | 236 MB whole kernel / 8.0 TB/s |
@@ -105,7 +105,7 @@ measured 3594.4 us @ 2364 MHz, 9709 steps/SM -> **875 clk per 128x128 step**; MM
 | alu | 30 | 3.4 % | 3.4 % |  | 60 integer/logic ALU warp-instr / 2 (static estimate) |
 | cvt | 256 | 29.3 % | 29.3 % |  | 512 F2FP/I2F convert+pack warp-instr / 2 (static estimate; ncu pipe attribution of F2FP differs) |
 | xu_inst | 260 | 29.7 % | 29.7 % |  | 260 MUFU warp-instr x 32 lanes / 32 (static estimate) |
-| smem | 338 | 38.6 % | 38.6 % |  | reads 34 KiB (Q 16 + K/2 8 + V/2 8 + ones 2) + TMA writes 8.2 KiB / 128 B |
+| smem | 169 | 19.3 % | 19.3 % |  | reads 34 KiB (Q 16 + K/2 8 + V/2 8 + ones 2) + TMA writes 8.2 KiB / 256 B |
 | tmem | 418 | 47.8 % | 47.8 % |  | 209 KiB tcgen05.ld/st / 512 B (assumed) |
 | l2 | 72 | 8.2 % | 8.2 % |  | 8.2 KiB K/V(+SF) per step per SM / 117 B/clk/SM |
 | dram | 14 | 1.6 % | 1.6 % |  | 472 MB whole kernel / 8.0 TB/s |
@@ -122,7 +122,7 @@ measured 104.3 us @ 2364 MHz, 308 steps/SM -> **800 clk per 128x128 step**; MMA 
 | alu | 30 | 3.7 % | 3.7 % |  | 60 integer/logic ALU warp-instr / 2 (static estimate) |
 | cvt | 256 | 32.0 % | 32.0 % |  | 512 F2FP/I2F convert+pack warp-instr / 2 (static estimate; ncu pipe attribution of F2FP differs) |
 | xu_inst | 260 | 32.5 % | 32.5 % |  | 260 MUFU warp-instr x 32 lanes / 32 (static estimate) |
-| smem | 338 | 42.2 % | 42.2 % |  | reads 34 KiB (Q 16 + K/2 8 + V/2 8 + ones 2) + TMA writes 8.2 KiB / 128 B |
+| smem | 169 | 21.1 % | 21.1 % |  | reads 34 KiB (Q 16 + K/2 8 + V/2 8 + ones 2) + TMA writes 8.2 KiB / 256 B |
 | tmem | 162 | 20.2 % | 20.2 % |  | 81 KiB tcgen05.ld/st / 512 B (assumed) |
 | l2 | 72 | 9.0 % | 9.0 % |  | 8.2 KiB K/V(+SF) per step per SM / 117 B/clk/SM |
 | dram | 113 | 14.1 % | 14.1 % |  | 118 MB whole kernel / 8.0 TB/s |
@@ -139,7 +139,7 @@ measured 340.9 us @ 2364 MHz, 1223 steps/SM -> **659 clk per 128x128 step**; MMA
 | alu | 147 | 22.3 % | 22.8 % | 16.7 | 294 integer/logic ALU warp-instr / 2 (ncu SASS executed) |
 | cvt | 133 | 20.2 % | 20.6 % |  | 266 F2FP/I2F convert+pack warp-instr / 2 (ncu SASS executed; ncu pipe attribution of F2FP differs) |
 | xu_inst | 266 | 40.4 % | 41.2 % | 42.5 | 266 MUFU warp-instr x 32 lanes / 32 (ncu SASS executed) |
-| smem | 338 | 51.3 % | 52.4 % | 42.9 | reads 34 KiB (Q 16 + K/2 8 + V/2 8 + ones 2) + TMA writes 8.2 KiB / 128 B |
+| smem | 169 | 25.6 % | 26.2 % | 42.9 | reads 34 KiB (Q 16 + K/2 8 + V/2 8 + ones 2) + TMA writes 8.2 KiB / 256 B |
 | tmem | 162 | 24.6 % | 25.1 % | 1.7 | 81 KiB tcgen05.ld/st / 512 B (assumed) |
 | l2 | 72 | 10.9 % | 11.1 % | 16.3 | 8.2 KiB K/V(+SF) per step per SM / 117 B/clk/SM |
 | dram | 57 | 8.7 % | 8.8 % |  | 236 MB whole kernel / 8.0 TB/s |
@@ -158,7 +158,7 @@ measured 1255.8 us @ 2364 MHz, 4873 steps/SM -> **609 clk per 128x128 step**; MM
 | alu | 30 | 4.9 % | 4.9 % |  | 60 integer/logic ALU warp-instr / 2 (static estimate) |
 | cvt | 256 | 42.0 % | 42.0 % |  | 512 F2FP/I2F convert+pack warp-instr / 2 (static estimate; ncu pipe attribution of F2FP differs) |
 | xu_inst | 260 | 42.7 % | 42.7 % |  | 260 MUFU warp-instr x 32 lanes / 32 (static estimate) |
-| smem | 338 | 55.5 % | 55.5 % |  | reads 34 KiB (Q 16 + K/2 8 + V/2 8 + ones 2) + TMA writes 8.2 KiB / 128 B |
+| smem | 169 | 27.7 % | 27.7 % |  | reads 34 KiB (Q 16 + K/2 8 + V/2 8 + ones 2) + TMA writes 8.2 KiB / 256 B |
 | tmem | 162 | 26.6 % | 26.6 % |  | 81 KiB tcgen05.ld/st / 512 B (assumed) |
 | l2 | 72 | 11.8 % | 11.8 % |  | 8.2 KiB K/V(+SF) per step per SM / 117 B/clk/SM |
 | dram | 29 | 4.7 % | 4.7 % |  | 472 MB whole kernel / 8.0 TB/s |
@@ -175,7 +175,7 @@ measured 172.7 us @ 2364 MHz, 607 steps/SM -> **673 clk per 128x128 step**; MMA 
 | alu | 30 | 4.5 % | 4.5 % |  | 60 integer/logic ALU warp-instr / 2 (static estimate) |
 | cvt | 256 | 38.0 % | 38.0 % |  | 512 F2FP/I2F convert+pack warp-instr / 2 (static estimate; ncu pipe attribution of F2FP differs) |
 | xu_inst | 260 | 38.6 % | 38.6 % |  | 260 MUFU warp-instr x 32 lanes / 32 (static estimate) |
-| smem | 338 | 50.2 % | 50.2 % |  | reads 34 KiB (Q 16 + K/2 8 + V/2 8 + ones 2) + TMA writes 8.2 KiB / 128 B |
+| smem | 169 | 25.1 % | 25.1 % |  | reads 34 KiB (Q 16 + K/2 8 + V/2 8 + ones 2) + TMA writes 8.2 KiB / 256 B |
 | tmem | 162 | 24.1 % | 24.1 % |  | 81 KiB tcgen05.ld/st / 512 B (assumed) |
 | l2 | 72 | 10.7 % | 10.7 % |  | 8.2 KiB K/V(+SF) per step per SM / 117 B/clk/SM |
 | dram | 57 | 8.5 % | 8.5 % |  | 118 MB whole kernel / 8.0 TB/s |
@@ -192,7 +192,7 @@ measured 641.3 us @ 2364 MHz, 2427 steps/SM -> **625 clk per 128x128 step**; MMA
 | alu | 129 | 20.6 % | 21.7 % | 14.4 | 258 integer/logic ALU warp-instr / 2 (ncu SASS executed) |
 | cvt | 129 | 20.7 % | 21.8 % |  | 258 F2FP/I2F convert+pack warp-instr / 2 (ncu SASS executed; ncu pipe attribution of F2FP differs) |
 | xu_inst | 260 | 41.6 % | 43.9 % | 45.0 | 260 MUFU warp-instr x 32 lanes / 32 (ncu SASS executed) |
-| smem | 338 | 54.1 % | 57.0 % | 44.0 | reads 34 KiB (Q 16 + K/2 8 + V/2 8 + ones 2) + TMA writes 8.2 KiB / 128 B |
+| smem | 169 | 27.1 % | 28.5 % | 44.0 | reads 34 KiB (Q 16 + K/2 8 + V/2 8 + ones 2) + TMA writes 8.2 KiB / 256 B |
 | tmem | 162 | 25.9 % | 27.3 % | 1.7 | 81 KiB tcgen05.ld/st / 512 B (assumed) |
 | l2 | 72 | 11.6 % | 12.2 % | 14.6 | 8.2 KiB K/V(+SF) per step per SM / 117 B/clk/SM |
 | dram | 29 | 4.6 % | 4.8 % |  | 236 MB whole kernel / 8.0 TB/s |
@@ -211,7 +211,7 @@ measured 2417.3 us @ 2364 MHz, 9709 steps/SM -> **589 clk per 128x128 step**; MM
 | alu | 30 | 5.1 % | 5.1 % |  | 60 integer/logic ALU warp-instr / 2 (static estimate) |
 | cvt | 256 | 43.5 % | 43.5 % |  | 512 F2FP/I2F convert+pack warp-instr / 2 (static estimate; ncu pipe attribution of F2FP differs) |
 | xu_inst | 260 | 44.2 % | 44.2 % |  | 260 MUFU warp-instr x 32 lanes / 32 (static estimate) |
-| smem | 338 | 57.4 % | 57.4 % |  | reads 34 KiB (Q 16 + K/2 8 + V/2 8 + ones 2) + TMA writes 8.2 KiB / 128 B |
+| smem | 169 | 28.7 % | 28.7 % |  | reads 34 KiB (Q 16 + K/2 8 + V/2 8 + ones 2) + TMA writes 8.2 KiB / 256 B |
 | tmem | 162 | 27.5 % | 27.5 % |  | 81 KiB tcgen05.ld/st / 512 B (assumed) |
 | l2 | 72 | 12.2 % | 12.2 % |  | 8.2 KiB K/V(+SF) per step per SM / 117 B/clk/SM |
 | dram | 14 | 2.4 % | 2.4 % |  | 472 MB whole kernel / 8.0 TB/s |
@@ -228,7 +228,7 @@ measured 103.8 us @ 2364 MHz, 308 steps/SM -> **797 clk per 128x128 step**; MMA 
 | alu | 30 | 3.8 % | 3.8 % |  | 60 integer/logic ALU warp-instr / 2 (static estimate) |
 | cvt | 256 | 32.1 % | 32.1 % |  | 512 F2FP/I2F convert+pack warp-instr / 2 (static estimate; ncu pipe attribution of F2FP differs) |
 | xu_inst | 260 | 32.6 % | 32.6 % |  | 260 MUFU warp-instr x 32 lanes / 32 (static estimate) |
-| smem | 338 | 42.4 % | 42.4 % |  | reads 34 KiB (Q 16 + K/2 8 + V/2 8 + ones 2) + TMA writes 8.2 KiB / 128 B |
+| smem | 169 | 21.2 % | 21.2 % |  | reads 34 KiB (Q 16 + K/2 8 + V/2 8 + ones 2) + TMA writes 8.2 KiB / 256 B |
 | tmem | 162 | 20.3 % | 20.3 % |  | 81 KiB tcgen05.ld/st / 512 B (assumed) |
 | l2 | 72 | 9.0 % | 9.0 % |  | 8.2 KiB K/V(+SF) per step per SM / 117 B/clk/SM |
 | dram | 113 | 14.2 % | 14.2 % |  | 118 MB whole kernel / 8.0 TB/s |
@@ -245,7 +245,7 @@ measured 332.8 us @ 2364 MHz, 1223 steps/SM -> **643 clk per 128x128 step**; MMA
 | alu | 114 | 17.7 % | 18.0 % | 18.0 | 227 integer/logic ALU warp-instr / 2 (ncu SASS executed) |
 | cvt | 133 | 20.7 % | 21.1 % |  | 266 F2FP/I2F convert+pack warp-instr / 2 (ncu SASS executed; ncu pipe attribution of F2FP differs) |
 | xu_inst | 266 | 41.4 % | 42.3 % | 43.6 | 266 MUFU warp-instr x 32 lanes / 32 (ncu SASS executed) |
-| smem | 338 | 52.5 % | 53.6 % | 43.9 | reads 34 KiB (Q 16 + K/2 8 + V/2 8 + ones 2) + TMA writes 8.2 KiB / 128 B |
+| smem | 169 | 26.3 % | 26.8 % | 43.9 | reads 34 KiB (Q 16 + K/2 8 + V/2 8 + ones 2) + TMA writes 8.2 KiB / 256 B |
 | tmem | 162 | 25.2 % | 25.7 % | 1.2 | 81 KiB tcgen05.ld/st / 512 B (assumed) |
 | l2 | 72 | 11.1 % | 11.4 % | 16.8 | 8.2 KiB K/V(+SF) per step per SM / 118 B/clk/SM |
 | dram | 57 | 8.9 % | 9.0 % |  | 236 MB whole kernel / 8.0 TB/s |
@@ -264,7 +264,7 @@ measured 1219.6 us @ 2364 MHz, 4873 steps/SM -> **592 clk per 128x128 step**; MM
 | alu | 30 | 5.1 % | 5.1 % |  | 60 integer/logic ALU warp-instr / 2 (static estimate) |
 | cvt | 256 | 43.3 % | 43.3 % |  | 512 F2FP/I2F convert+pack warp-instr / 2 (static estimate; ncu pipe attribution of F2FP differs) |
 | xu_inst | 260 | 43.9 % | 43.9 % |  | 260 MUFU warp-instr x 32 lanes / 32 (static estimate) |
-| smem | 338 | 57.1 % | 57.1 % |  | reads 34 KiB (Q 16 + K/2 8 + V/2 8 + ones 2) + TMA writes 8.2 KiB / 128 B |
+| smem | 169 | 28.6 % | 28.6 % |  | reads 34 KiB (Q 16 + K/2 8 + V/2 8 + ones 2) + TMA writes 8.2 KiB / 256 B |
 | tmem | 162 | 27.4 % | 27.4 % |  | 81 KiB tcgen05.ld/st / 512 B (assumed) |
 | l2 | 72 | 12.2 % | 12.2 % |  | 8.2 KiB K/V(+SF) per step per SM / 117 B/clk/SM |
 | dram | 29 | 4.8 % | 4.8 % |  | 472 MB whole kernel / 8.0 TB/s |
@@ -281,7 +281,7 @@ measured 181.4 us @ 2364 MHz, 607 steps/SM -> **707 clk per 128x128 step**; MMA 
 | alu | 30 | 4.2 % | 4.2 % |  | 60 integer/logic ALU warp-instr / 2 (static estimate) |
 | cvt | 256 | 36.2 % | 36.2 % |  | 512 F2FP/I2F convert+pack warp-instr / 2 (static estimate; ncu pipe attribution of F2FP differs) |
 | xu_inst | 260 | 36.8 % | 36.8 % |  | 260 MUFU warp-instr x 32 lanes / 32 (static estimate) |
-| smem | 338 | 47.8 % | 47.8 % |  | reads 34 KiB (Q 16 + K/2 8 + V/2 8 + ones 2) + TMA writes 8.2 KiB / 128 B |
+| smem | 169 | 23.9 % | 23.9 % |  | reads 34 KiB (Q 16 + K/2 8 + V/2 8 + ones 2) + TMA writes 8.2 KiB / 256 B |
 | tmem | 162 | 22.9 % | 22.9 % |  | 81 KiB tcgen05.ld/st / 512 B (assumed) |
 | l2 | 72 | 10.2 % | 10.2 % |  | 8.2 KiB K/V(+SF) per step per SM / 117 B/clk/SM |
 | dram | 57 | 8.1 % | 8.1 % |  | 118 MB whole kernel / 8.0 TB/s |
@@ -298,7 +298,7 @@ measured 673.1 us @ 2364 MHz, 2427 steps/SM -> **656 clk per 128x128 step**; MMA
 | alu | 127 | 19.4 % | 20.5 % | 14.8 | 255 integer/logic ALU warp-instr / 2 (ncu SASS executed) |
 | cvt | 129 | 19.7 % | 20.8 % |  | 258 F2FP/I2F convert+pack warp-instr / 2 (ncu SASS executed; ncu pipe attribution of F2FP differs) |
 | xu_inst | 260 | 39.7 % | 41.9 % | 43.2 | 260 MUFU warp-instr x 32 lanes / 32 (ncu SASS executed) |
-| smem | 338 | 51.6 % | 54.5 % | 42.1 | reads 34 KiB (Q 16 + K/2 8 + V/2 8 + ones 2) + TMA writes 8.2 KiB / 128 B |
+| smem | 169 | 25.8 % | 27.3 % | 42.1 | reads 34 KiB (Q 16 + K/2 8 + V/2 8 + ones 2) + TMA writes 8.2 KiB / 256 B |
 | tmem | 162 | 24.7 % | 26.1 % | 1.2 | 81 KiB tcgen05.ld/st / 512 B (assumed) |
 | l2 | 72 | 11.0 % | 11.6 % | 14.3 | 8.2 KiB K/V(+SF) per step per SM / 117 B/clk/SM |
 | dram | 29 | 4.4 % | 4.6 % |  | 236 MB whole kernel / 8.0 TB/s |
@@ -317,7 +317,7 @@ measured 2516.2 us @ 2364 MHz, 9709 steps/SM -> **613 clk per 128x128 step**; MM
 | alu | 30 | 4.9 % | 4.9 % |  | 60 integer/logic ALU warp-instr / 2 (static estimate) |
 | cvt | 256 | 41.8 % | 41.8 % |  | 512 F2FP/I2F convert+pack warp-instr / 2 (static estimate; ncu pipe attribution of F2FP differs) |
 | xu_inst | 260 | 42.4 % | 42.4 % |  | 260 MUFU warp-instr x 32 lanes / 32 (static estimate) |
-| smem | 338 | 55.2 % | 55.2 % |  | reads 34 KiB (Q 16 + K/2 8 + V/2 8 + ones 2) + TMA writes 8.2 KiB / 128 B |
+| smem | 169 | 27.6 % | 27.6 % |  | reads 34 KiB (Q 16 + K/2 8 + V/2 8 + ones 2) + TMA writes 8.2 KiB / 256 B |
 | tmem | 162 | 26.4 % | 26.4 % |  | 81 KiB tcgen05.ld/st / 512 B (assumed) |
 | l2 | 72 | 11.8 % | 11.8 % |  | 8.2 KiB K/V(+SF) per step per SM / 117 B/clk/SM |
 | dram | 14 | 2.3 % | 2.3 % |  | 472 MB whole kernel / 8.0 TB/s |
@@ -334,7 +334,7 @@ measured 103.4 us @ 2364 MHz, 308 steps/SM -> **793 clk per 128x128 step**; MMA 
 | alu | 30 | 3.8 % | 3.8 % |  | 60 integer/logic ALU warp-instr / 2 (static estimate) |
 | cvt | 256 | 32.3 % | 32.3 % |  | 512 F2FP/I2F convert+pack warp-instr / 2 (static estimate; ncu pipe attribution of F2FP differs) |
 | xu_inst | 260 | 32.8 % | 32.8 % |  | 260 MUFU warp-instr x 32 lanes / 32 (static estimate) |
-| smem | 338 | 42.6 % | 42.6 % |  | reads 34 KiB (Q 16 + K/2 8 + V/2 8 + ones 2) + TMA writes 8.2 KiB / 128 B |
+| smem | 169 | 21.3 % | 21.3 % |  | reads 34 KiB (Q 16 + K/2 8 + V/2 8 + ones 2) + TMA writes 8.2 KiB / 256 B |
 | tmem | 162 | 20.4 % | 20.4 % |  | 81 KiB tcgen05.ld/st / 512 B (assumed) |
 | l2 | 72 | 9.1 % | 9.1 % |  | 8.2 KiB K/V(+SF) per step per SM / 117 B/clk/SM |
 | dram | 113 | 14.3 % | 14.3 % |  | 118 MB whole kernel / 8.0 TB/s |
@@ -351,7 +351,7 @@ measured 332.7 us @ 2364 MHz, 1223 steps/SM -> **643 clk per 128x128 step**; MMA
 | alu | 139 | 21.7 % | 22.2 % | 17.6 | 279 integer/logic ALU warp-instr / 2 (ncu SASS executed) |
 | cvt | 133 | 20.7 % | 21.2 % |  | 266 F2FP/I2F convert+pack warp-instr / 2 (ncu SASS executed; ncu pipe attribution of F2FP differs) |
 | xu_inst | 266 | 41.4 % | 42.3 % | 43.6 | 266 MUFU warp-instr x 32 lanes / 32 (ncu SASS executed) |
-| smem | 338 | 52.6 % | 53.7 % | 43.8 | reads 34 KiB (Q 16 + K/2 8 + V/2 8 + ones 2) + TMA writes 8.2 KiB / 128 B |
+| smem | 169 | 26.3 % | 26.9 % | 43.8 | reads 34 KiB (Q 16 + K/2 8 + V/2 8 + ones 2) + TMA writes 8.2 KiB / 256 B |
 | tmem | 162 | 25.2 % | 25.8 % | 1.0 | 81 KiB tcgen05.ld/st / 512 B (assumed) |
 | l2 | 72 | 11.2 % | 11.4 % | 16.8 | 8.2 KiB K/V(+SF) per step per SM / 118 B/clk/SM |
 | dram | 57 | 8.9 % | 9.1 % |  | 236 MB whole kernel / 8.0 TB/s |
@@ -370,7 +370,7 @@ measured 1221.1 us @ 2364 MHz, 4873 steps/SM -> **592 clk per 128x128 step**; MM
 | alu | 30 | 5.1 % | 5.1 % |  | 60 integer/logic ALU warp-instr / 2 (static estimate) |
 | cvt | 256 | 43.2 % | 43.2 % |  | 512 F2FP/I2F convert+pack warp-instr / 2 (static estimate; ncu pipe attribution of F2FP differs) |
 | xu_inst | 260 | 43.9 % | 43.9 % |  | 260 MUFU warp-instr x 32 lanes / 32 (static estimate) |
-| smem | 338 | 57.1 % | 57.1 % |  | reads 34 KiB (Q 16 + K/2 8 + V/2 8 + ones 2) + TMA writes 8.2 KiB / 128 B |
+| smem | 169 | 28.5 % | 28.5 % |  | reads 34 KiB (Q 16 + K/2 8 + V/2 8 + ones 2) + TMA writes 8.2 KiB / 256 B |
 | tmem | 162 | 27.4 % | 27.4 % |  | 81 KiB tcgen05.ld/st / 512 B (assumed) |
 | l2 | 72 | 12.2 % | 12.2 % |  | 8.2 KiB K/V(+SF) per step per SM / 117 B/clk/SM |
 | dram | 29 | 4.8 % | 4.8 % |  | 472 MB whole kernel / 8.0 TB/s |
@@ -387,7 +387,7 @@ measured 169.3 us @ 2364 MHz, 607 steps/SM -> **660 clk per 128x128 step**; MMA 
 | alu | 30 | 4.5 % | 4.5 % |  | 60 integer/logic ALU warp-instr / 2 (static estimate) |
 | cvt | 256 | 38.8 % | 38.8 % |  | 512 F2FP/I2F convert+pack warp-instr / 2 (static estimate; ncu pipe attribution of F2FP differs) |
 | xu_inst | 260 | 39.4 % | 39.4 % |  | 260 MUFU warp-instr x 32 lanes / 32 (static estimate) |
-| smem | 338 | 51.2 % | 51.2 % |  | reads 34 KiB (Q 16 + K/2 8 + V/2 8 + ones 2) + TMA writes 8.2 KiB / 128 B |
+| smem | 169 | 25.6 % | 25.6 % |  | reads 34 KiB (Q 16 + K/2 8 + V/2 8 + ones 2) + TMA writes 8.2 KiB / 256 B |
 | tmem | 162 | 24.6 % | 24.6 % |  | 81 KiB tcgen05.ld/st / 512 B (assumed) |
 | l2 | 72 | 10.9 % | 10.9 % |  | 8.2 KiB K/V(+SF) per step per SM / 117 B/clk/SM |
 | dram | 57 | 8.7 % | 8.7 % |  | 118 MB whole kernel / 8.0 TB/s |
@@ -404,7 +404,7 @@ measured 625.4 us @ 2364 MHz, 2427 steps/SM -> **609 clk per 128x128 step**; MMA
 | alu | 119 | 19.6 % | 20.7 % | 15.5 | 238 integer/logic ALU warp-instr / 2 (ncu SASS executed) |
 | cvt | 129 | 21.2 % | 22.4 % |  | 258 F2FP/I2F convert+pack warp-instr / 2 (ncu SASS executed; ncu pipe attribution of F2FP differs) |
 | xu_inst | 260 | 42.7 % | 45.2 % | 46.5 | 260 MUFU warp-instr x 32 lanes / 32 (ncu SASS executed) |
-| smem | 338 | 55.5 % | 58.8 % | 45.3 | reads 34 KiB (Q 16 + K/2 8 + V/2 8 + ones 2) + TMA writes 8.2 KiB / 128 B |
+| smem | 169 | 27.7 % | 29.4 % | 45.3 | reads 34 KiB (Q 16 + K/2 8 + V/2 8 + ones 2) + TMA writes 8.2 KiB / 256 B |
 | tmem | 162 | 26.6 % | 28.2 % | 1.1 | 81 KiB tcgen05.ld/st / 512 B (assumed) |
 | l2 | 72 | 11.8 % | 12.5 % | 16.0 | 8.2 KiB K/V(+SF) per step per SM / 117 B/clk/SM |
 | dram | 29 | 4.7 % | 5.0 % |  | 236 MB whole kernel / 8.0 TB/s |
@@ -423,7 +423,7 @@ measured 2364.6 us @ 2364 MHz, 9709 steps/SM -> **576 clk per 128x128 step**; MM
 | alu | 30 | 5.2 % | 5.2 % |  | 60 integer/logic ALU warp-instr / 2 (static estimate) |
 | cvt | 256 | 44.5 % | 44.5 % |  | 512 F2FP/I2F convert+pack warp-instr / 2 (static estimate; ncu pipe attribution of F2FP differs) |
 | xu_inst | 260 | 45.2 % | 45.2 % |  | 260 MUFU warp-instr x 32 lanes / 32 (static estimate) |
-| smem | 338 | 58.7 % | 58.7 % |  | reads 34 KiB (Q 16 + K/2 8 + V/2 8 + ones 2) + TMA writes 8.2 KiB / 128 B |
+| smem | 169 | 29.4 % | 29.4 % |  | reads 34 KiB (Q 16 + K/2 8 + V/2 8 + ones 2) + TMA writes 8.2 KiB / 256 B |
 | tmem | 162 | 28.1 % | 28.1 % |  | 81 KiB tcgen05.ld/st / 512 B (assumed) |
 | l2 | 72 | 12.5 % | 12.5 % |  | 8.2 KiB K/V(+SF) per step per SM / 117 B/clk/SM |
 | dram | 14 | 2.5 % | 2.5 % |  | 472 MB whole kernel / 8.0 TB/s |

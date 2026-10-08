@@ -246,7 +246,7 @@ def main():
     if U:
         md.append("## Per-unit utilisation vs SOL (analytic model + ncu cross-check)\n")
         md.append(
-            "Units: tensor (UTCQMMA MACs), mufu (exp2 lanes), issue (warp-instr/4), fma / alu (pipe warp-instr / 2), smem (TMA writes + UMMA operand reads at 128 B/clk), tmem (tcgen05.ld/st at an assumed 512 B/clk), l2 (K/V(+SF) bytes per step per SM at the ncu-derived L2 peak), dram (whole-kernel bytes). "
+            "Units: tensor (UTCQMMA MACs), mufu (exp2 lanes), issue (warp-instr/4), fma / alu (pipe warp-instr / 2), smem (TMA writes + UMMA operand reads at 256 B/clk, the operand feed of a 16384 MAC/clk tensor core; the LSU path alone is 128), tmem (tcgen05.ld/st at an assumed 512 B/clk), l2 (K/V(+SF) bytes per step per SM at the ncu-derived L2 peak), dram (whole-kernel bytes). "
             "Cell = util% [SOL clk/step] (ncu pipe %). Constants and sources: `unit_sol.py` header.\n"
         )
         for d in ds:

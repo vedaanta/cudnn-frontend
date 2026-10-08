@@ -24,7 +24,13 @@ Units and constants (per SM, per clock) -- every number carries its source, see 
   fma     warp-instr/clk/SM on fmaheavy+fmalite     2      16 lanes per pipe per SMSP: a 32-thread warp-instr occupies a pipe 2 clk;
                                                     FFMA2 / HFMA2-class instructions produce 2 results per lane at the same issue cost.
   alu     warp-instr/clk/SM (int ALU + F2FP cvt)     2      16 lanes/clk/SMSP (Ampere+ ALU datapath; conversions ride it on sm_10x).
-  smem    bytes/clk/SM                               128    the plan's figure (32 banks x 4 B); counts TMA writes AND UMMA operand reads.
+  smem    bytes/clk/SM                               256    the LSU figure is 128 (32 banks x 4 B) but the UTCQMMA operand feed must
+                                                    keep up with a 16384 MAC/clk tensor core: a 128x256x32 fp8 MMA with both
+                                                    operands in SMEM reads 12 KiB in 64 clk = 192 B/clk, and the d256 cga1 kernel
+                                                    SUSTAINS 138 B/clk on silicon (162 KiB per step in 1198 clk), so 128 is a
+                                                    lower bound; 256 (the tensor rate doubling) matches PerfSim's LST SOL on
+                                                    the page-64 d128 trace (29 % vs 26 % here).  Counts TMA writes AND UMMA
+                                                    operand reads.  ncu's L1/SMEM % is the measured cross-check in the tables.
   tmem    bytes/clk/SM (tcgen05.ld/st side)          512    ASSUMED: 128 lanes x 32 bit per clock; the tensor core's own accumulator
                                                     traffic is not modelled (it is internal to the MMA pipe).
   l2      bytes/clk/SM                               ncu-derived when available (lts__t_bytes / lts__throughput pct), else 64 (ASSUMED).
@@ -47,7 +53,10 @@ CONSTANTS = {
     "issue_per_clk": (4, "4 SMSP schedulers x 1 warp-instruction/clk"),
     "fma_winst_per_clk": (2, "fmaheavy + fmalite, 16 lanes each per SMSP -> 2 clk per warp-instruction per pipe"),
     "alu_winst_per_clk": (2, "16 lanes/clk/SMSP"),
-    "smem_bytes_per_clk": (128, "32 banks x 4 B (plan.md); TMA writes + UMMA operand reads"),
+    "smem_bytes_per_clk": (
+        256,
+        "UTCQMMA operand feed at the 16384 MAC/clk tensor rate (LSU path alone is 128; silicon sustains 138 at d256 cga1); TMA writes + UMMA operand reads",
+    ),
     "tmem_bytes_per_clk": (512, "ASSUMED 128 lanes x 32 bit per clock for tcgen05.ld/st"),
     "l2_bytes_per_clk_sm": (64, "ASSUMED fallback; replaced by the ncu-derived peak when an ncu row is present"),
     "dram_bytes_per_s": (8.0e12, "ASSUMED fallback; replaced by the ncu-derived peak when an ncu row is present"),
