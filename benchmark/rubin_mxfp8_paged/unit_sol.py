@@ -34,6 +34,7 @@ so per-K/V-tile costs (TMA writes, L2 fetch, loader instructions) are divided by
 K/V tile (multicast) so per-SM TMA/L2 bytes are halved and the UMMA reads only this CTA's half of K (B operand, N split)
 and of V (N = d split).  steps_total = B x H_q x n x n (dense) or n(n+1)/2 (causal), n = S/128.
 """
+
 import argparse
 import json
 import math
@@ -101,19 +102,34 @@ def model_step(d, cta_mma, tiles_q, rowsum_mma, f16, corr_always, paged, inst, C
     cvt_clk = inst.get("cvt", 0.0) / C["alu_winst_per_clk"]
     xu_inst_clk = inst["xu"] * 32 / C["xu_lanes_per_clk"]
     out = {
-        "tensor": (tensor_clk, f"BMM1 {macs_bmm1 // 1024}k + BMM2 {macs_bmm2 // 1024}k" + (f" + rowsum {macs_rowsum // 1024}k" if rowsum_mma else "") + f" MAC / {tc}"),
+        "tensor": (
+            tensor_clk,
+            f"BMM1 {macs_bmm1 // 1024}k + BMM2 {macs_bmm2 // 1024}k" + (f" + rowsum {macs_rowsum // 1024}k" if rowsum_mma else "") + f" MAC / {tc}",
+        ),
         "mufu": (xu_clk, f"{exps} exp{' as f16x2 pairs' if f16 else ' fp32'} / {C['xu_lanes_per_clk']} lanes"),
-        "issue": (issue_clk, f"{inst['total']:.0f} warp-instr / {C['issue_per_clk']} ({inst['src']})" + (f"; of which sync/branch {inst['ctrl']:.0f}" if inst.get("ctrl") else "")),
+        "issue": (
+            issue_clk,
+            f"{inst['total']:.0f} warp-instr / {C['issue_per_clk']} ({inst['src']})"
+            + (f"; of which sync/branch {inst['ctrl']:.0f}" if inst.get("ctrl") else ""),
+        ),
         "fma": (fma_clk, f"{inst['fma']:.0f} FMA-pipe warp-instr (FFMA2/FHADD2/HFMA2) / {C['fma_winst_per_clk']} ({inst['src']})"),
         "alu": (alu_clk, f"{inst['alu']:.0f} integer/logic ALU warp-instr / {C['alu_winst_per_clk']} ({inst['src']})"),
-        "cvt": (cvt_clk, f"{inst.get('cvt', 0):.0f} F2FP/I2F convert+pack warp-instr / {C['alu_winst_per_clk']} ({inst['src']}; ncu pipe attribution of F2FP differs)"),
+        "cvt": (
+            cvt_clk,
+            f"{inst.get('cvt', 0):.0f} F2FP/I2F convert+pack warp-instr / {C['alu_winst_per_clk']} ({inst['src']}; ncu pipe attribution of F2FP differs)",
+        ),
         "xu_inst": (xu_inst_clk, f"{inst['xu']:.0f} MUFU warp-instr x 32 lanes / {C['xu_lanes_per_clk']} ({inst['src']})"),
     }
-    out.update({
-        "smem": (smem_clk, f"reads {smem_reads // 1024} KiB (Q {q_bytes // 1024} + K/{cta_mma} {k_read // 1024} + V/{cta_mma} {v_read // 1024}{' + ones 2' if rowsum_mma else ''}) + TMA writes {smem_writes / 1024:.1f} KiB / {C['smem_bytes_per_clk']} B"),
-        "tmem": (tmem_clk, f"{tmem_bytes // 1024} KiB tcgen05.ld/st / {C['tmem_bytes_per_clk']} B (assumed)"),
-        "l2": (l2_clk, f"{l2_bytes / 1024:.1f} KiB K/V(+SF) per step per SM / {C['l2_bytes_per_clk_sm']:.0f} B/clk/SM"),
-    })
+    out.update(
+        {
+            "smem": (
+                smem_clk,
+                f"reads {smem_reads // 1024} KiB (Q {q_bytes // 1024} + K/{cta_mma} {k_read // 1024} + V/{cta_mma} {v_read // 1024}{' + ones 2' if rowsum_mma else ''}) + TMA writes {smem_writes / 1024:.1f} KiB / {C['smem_bytes_per_clk']} B",
+            ),
+            "tmem": (tmem_clk, f"{tmem_bytes // 1024} KiB tcgen05.ld/st / {C['tmem_bytes_per_clk']} B (assumed)"),
+            "l2": (l2_clk, f"{l2_bytes / 1024:.1f} KiB K/V(+SF) per step per SM / {C['l2_bytes_per_clk_sm']:.0f} B/clk/SM"),
+        }
+    )
     return out
 
 
@@ -124,10 +140,27 @@ def inst_from_ncu(n, steps_all):
     cls = n.get("sass_by_class")
     if cls and n.get("sass_exec_total"):
         tot = n["sass_exec_total"]
-        return dict(total=tot / steps_all, fma=cls.get("fma", 0) / steps_all, alu=cls.get("alu_int", 0) / steps_all, cvt=cls.get("alu_cvt", 0) / steps_all, xu=cls.get("xu", 0) / steps_all, ctrl=cls.get("ctrl_sync", 0) / steps_all,
-                    tmem=cls.get("tmem", 0) / steps_all, lsu=cls.get("lsu_mem", 0) / steps_all, src="ncu SASS executed", by_class={k: v / steps_all for k, v in cls.items()})
+        return dict(
+            total=tot / steps_all,
+            fma=cls.get("fma", 0) / steps_all,
+            alu=cls.get("alu_int", 0) / steps_all,
+            cvt=cls.get("alu_cvt", 0) / steps_all,
+            xu=cls.get("xu", 0) / steps_all,
+            ctrl=cls.get("ctrl_sync", 0) / steps_all,
+            tmem=cls.get("tmem", 0) / steps_all,
+            lsu=cls.get("lsu_mem", 0) / steps_all,
+            src="ncu SASS executed",
+            by_class={k: v / steps_all for k, v in cls.items()},
+        )
     if n.get("inst_total"):
-        return dict(total=n["inst_total"] / steps_all, fma=(n.get("fma_inst") or 0) / steps_all, alu=(n.get("alu_inst") or 0) / steps_all, cvt=0.0, xu=(n.get("xu_inst") or 0) / steps_all, src="ncu pipe counters")
+        return dict(
+            total=n["inst_total"] / steps_all,
+            fma=(n.get("fma_inst") or 0) / steps_all,
+            alu=(n.get("alu_inst") or 0) / steps_all,
+            cvt=0.0,
+            xu=(n.get("xu_inst") or 0) / steps_all,
+            src="ncu pipe counters",
+        )
     return None
 
 
@@ -146,7 +179,9 @@ def peaks_from_ncu(n, C):
             out["dram_bytes_per_s"] = n["dram_gbs"] * 1e9 / (n["dram_pct"] / 100.0)
             notes["dram"] = f"ncu-derived DRAM peak {out['dram_bytes_per_s'] / 1e12:.1f} TB/s"
         if n.get("inst_total") and n.get("sass_exec_total"):
-            notes["issue"] = f"ncu smsp__inst_executed.sum {n['inst_total'] / 1e6:.0f} M vs SASS-page executed {n['sass_exec_total'] / 1e6:.0f} M (the SASS page counts every pipe of a multi-pipe instruction; issue SOL uses the SASS count = upper bound)"
+            notes["issue"] = (
+                f"ncu smsp__inst_executed.sum {n['inst_total'] / 1e6:.0f} M vs SASS-page executed {n['sass_exec_total'] / 1e6:.0f} M (the SASS page counts every pipe of a multi-pipe instruction; issue SOL uses the SASS count = upper bound)"
+            )
     return out, notes
 
 
@@ -188,30 +223,83 @@ def analyze(rec, n, C0, args):
     rows = []
     for unit, (clk, detail) in sol.items():
         rows.append(dict(unit=unit, sol_clk=clk, util_pct=100.0 * clk / step_clk, util_active_pct=100.0 * clk / step_clk / active_frac, detail=detail))
-    rows.append(dict(unit="dram", sol_clk=dram_us * 1e-6 * mhz * 1e6 / steps_sm, util_pct=100.0 * dram_us / us, util_active_pct=100.0 * dram_us / us / active_frac, detail=f"{dram_bytes / 1e6:.0f} MB whole kernel / {C['dram_bytes_per_s'] / 1e12:.1f} TB/s"))
+    rows.append(
+        dict(
+            unit="dram",
+            sol_clk=dram_us * 1e-6 * mhz * 1e6 / steps_sm,
+            util_pct=100.0 * dram_us / us,
+            util_active_pct=100.0 * dram_us / us / active_frac,
+            detail=f"{dram_bytes / 1e6:.0f} MB whole kernel / {C['dram_bytes_per_s'] / 1e12:.1f} TB/s",
+        )
+    )
     binding = max(rows, key=lambda r: r["sol_clk"])
     xcheck = {}
     if n:
-        xcheck = dict(tensor=n.get("tensor_act_pct"), mufu=n.get("xu_mufu_pct"), xu_inst=n.get("xu_mufu_pct"), issue=n.get("issue_pct"), fma=n.get("fma_pct"), alu=n.get("alu_pct"), tmem=n.get("tmem_inst_pct"), smem=n.get("l1_pct"), l2=n.get("l2_pct"), dram=n.get("dram_pct"), ncu_us=n.get("dur_us"), ncu_clk_ghz=n.get("clk_ghz"), sm_active_pct=n.get("sm_active_pct"))
+        xcheck = dict(
+            tensor=n.get("tensor_act_pct"),
+            mufu=n.get("xu_mufu_pct"),
+            xu_inst=n.get("xu_mufu_pct"),
+            issue=n.get("issue_pct"),
+            fma=n.get("fma_pct"),
+            alu=n.get("alu_pct"),
+            tmem=n.get("tmem_inst_pct"),
+            smem=n.get("l1_pct"),
+            l2=n.get("l2_pct"),
+            dram=n.get("dram_pct"),
+            ncu_us=n.get("dur_us"),
+            ncu_clk_ghz=n.get("clk_ghz"),
+            sm_active_pct=n.get("sm_active_pct"),
+        )
         if n.get("smem_wavefronts") and steps_all:
             xcheck["smem_wavefronts_per_step"] = n["smem_wavefronts"] / steps_all
     return dict(
-        name=rec["name"], d=d, S=S, mask=rec["mask"], sched=rec.get("sched"), cta_mma=cta_mma, tiles_q=tiles_q, f16=f16, rowsum_mma=rowsum_mma, corr=rec.get("config", {}).get("corr"), paged=paged,
-        time_us=us, clock_mhz=mhz, sm_count=sm_count, steps_total=steps_all, steps_per_sm=steps_sm, step_clk=step_clk,
-        mma_util_pct=100.0 * sol["tensor"][0] / step_clk, binding_unit=binding["unit"], binding_pct=binding["util_pct"],
-        inst_per_step=inst, units=rows, ncu=xcheck, peak_notes=notes, constants={k: C[k] for k in C},
+        name=rec["name"],
+        d=d,
+        S=S,
+        mask=rec["mask"],
+        sched=rec.get("sched"),
+        cta_mma=cta_mma,
+        tiles_q=tiles_q,
+        f16=f16,
+        rowsum_mma=rowsum_mma,
+        corr=rec.get("config", {}).get("corr"),
+        paged=paged,
+        time_us=us,
+        clock_mhz=mhz,
+        sm_count=sm_count,
+        steps_total=steps_all,
+        steps_per_sm=steps_sm,
+        step_clk=step_clk,
+        mma_util_pct=100.0 * sol["tensor"][0] / step_clk,
+        binding_unit=binding["unit"],
+        binding_pct=binding["util_pct"],
+        inst_per_step=inst,
+        units=rows,
+        ncu=xcheck,
+        peak_notes=notes,
+        constants={k: C[k] for k in C},
     )
 
 
 def md_table(a):
-    L = [f"### {a['name']} d{a['d']} S={a['S']} {a['mask']} (cta_mma {a['cta_mma']}, TILES_Q {a['tiles_q']}, {'f16' if a['f16'] else 'f32'} exp, rowsum-MMA {int(a['rowsum_mma'])}, corr {a['corr']}, paged {a['paged']})",
-         f"measured {a['time_us']:.1f} us @ {a['clock_mhz']:.0f} MHz, {a['steps_per_sm']:.0f} steps/SM -> **{a['step_clk']:.0f} clk per 128x128 step**; MMA util {a['mma_util_pct']:.1f} %; binding unit by SOL: {a['binding_unit']} ({a['binding_pct']:.0f} %)"
-         + (f"; ncu: {a['ncu']['ncu_us']:.1f} us @ {a['ncu']['ncu_clk_ghz']:.2f} GHz, SM-active {a['ncu']['sm_active_pct']:.1f} %" if a.get("ncu", {}).get("ncu_us") else ""), "",
-         "| unit | SOL clk/step | util = SOL/measured | util over SM-active | ncu % (cross-check, of SM-active) | how |", "|---|---|---|---|---|---|"]
+    L = [
+        f"### {a['name']} d{a['d']} S={a['S']} {a['mask']} (cta_mma {a['cta_mma']}, TILES_Q {a['tiles_q']}, {'f16' if a['f16'] else 'f32'} exp, rowsum-MMA {int(a['rowsum_mma'])}, corr {a['corr']}, paged {a['paged']})",
+        f"measured {a['time_us']:.1f} us @ {a['clock_mhz']:.0f} MHz, {a['steps_per_sm']:.0f} steps/SM -> **{a['step_clk']:.0f} clk per 128x128 step**; MMA util {a['mma_util_pct']:.1f} %; binding unit by SOL: {a['binding_unit']} ({a['binding_pct']:.0f} %)"
+        + (
+            f"; ncu: {a['ncu']['ncu_us']:.1f} us @ {a['ncu']['ncu_clk_ghz']:.2f} GHz, SM-active {a['ncu']['sm_active_pct']:.1f} %"
+            if a.get("ncu", {}).get("ncu_us")
+            else ""
+        ),
+        "",
+        "| unit | SOL clk/step | util = SOL/measured | util over SM-active | ncu % (cross-check, of SM-active) | how |",
+        "|---|---|---|---|---|---|",
+    ]
     xc = a.get("ncu", {})
     for r in a["units"]:
         x = xc.get(r["unit"], None)
-        L.append(f"| {r['unit']} | {r['sol_clk']:.0f} | {r['util_pct']:.1f} % | {r['util_active_pct']:.1f} % | {'' if x is None else f'{x:.1f}'} | {r['detail']} |")
+        L.append(
+            f"| {r['unit']} | {r['sol_clk']:.0f} | {r['util_pct']:.1f} % | {r['util_active_pct']:.1f} % | {'' if x is None else f'{x:.1f}'} | {r['detail']} |"
+        )
     if a["peak_notes"]:
         L.append("")
         L.append("; ".join(a["peak_notes"].values()))
@@ -248,13 +336,28 @@ def main():
         if line.strip():
             r = json.loads(line)
             recs[(r["d"], r["name"], r["mask"], r["S"], r.get("sched", "natural"))] = r  # last write wins
+    # The L2 / DRAM peaks are board properties, not per-record ones: records without their own ncu row (the 8k / 32k
+    # timing cells) take the peaks derived from any ncu row of the same head dim instead of the ASSUMED fallbacks, so the
+    # l2 / dram columns are comparable across S.
+    peaks_by_d = {}
+    for n in ncu.values():
+        if n.get("l2_peak_tbs_ncu") and n["d"] not in peaks_by_d:
+            peaks_by_d[n["d"]] = peaks_from_ncu(n, C)[0]
     out = []
     md = ["## Per-unit SOL model (per 128x128 step per SM)", "", "Constants: " + "; ".join(f"{k} = {C[k]:g} ({CONSTANTS[k][1]})" for k in CONSTANTS), ""]
+    if peaks_by_d:
+        md += [
+            "Records without an ncu row use the ncu-derived L2 / DRAM peaks of the same head dim: "
+            + "; ".join(
+                f"d{d}: L2 {p['l2_bytes_per_clk_sm']:.0f} B/clk/SM, DRAM {p['dram_bytes_per_s'] / 1e12:.1f} TB/s" for d, p in sorted(peaks_by_d.items())
+            ),
+            "",
+        ]
     for key in sorted(recs):
         r = recs[key]
         if (args.d and r["d"] != args.d) or (args.mask and r["mask"] != args.mask) or (args.S and r["S"] != args.S) or (args.name and r["name"] != args.name):
             continue
-        a = analyze(r, ncu.get(key), C, args)
+        a = analyze(r, ncu.get(key), peaks_by_d.get(r["d"], C) if ncu.get(key) is None else C, args)
         if a:
             out.append(a)
             md.append(md_table(a))

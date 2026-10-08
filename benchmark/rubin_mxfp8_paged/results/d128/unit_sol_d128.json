@@ -1,0 +1,3186 @@
+[
+ {
+  "name": "corralways_p64_half_pf_benc_cf1h1",
+  "d": 128,
+  "S": 8192,
+  "mask": "causal",
+  "sched": "lpt",
+  "cta_mma": 2,
+  "tiles_q": 2,
+  "f16": true,
+  "rowsum_mma": true,
+  "corr": "always",
+  "paged": 64,
+  "time_us": 136.96,
+  "clock_mhz": 2364.0,
+  "sm_count": 216,
+  "steps_total": 66560,
+  "steps_per_sm": 308.14814814814815,
+  "step_clk": 1050.7070769230768,
+  "mma_util_pct": 25.887329206588504,
+  "binding_unit": "tmem",
+  "binding_pct": 39.78273385424263,
+  "inst_per_step": {
+   "total": 1646,
+   "fma": 512,
+   "alu": 60,
+   "xu": 260,
+   "src": "static estimate",
+   "cvt": 512
+  },
+  "units": [
+   {
+    "unit": "tensor",
+    "sol_clk": 272.0,
+    "util_pct": 25.887329206588504,
+    "util_active_pct": 25.887329206588504,
+    "detail": "BMM1 2048k + BMM2 2048k + rowsum 256k MAC / 16384"
+   },
+   {
+    "unit": "mufu",
+    "sol_clk": 256.0,
+    "util_pct": 24.36454513561271,
+    "util_active_pct": 24.36454513561271,
+    "detail": "16384 exp as f16x2 pairs / 32 lanes"
+   },
+   {
+    "unit": "issue",
+    "sol_clk": 411.5,
+    "util_pct": 39.16410282540871,
+    "util_active_pct": 39.16410282540871,
+    "detail": "1646 warp-instr / 4 (static estimate)"
+   },
+   {
+    "unit": "fma",
+    "sol_clk": 256.0,
+    "util_pct": 24.36454513561271,
+    "util_active_pct": 24.36454513561271,
+    "detail": "512 FMA-pipe warp-instr (FFMA2/FHADD2/HFMA2) / 2 (static estimate)"
+   },
+   {
+    "unit": "alu",
+    "sol_clk": 30.0,
+    "util_pct": 2.8552201330796145,
+    "util_active_pct": 2.8552201330796145,
+    "detail": "60 integer/logic ALU warp-instr / 2 (static estimate)"
+   },
+   {
+    "unit": "cvt",
+    "sol_clk": 256.0,
+    "util_pct": 24.36454513561271,
+    "util_active_pct": 24.36454513561271,
+    "detail": "512 F2FP/I2F convert+pack warp-instr / 2 (static estimate; ncu pipe attribution of F2FP differs)"
+   },
+   {
+    "unit": "xu_inst",
+    "sol_clk": 260.0,
+    "util_pct": 24.74524115335666,
+    "util_active_pct": 24.74524115335666,
+    "detail": "260 MUFU warp-instr x 32 lanes / 32 (static estimate)"
+   },
+   {
+    "unit": "smem",
+    "sol_clk": 338.0,
+    "util_pct": 32.16881349936366,
+    "util_active_pct": 32.16881349936366,
+    "detail": "reads 34 KiB (Q 16 + K/2 8 + V/2 8 + ones 2) + TMA writes 8.2 KiB / 128 B"
+   },
+   {
+    "unit": "tmem",
+    "sol_clk": 418.0,
+    "util_pct": 39.78273385424263,
+    "util_active_pct": 39.78273385424263,
+    "detail": "209 KiB tcgen05.ld/st / 512 B (assumed)"
+   },
+   {
+    "unit": "l2",
+    "sol_clk": 72.06540665570924,
+    "util_pct": 6.8587533327316885,
+    "util_active_pct": 6.8587533327316885,
+    "detail": "8.2 KiB K/V(+SF) per step per SM / 117 B/clk/SM"
+   },
+   {
+    "unit": "dram",
+    "sol_clk": 113.12285538461536,
+    "util_pct": 10.766355140186915,
+    "util_active_pct": 10.766355140186915,
+    "detail": "118 MB whole kernel / 8.0 TB/s"
+   }
+  ],
+  "ncu": {},
+  "peak_notes": {},
+  "constants": {
+   "tc_mac_per_clk": 16384,
+   "xu_lanes_per_clk": 32,
+   "issue_per_clk": 4,
+   "fma_winst_per_clk": 2,
+   "alu_winst_per_clk": 2,
+   "smem_bytes_per_clk": 128,
+   "tmem_bytes_per_clk": 512,
+   "l2_bytes_per_clk_sm": 117.22684144918682,
+   "dram_bytes_per_s": 8000000000000.0
+  }
+ },
+ {
+  "name": "corralways_p64_half_pf_benc_cf1h1",
+  "d": 128,
+  "S": 16384,
+  "mask": "causal",
+  "sched": "lpt",
+  "cta_mma": 2,
+  "tiles_q": 2,
+  "f16": true,
+  "rowsum_mma": true,
+  "corr": "always",
+  "paged": 64,
+  "time_us": 464.54,
+  "clock_mhz": 2364.0,
+  "sm_count": 216,
+  "steps_total": 264192,
+  "steps_per_sm": 1223.111111111111,
+  "step_clk": 897.8518386627908,
+  "mma_util_pct": 30.294530599291445,
+  "binding_unit": "issue",
+  "binding_pct": 51.834493270617045,
+  "inst_per_step": {
+   "total": 1861.5878035671028,
+   "fma": 636.9190740067829,
+   "alu": 219.29861615794573,
+   "cvt": 266.4089147286822,
+   "xu": 266.3517441860465,
+   "ctrl": 351.39907718628876,
+   "tmem": 89.55038759689923,
+   "lsu": 26.517593265503876,
+   "src": "ncu SASS executed",
+   "by_class": {
+    "alu_int": 219.29861615794573,
+    "fma": 636.9190740067829,
+    "ctrl_sync": 351.39907718628876,
+    "lsu_mem": 26.517593265503876,
+    "alu_cvt": 266.4089147286822,
+    "xu": 266.3517441860465,
+    "tmem": 89.55038759689923,
+    "other": 0.010204699612403102,
+    "tensor": 5.132191739341085
+   }
+  },
+  "units": [
+   {
+    "unit": "tensor",
+    "sol_clk": 272.0,
+    "util_pct": 30.294530599291445,
+    "util_active_pct": 30.854290359902176,
+    "detail": "BMM1 2048k + BMM2 2048k + rowsum 256k MAC / 16384"
+   },
+   {
+    "unit": "mufu",
+    "sol_clk": 256.0,
+    "util_pct": 28.51249938756842,
+    "util_active_pct": 29.039332103437342,
+    "detail": "16384 exp as f16x2 pairs / 32 lanes"
+   },
+   {
+    "unit": "issue",
+    "sol_clk": 465.3969508917757,
+    "util_pct": 51.834493270617045,
+    "util_active_pct": 52.7922524096617,
+    "detail": "1862 warp-instr / 4 (ncu SASS executed); of which sync/branch 351"
+   },
+   {
+    "unit": "fma",
+    "sol_clk": 318.45953700339146,
+    "util_pct": 35.46905216318172,
+    "util_active_pct": 36.1244228771421,
+    "detail": "637 FMA-pipe warp-instr (FFMA2/FHADD2/HFMA2) / 2 (ncu SASS executed)"
+   },
+   {
+    "unit": "alu",
+    "sol_clk": 109.64930807897287,
+    "util_pct": 12.212405583785213,
+    "util_active_pct": 12.438057313349251,
+    "detail": "219 integer/logic ALU warp-instr / 2 (ncu SASS executed)"
+   },
+   {
+    "unit": "cvt",
+    "sol_clk": 133.2044573643411,
+    "util_pct": 14.835906285242807,
+    "util_active_pct": 15.11003310570805,
+    "detail": "266 F2FP/I2F convert+pack warp-instr / 2 (ncu SASS executed; ncu pipe attribution of F2FP differs)"
+   },
+   {
+    "unit": "xu_inst",
+    "sol_clk": 266.3517441860465,
+    "util_pct": 29.665445089775123,
+    "util_active_pct": 30.213581077142155,
+    "detail": "266 MUFU warp-instr x 32 lanes / 32 (ncu SASS executed)"
+   },
+   {
+    "unit": "smem",
+    "sol_clk": 338.0,
+    "util_pct": 37.64540934764893,
+    "util_active_pct": 38.34099316781962,
+    "detail": "reads 34 KiB (Q 16 + K/2 8 + V/2 8 + ones 2) + TMA writes 8.2 KiB / 128 B"
+   },
+   {
+    "unit": "tmem",
+    "sol_clk": 418.0,
+    "util_pct": 46.55556540626406,
+    "util_active_pct": 47.41578445014379,
+    "detail": "209 KiB tcgen05.ld/st / 512 B (assumed)"
+   },
+   {
+    "unit": "l2",
+    "sol_clk": 72.06540665570924,
+    "util_pct": 8.026425246624136,
+    "util_active_pct": 8.174731550954705,
+    "detail": "8.2 KiB K/V(+SF) per step per SM / 117 B/clk/SM"
+   },
+   {
+    "unit": "dram",
+    "sol_clk": 56.99988837209302,
+    "util_pct": 6.348473758987385,
+    "util_active_pct": 6.465776126156507,
+    "detail": "236 MB whole kernel / 8.0 TB/s"
+   }
+  ],
+  "ncu": {
+   "tensor": 32.142794,
+   "mufu": 30.80704,
+   "xu_inst": 30.80704,
+   "issue": 44.618951,
+   "fma": 32.765883,
+   "alu": 12.495089,
+   "tmem": 2.939107,
+   "smem": 31.104319,
+   "l2": 12.109774,
+   "dram": null,
+   "ncu_us": 468.224,
+   "ncu_clk_ghz": 2.30442,
+   "sm_active_pct": 98.18579603004518,
+   "smem_wavefronts_per_step": 17.09191042877907
+  },
+  "peak_notes": {
+   "l2": "ncu-derived L2 sector peak 58.4 TB/s = 117 B/clk/SM (lts__t_sectors / pct_of_peak)",
+   "issue": "ncu smsp__inst_executed.sum 408 M vs SASS-page executed 492 M (the SASS page counts every pipe of a multi-pipe instruction; issue SOL uses the SASS count = upper bound)"
+  },
+  "constants": {
+   "tc_mac_per_clk": 16384,
+   "xu_lanes_per_clk": 32,
+   "issue_per_clk": 4,
+   "fma_winst_per_clk": 2,
+   "alu_winst_per_clk": 2,
+   "smem_bytes_per_clk": 128,
+   "tmem_bytes_per_clk": 512,
+   "l2_bytes_per_clk_sm": 117.22684144918682,
+   "dram_bytes_per_s": 8000000000000.0
+  }
+ },
+ {
+  "name": "corralways_p64_half_pf_benc_cf1h1",
+  "d": 128,
+  "S": 32768,
+  "mask": "causal",
+  "sched": "lpt",
+  "cta_mma": 2,
+  "tiles_q": 2,
+  "f16": true,
+  "rowsum_mma": true,
+  "corr": "always",
+  "paged": 64,
+  "time_us": 1741.85,
+  "clock_mhz": 2364.0,
+  "sm_count": 216,
+  "steps_total": 1052672,
+  "steps_per_sm": 4873.481481481482,
+  "step_clk": 844.9264485043773,
+  "mma_util_pct": 32.192151219963954,
+  "binding_unit": "tmem",
+  "binding_pct": 49.47176180126814,
+  "inst_per_step": {
+   "total": 1646,
+   "fma": 512,
+   "alu": 60,
+   "xu": 260,
+   "src": "static estimate",
+   "cvt": 512
+  },
+  "units": [
+   {
+    "unit": "tensor",
+    "sol_clk": 272.0,
+    "util_pct": 32.192151219963954,
+    "util_active_pct": 32.192151219963954,
+    "detail": "BMM1 2048k + BMM2 2048k + rowsum 256k MAC / 16384"
+   },
+   {
+    "unit": "mufu",
+    "sol_clk": 256.0,
+    "util_pct": 30.298495265848427,
+    "util_active_pct": 30.298495265848427,
+    "detail": "16384 exp as f16x2 pairs / 32 lanes"
+   },
+   {
+    "unit": "issue",
+    "sol_clk": 411.5,
+    "util_pct": 48.7024640699087,
+    "util_active_pct": 48.7024640699087,
+    "detail": "1646 warp-instr / 4 (static estimate)"
+   },
+   {
+    "unit": "fma",
+    "sol_clk": 256.0,
+    "util_pct": 30.298495265848427,
+    "util_active_pct": 30.298495265848427,
+    "detail": "512 FMA-pipe warp-instr (FFMA2/FHADD2/HFMA2) / 2 (static estimate)"
+   },
+   {
+    "unit": "alu",
+    "sol_clk": 30.0,
+    "util_pct": 3.5506049139666125,
+    "util_active_pct": 3.5506049139666125,
+    "detail": "60 integer/logic ALU warp-instr / 2 (static estimate)"
+   },
+   {
+    "unit": "cvt",
+    "sol_clk": 256.0,
+    "util_pct": 30.298495265848427,
+    "util_active_pct": 30.298495265848427,
+    "detail": "512 F2FP/I2F convert+pack warp-instr / 2 (static estimate; ncu pipe attribution of F2FP differs)"
+   },
+   {
+    "unit": "xu_inst",
+    "sol_clk": 260.0,
+    "util_pct": 30.77190925437731,
+    "util_active_pct": 30.77190925437731,
+    "detail": "260 MUFU warp-instr x 32 lanes / 32 (static estimate)"
+   },
+   {
+    "unit": "smem",
+    "sol_clk": 338.0,
+    "util_pct": 40.0034820306905,
+    "util_active_pct": 40.0034820306905,
+    "detail": "reads 34 KiB (Q 16 + K/2 8 + V/2 8 + ones 2) + TMA writes 8.2 KiB / 128 B"
+   },
+   {
+    "unit": "tmem",
+    "sol_clk": 418.0,
+    "util_pct": 49.47176180126814,
+    "util_active_pct": 49.47176180126814,
+    "detail": "209 KiB tcgen05.ld/st / 512 B (assumed)"
+   },
+   {
+    "unit": "l2",
+    "sol_clk": 72.06540665570924,
+    "util_pct": 8.529192899958781,
+    "util_active_pct": 8.529192899958781,
+    "detail": "8.2 KiB K/V(+SF) per step per SM / 117 B/clk/SM"
+   },
+   {
+    "unit": "dram",
+    "sol_clk": 28.61083891050583,
+    "util_pct": 3.386192840944972,
+    "util_active_pct": 3.386192840944972,
+    "detail": "472 MB whole kernel / 8.0 TB/s"
+   }
+  ],
+  "ncu": {},
+  "peak_notes": {},
+  "constants": {
+   "tc_mac_per_clk": 16384,
+   "xu_lanes_per_clk": 32,
+   "issue_per_clk": 4,
+   "fma_winst_per_clk": 2,
+   "alu_winst_per_clk": 2,
+   "smem_bytes_per_clk": 128,
+   "tmem_bytes_per_clk": 512,
+   "l2_bytes_per_clk_sm": 117.22684144918682,
+   "dram_bytes_per_s": 8000000000000.0
+  }
+ },
+ {
+  "name": "corralways_p64_half_pf_benc_cf1h1",
+  "d": 128,
+  "S": 8192,
+  "mask": "none",
+  "sched": "natural",
+  "cta_mma": 2,
+  "tiles_q": 2,
+  "f16": true,
+  "rowsum_mma": true,
+  "corr": "always",
+  "paged": 64,
+  "time_us": 249.01,
+  "clock_mhz": 2364.0,
+  "sm_count": 216,
+  "steps_total": 131072,
+  "steps_per_sm": 606.8148148148148,
+  "step_clk": 970.0811938476561,
+  "mma_util_pct": 28.038890118172475,
+  "binding_unit": "tmem",
+  "binding_pct": 43.08917672572093,
+  "inst_per_step": {
+   "total": 1646,
+   "fma": 512,
+   "alu": 60,
+   "xu": 260,
+   "src": "static estimate",
+   "cvt": 512
+  },
+  "units": [
+   {
+    "unit": "tensor",
+    "sol_clk": 272.0,
+    "util_pct": 28.038890118172475,
+    "util_active_pct": 28.038890118172475,
+    "detail": "BMM1 2048k + BMM2 2048k + rowsum 256k MAC / 16384"
+   },
+   {
+    "unit": "mufu",
+    "sol_clk": 256.0,
+    "util_pct": 26.389543640632915,
+    "util_active_pct": 26.389543640632915,
+    "detail": "16384 exp as f16x2 pairs / 32 lanes"
+   },
+   {
+    "unit": "issue",
+    "sol_clk": 411.5,
+    "util_pct": 42.419129719220486,
+    "util_active_pct": 42.419129719220486,
+    "detail": "1646 warp-instr / 4 (static estimate)"
+   },
+   {
+    "unit": "fma",
+    "sol_clk": 256.0,
+    "util_pct": 26.389543640632915,
+    "util_active_pct": 26.389543640632915,
+    "detail": "512 FMA-pipe warp-instr (FFMA2/FHADD2/HFMA2) / 2 (static estimate)"
+   },
+   {
+    "unit": "alu",
+    "sol_clk": 30.0,
+    "util_pct": 3.09252464538667,
+    "util_active_pct": 3.09252464538667,
+    "detail": "60 integer/logic ALU warp-instr / 2 (static estimate)"
+   },
+   {
+    "unit": "cvt",
+    "sol_clk": 256.0,
+    "util_pct": 26.389543640632915,
+    "util_active_pct": 26.389543640632915,
+    "detail": "512 F2FP/I2F convert+pack warp-instr / 2 (static estimate; ncu pipe attribution of F2FP differs)"
+   },
+   {
+    "unit": "xu_inst",
+    "sol_clk": 260.0,
+    "util_pct": 26.801880260017807,
+    "util_active_pct": 26.801880260017807,
+    "detail": "260 MUFU warp-instr x 32 lanes / 32 (static estimate)"
+   },
+   {
+    "unit": "smem",
+    "sol_clk": 338.0,
+    "util_pct": 34.84244433802315,
+    "util_active_pct": 34.84244433802315,
+    "detail": "reads 34 KiB (Q 16 + K/2 8 + V/2 8 + ones 2) + TMA writes 8.2 KiB / 128 B"
+   },
+   {
+    "unit": "tmem",
+    "sol_clk": 418.0,
+    "util_pct": 43.08917672572093,
+    "util_active_pct": 43.08917672572093,
+    "detail": "209 KiB tcgen05.ld/st / 512 B (assumed)"
+   },
+   {
+    "unit": "l2",
+    "sol_clk": 72.06540665570924,
+    "util_pct": 7.428801538753112,
+    "util_active_pct": 7.428801538753112,
+    "detail": "8.2 KiB K/V(+SF) per step per SM / 117 B/clk/SM"
+   },
+   {
+    "unit": "dram",
+    "sol_clk": 57.44519999999999,
+    "util_pct": 5.92168989197221,
+    "util_active_pct": 5.92168989197221,
+    "detail": "118 MB whole kernel / 8.0 TB/s"
+   }
+  ],
+  "ncu": {},
+  "peak_notes": {},
+  "constants": {
+   "tc_mac_per_clk": 16384,
+   "xu_lanes_per_clk": 32,
+   "issue_per_clk": 4,
+   "fma_winst_per_clk": 2,
+   "alu_winst_per_clk": 2,
+   "smem_bytes_per_clk": 128,
+   "tmem_bytes_per_clk": 512,
+   "l2_bytes_per_clk_sm": 117.22684144918682,
+   "dram_bytes_per_s": 8000000000000.0
+  }
+ },
+ {
+  "name": "corralways_p64_half_pf_benc_cf1h1",
+  "d": 128,
+  "S": 16384,
+  "mask": "none",
+  "sched": "natural",
+  "cta_mma": 2,
+  "tiles_q": 2,
+  "f16": true,
+  "rowsum_mma": true,
+  "corr": "always",
+  "paged": 64,
+  "time_us": 951.37,
+  "clock_mhz": 2364.0,
+  "sm_count": 216,
+  "steps_total": 524288,
+  "steps_per_sm": 2427.259259259259,
+  "step_clk": 926.5753839111329,
+  "mma_util_pct": 29.35540968635179,
+  "binding_unit": "issue",
+  "binding_pct": 48.86481242765497,
+  "inst_per_step": {
+   "total": 1811.077293395996,
+   "fma": 572.0442199707031,
+   "alu": 203.9414005279541,
+   "cvt": 258.0086364746094,
+   "xu": 260.0355682373047,
+   "ctrl": 399.3047389984131,
+   "tmem": 87.75,
+   "lsu": 24.979568481445312,
+   "src": "ncu SASS executed",
+   "by_class": {
+    "alu_int": 203.9414005279541,
+    "fma": 572.0442199707031,
+    "ctrl_sync": 399.3047389984131,
+    "lsu_mem": 24.979568481445312,
+    "tmem": 87.75,
+    "xu": 260.0355682373047,
+    "alu_cvt": 258.0086364746094,
+    "other": 0.0051422119140625,
+    "tensor": 5.008018493652344
+   }
+  },
+  "units": [
+   {
+    "unit": "tensor",
+    "sol_clk": 272.0,
+    "util_pct": 29.35540968635179,
+    "util_active_pct": 31.02532274248784,
+    "detail": "BMM1 2048k + BMM2 2048k + rowsum 256k MAC / 16384"
+   },
+   {
+    "unit": "mufu",
+    "sol_clk": 256.0,
+    "util_pct": 27.628620881272273,
+    "util_active_pct": 29.200303757635613,
+    "detail": "16384 exp as f16x2 pairs / 32 lanes"
+   },
+   {
+    "unit": "issue",
+    "sol_clk": 452.769323348999,
+    "util_pct": 48.86481242765497,
+    "util_active_pct": 51.644538179413715,
+    "detail": "1811 warp-instr / 4 (ncu SASS executed); of which sync/branch 399"
+   },
+   {
+    "unit": "fma",
+    "sol_clk": 286.02210998535156,
+    "util_pct": 30.868736095495464,
+    "util_active_pct": 32.624736300672375,
+    "detail": "572 FMA-pipe warp-instr (FFMA2/FHADD2/HFMA2) / 2 (ncu SASS executed)"
+   },
+   {
+    "unit": "alu",
+    "sol_clk": 101.97070026397705,
+    "util_pct": 11.005116478872157,
+    "util_active_pct": 11.631153992527125,
+    "detail": "204 integer/logic ALU warp-instr / 2 (ncu SASS executed)"
+   },
+   {
+    "unit": "cvt",
+    "sol_clk": 129.0043182373047,
+    "util_pct": 13.922700783693319,
+    "util_active_pct": 14.714708119437455,
+    "detail": "258 F2FP/I2F convert+pack warp-instr / 2 (ncu SASS executed; ncu pipe attribution of F2FP differs)"
+   },
+   {
+    "unit": "xu_inst",
+    "sol_clk": 260.0355682373047,
+    "util_pct": 28.064156759666787,
+    "util_active_pct": 29.660615548119846,
+    "detail": "260 MUFU warp-instr x 32 lanes / 32 (ncu SASS executed)"
+   },
+   {
+    "unit": "smem",
+    "sol_clk": 338.0,
+    "util_pct": 36.4784135073048,
+    "util_active_pct": 38.553526055003275,
+    "detail": "reads 34 KiB (Q 16 + K/2 8 + V/2 8 + ones 2) + TMA writes 8.2 KiB / 128 B"
+   },
+   {
+    "unit": "tmem",
+    "sol_clk": 418.0,
+    "util_pct": 45.11235753270238,
+    "util_active_pct": 47.6786209792644,
+    "detail": "209 KiB tcgen05.ld/st / 512 B (assumed)"
+   },
+   {
+    "unit": "l2",
+    "sol_clk": 72.48580855856133,
+    "util_pct": 7.822980171628797,
+    "util_active_pct": 8.26799854698365,
+    "detail": "8.2 KiB K/V(+SF) per step per SM / 117 B/clk/SM"
+   },
+   {
+    "unit": "dram",
+    "sol_clk": 28.722599999999996,
+    "util_pct": 3.099866508298559,
+    "util_active_pct": 3.276205643394784,
+    "detail": "236 MB whole kernel / 8.0 TB/s"
+   }
+  ],
+  "ncu": {
+   "tensor": 31.575781,
+   "mufu": 30.184937,
+   "xu_inst": 30.184937,
+   "issue": 41.442656,
+   "fma": 32.062528,
+   "alu": 10.149203,
+   "tmem": 2.89465,
+   "smem": 29.442108,
+   "l2": 10.437946,
+   "dram": null,
+   "ncu_us": 952.064,
+   "ncu_clk_ghz": 2.32132,
+   "sm_active_pct": 94.61758038749045,
+   "smem_wavefronts_per_step": 14.601741790771484
+  },
+  "peak_notes": {
+   "l2": "ncu-derived L2 sector peak 58.4 TB/s = 117 B/clk/SM (lts__t_sectors / pct_of_peak)",
+   "issue": "ncu smsp__inst_executed.sum 748 M vs SASS-page executed 950 M (the SASS page counts every pipe of a multi-pipe instruction; issue SOL uses the SASS count = upper bound)"
+  },
+  "constants": {
+   "tc_mac_per_clk": 16384,
+   "xu_lanes_per_clk": 32,
+   "issue_per_clk": 4,
+   "fma_winst_per_clk": 2,
+   "alu_winst_per_clk": 2,
+   "smem_bytes_per_clk": 128,
+   "tmem_bytes_per_clk": 512,
+   "l2_bytes_per_clk_sm": 116.54695129978244,
+   "dram_bytes_per_s": 8000000000000.0
+  }
+ },
+ {
+  "name": "corralways_p64_half_pf_benc_cf1h1",
+  "d": 128,
+  "S": 32768,
+  "mask": "none",
+  "sched": "natural",
+  "cta_mma": 2,
+  "tiles_q": 2,
+  "f16": true,
+  "rowsum_mma": true,
+  "corr": "always",
+  "paged": 64,
+  "time_us": 3594.45,
+  "clock_mhz": 2364.0,
+  "sm_count": 216,
+  "steps_total": 2097152,
+  "steps_per_sm": 9709.037037037036,
+  "step_clk": 875.1928504943847,
+  "mma_util_pct": 31.078864486421573,
+  "binding_unit": "tmem",
+  "binding_pct": 47.76090204163315,
+  "inst_per_step": {
+   "total": 1646,
+   "fma": 512,
+   "alu": 60,
+   "xu": 260,
+   "src": "static estimate",
+   "cvt": 512
+  },
+  "units": [
+   {
+    "unit": "tensor",
+    "sol_clk": 272.0,
+    "util_pct": 31.078864486421573,
+    "util_active_pct": 31.078864486421573,
+    "detail": "BMM1 2048k + BMM2 2048k + rowsum 256k MAC / 16384"
+   },
+   {
+    "unit": "mufu",
+    "sol_clk": 256.0,
+    "util_pct": 29.250695987220304,
+    "util_active_pct": 29.250695987220304,
+    "detail": "16384 exp as f16x2 pairs / 32 lanes"
+   },
+   {
+    "unit": "issue",
+    "sol_clk": 411.5,
+    "util_pct": 47.018208588832636,
+    "util_active_pct": 47.018208588832636,
+    "detail": "1646 warp-instr / 4 (static estimate)"
+   },
+   {
+    "unit": "fma",
+    "sol_clk": 256.0,
+    "util_pct": 29.250695987220304,
+    "util_active_pct": 29.250695987220304,
+    "detail": "512 FMA-pipe warp-instr (FFMA2/FHADD2/HFMA2) / 2 (static estimate)"
+   },
+   {
+    "unit": "alu",
+    "sol_clk": 30.0,
+    "util_pct": 3.4278159360023794,
+    "util_active_pct": 3.4278159360023794,
+    "detail": "60 integer/logic ALU warp-instr / 2 (static estimate)"
+   },
+   {
+    "unit": "cvt",
+    "sol_clk": 256.0,
+    "util_pct": 29.250695987220304,
+    "util_active_pct": 29.250695987220304,
+    "detail": "512 F2FP/I2F convert+pack warp-instr / 2 (static estimate; ncu pipe attribution of F2FP differs)"
+   },
+   {
+    "unit": "xu_inst",
+    "sol_clk": 260.0,
+    "util_pct": 29.70773811202062,
+    "util_active_pct": 29.70773811202062,
+    "detail": "260 MUFU warp-instr x 32 lanes / 32 (static estimate)"
+   },
+   {
+    "unit": "smem",
+    "sol_clk": 338.0,
+    "util_pct": 38.62005954562681,
+    "util_active_pct": 38.62005954562681,
+    "detail": "reads 34 KiB (Q 16 + K/2 8 + V/2 8 + ones 2) + TMA writes 8.2 KiB / 128 B"
+   },
+   {
+    "unit": "tmem",
+    "sol_clk": 418.0,
+    "util_pct": 47.76090204163315,
+    "util_active_pct": 47.76090204163315,
+    "detail": "209 KiB tcgen05.ld/st / 512 B (assumed)"
+   },
+   {
+    "unit": "l2",
+    "sol_clk": 72.06540665570924,
+    "util_pct": 8.23423164563107,
+    "util_active_pct": 8.23423164563107,
+    "detail": "8.2 KiB K/V(+SF) per step per SM / 117 B/clk/SM"
+   },
+   {
+    "unit": "dram",
+    "sol_clk": 14.361299999999998,
+    "util_pct": 1.640929766723699,
+    "util_active_pct": 1.640929766723699,
+    "detail": "472 MB whole kernel / 8.0 TB/s"
+   }
+  ],
+  "ncu": {},
+  "peak_notes": {},
+  "constants": {
+   "tc_mac_per_clk": 16384,
+   "xu_lanes_per_clk": 32,
+   "issue_per_clk": 4,
+   "fma_winst_per_clk": 2,
+   "alu_winst_per_clk": 2,
+   "smem_bytes_per_clk": 128,
+   "tmem_bytes_per_clk": 512,
+   "l2_bytes_per_clk_sm": 117.22684144918682,
+   "dram_bytes_per_s": 8000000000000.0
+  }
+ },
+ {
+  "name": "corrdefault_p0_half_pf_prod",
+  "d": 128,
+  "S": 8192,
+  "mask": "causal",
+  "sched": "lpt",
+  "cta_mma": 2,
+  "tiles_q": 2,
+  "f16": true,
+  "rowsum_mma": true,
+  "corr": "default",
+  "paged": 0,
+  "time_us": 104.29,
+  "clock_mhz": 2364.0,
+  "sm_count": 216,
+  "steps_total": 66560,
+  "steps_per_sm": 308.14814814814815,
+  "step_clk": 800.0747740384617,
+  "mma_util_pct": 33.996822400367826,
+  "binding_unit": "issue",
+  "binding_pct": 42.43353384163558,
+  "inst_per_step": {
+   "total": 1358,
+   "fma": 256,
+   "alu": 60,
+   "xu": 260,
+   "src": "static estimate",
+   "cvt": 512
+  },
+  "units": [
+   {
+    "unit": "tensor",
+    "sol_clk": 272.0,
+    "util_pct": 33.996822400367826,
+    "util_active_pct": 33.996822400367826,
+    "detail": "BMM1 2048k + BMM2 2048k + rowsum 256k MAC / 16384"
+   },
+   {
+    "unit": "mufu",
+    "sol_clk": 256.0,
+    "util_pct": 31.997009317993246,
+    "util_active_pct": 31.997009317993246,
+    "detail": "16384 exp as f16x2 pairs / 32 lanes"
+   },
+   {
+    "unit": "issue",
+    "sol_clk": 339.5,
+    "util_pct": 42.43353384163558,
+    "util_active_pct": 42.43353384163558,
+    "detail": "1358 warp-instr / 4 (static estimate)"
+   },
+   {
+    "unit": "fma",
+    "sol_clk": 128.0,
+    "util_pct": 15.998504658996623,
+    "util_active_pct": 15.998504658996623,
+    "detail": "256 FMA-pipe warp-instr (FFMA2/FHADD2/HFMA2) / 2 (static estimate)"
+   },
+   {
+    "unit": "alu",
+    "sol_clk": 30.0,
+    "util_pct": 3.7496495294523338,
+    "util_active_pct": 3.7496495294523338,
+    "detail": "60 integer/logic ALU warp-instr / 2 (static estimate)"
+   },
+   {
+    "unit": "cvt",
+    "sol_clk": 256.0,
+    "util_pct": 31.997009317993246,
+    "util_active_pct": 31.997009317993246,
+    "detail": "512 F2FP/I2F convert+pack warp-instr / 2 (static estimate; ncu pipe attribution of F2FP differs)"
+   },
+   {
+    "unit": "xu_inst",
+    "sol_clk": 260.0,
+    "util_pct": 32.49696258858689,
+    "util_active_pct": 32.49696258858689,
+    "detail": "260 MUFU warp-instr x 32 lanes / 32 (static estimate)"
+   },
+   {
+    "unit": "smem",
+    "sol_clk": 338.0,
+    "util_pct": 42.24605136516296,
+    "util_active_pct": 42.24605136516296,
+    "detail": "reads 34 KiB (Q 16 + K/2 8 + V/2 8 + ones 2) + TMA writes 8.2 KiB / 128 B"
+   },
+   {
+    "unit": "tmem",
+    "sol_clk": 162.0,
+    "util_pct": 20.2481074590426,
+    "util_active_pct": 20.2481074590426,
+    "detail": "81 KiB tcgen05.ld/st / 512 B (assumed)"
+   },
+   {
+    "unit": "l2",
+    "sol_clk": 72.06540665570924,
+    "util_pct": 9.007333938545708,
+    "util_active_pct": 9.007333938545708,
+    "detail": "8.2 KiB K/V(+SF) per step per SM / 117 B/clk/SM"
+   },
+   {
+    "unit": "dram",
+    "sol_clk": 113.12285538461536,
+    "util_pct": 14.139035382107583,
+    "util_active_pct": 14.139035382107583,
+    "detail": "118 MB whole kernel / 8.0 TB/s"
+   }
+  ],
+  "ncu": {},
+  "peak_notes": {},
+  "constants": {
+   "tc_mac_per_clk": 16384,
+   "xu_lanes_per_clk": 32,
+   "issue_per_clk": 4,
+   "fma_winst_per_clk": 2,
+   "alu_winst_per_clk": 2,
+   "smem_bytes_per_clk": 128,
+   "tmem_bytes_per_clk": 512,
+   "l2_bytes_per_clk_sm": 117.22684144918682,
+   "dram_bytes_per_s": 8000000000000.0
+  }
+ },
+ {
+  "name": "corrdefault_p0_half_pf_prod",
+  "d": 128,
+  "S": 16384,
+  "mask": "causal",
+  "sched": "lpt",
+  "cta_mma": 2,
+  "tiles_q": 2,
+  "f16": true,
+  "rowsum_mma": true,
+  "corr": "default",
+  "paged": 0,
+  "time_us": 340.9,
+  "clock_mhz": 2364.0,
+  "sm_count": 216,
+  "steps_total": 264192,
+  "steps_per_sm": 1223.111111111111,
+  "step_clk": 658.8833938953487,
+  "mma_util_pct": 41.281963169829424,
+  "binding_unit": "issue",
+  "binding_pct": 61.018017472172815,
+  "inst_per_step": {
+   "total": 1608.1503376332364,
+   "fma": 362.98759992732556,
+   "alu": 294.23265655281006,
+   "cvt": 266.1946765988372,
+   "xu": 266.24462512112405,
+   "ctrl": 361.80900254360466,
+   "tmem": 25.11627906976744,
+   "lsu": 26.423101380813954,
+   "src": "ncu SASS executed",
+   "by_class": {
+    "alu_int": 294.23265655281006,
+    "fma": 362.98759992732556,
+    "ctrl_sync": 361.80900254360466,
+    "lsu_mem": 26.423101380813954,
+    "alu_cvt": 266.1946765988372,
+    "xu": 266.24462512112405,
+    "tmem": 25.11627906976744,
+    "other": 0.010204699612403102,
+    "tensor": 5.132191739341085
+   }
+  },
+  "units": [
+   {
+    "unit": "tensor",
+    "sol_clk": 272.0,
+    "util_pct": 41.281963169829424,
+    "util_active_pct": 42.130013124295935,
+    "detail": "BMM1 2048k + BMM2 2048k + rowsum 256k MAC / 16384"
+   },
+   {
+    "unit": "mufu",
+    "sol_clk": 256.0,
+    "util_pct": 38.853612395133574,
+    "util_active_pct": 39.65177705816088,
+    "detail": "16384 exp as f16x2 pairs / 32 lanes"
+   },
+   {
+    "unit": "issue",
+    "sol_clk": 402.0375844083091,
+    "util_pct": 61.018017472172815,
+    "util_active_pct": 62.27150260140551,
+    "detail": "1608 warp-instr / 4 (ncu SASS executed); of which sync/branch 362"
+   },
+   {
+    "unit": "fma",
+    "sol_clk": 181.49379996366278,
+    "util_pct": 27.54566310901587,
+    "util_active_pct": 28.111530053115644,
+    "detail": "363 FMA-pipe warp-instr (FFMA2/FHADD2/HFMA2) / 2 (ncu SASS executed)"
+   },
+   {
+    "unit": "alu",
+    "sol_clk": 147.11632827640503,
+    "util_pct": 22.328128108776056,
+    "util_active_pct": 22.78681191574696,
+    "detail": "294 integer/logic ALU warp-instr / 2 (ncu SASS executed)"
+   },
+   {
+    "unit": "cvt",
+    "sol_clk": 133.0973382994186,
+    "util_pct": 20.200439035584285,
+    "util_active_pct": 20.615414005012358,
+    "detail": "266 F2FP/I2F convert+pack warp-instr / 2 (ncu SASS executed; ncu pipe attribution of F2FP differs)"
+   },
+   {
+    "unit": "xu_inst",
+    "sol_clk": 266.24462512112405,
+    "util_pct": 40.40845885446796,
+    "util_active_pct": 41.23856452436106,
+    "detail": "266 MUFU warp-instr x 32 lanes / 32 (ncu SASS executed)"
+   },
+   {
+    "unit": "smem",
+    "sol_clk": 338.0,
+    "util_pct": 51.2989101154498,
+    "util_active_pct": 52.352736897103036,
+    "detail": "reads 34 KiB (Q 16 + K/2 8 + V/2 8 + ones 2) + TMA writes 8.2 KiB / 128 B"
+   },
+   {
+    "unit": "tmem",
+    "sol_clk": 162.0,
+    "util_pct": 24.587051593795465,
+    "util_active_pct": 25.09214016961743,
+    "detail": "81 KiB tcgen05.ld/st / 512 B (assumed)"
+   },
+   {
+    "unit": "l2",
+    "sol_clk": 71.95515315960799,
+    "util_pct": 10.920771994905781,
+    "util_active_pct": 11.145115981525768,
+    "detail": "8.2 KiB K/V(+SF) per step per SM / 117 B/clk/SM"
+   },
+   {
+    "unit": "dram",
+    "sol_clk": 56.99988837209302,
+    "util_pct": 8.65098269287181,
+    "util_active_pct": 8.828698695587066,
+    "detail": "236 MB whole kernel / 8.0 TB/s"
+   }
+  ],
+  "ncu": {
+   "tensor": 44.409696,
+   "mufu": 42.513054,
+   "xu_inst": 42.513054,
+   "issue": 47.547691,
+   "fma": 21.788855,
+   "alu": 16.709351,
+   "tmem": 1.65449,
+   "smem": 42.887574,
+   "l2": 16.339296,
+   "dram": null,
+   "ncu_us": 343.584,
+   "ncu_clk_ghz": 2.277543,
+   "sm_active_pct": 97.98706458513432,
+   "smem_wavefronts_per_step": 13.475612433381784
+  },
+  "peak_notes": {
+   "l2": "ncu-derived L2 sector peak 57.8 TB/s = 117 B/clk/SM (lts__t_sectors / pct_of_peak)",
+   "issue": "ncu smsp__inst_executed.sum 314 M vs SASS-page executed 425 M (the SASS page counts every pipe of a multi-pipe instruction; issue SOL uses the SASS count = upper bound)"
+  },
+  "constants": {
+   "tc_mac_per_clk": 16384,
+   "xu_lanes_per_clk": 32,
+   "issue_per_clk": 4,
+   "fma_winst_per_clk": 2,
+   "alu_winst_per_clk": 2,
+   "smem_bytes_per_clk": 128,
+   "tmem_bytes_per_clk": 512,
+   "l2_bytes_per_clk_sm": 117.4064626234759,
+   "dram_bytes_per_s": 8000000000000.0
+  }
+ },
+ {
+  "name": "corrdefault_p0_half_pf_prod",
+  "d": 128,
+  "S": 32768,
+  "mask": "causal",
+  "sched": "lpt",
+  "cta_mma": 2,
+  "tiles_q": 2,
+  "f16": true,
+  "rowsum_mma": true,
+  "corr": "default",
+  "paged": 0,
+  "time_us": 1255.77,
+  "clock_mhz": 2364.0,
+  "sm_count": 216,
+  "steps_total": 1052672,
+  "steps_per_sm": 4873.481481481482,
+  "step_clk": 609.1415944187744,
+  "mma_util_pct": 44.65300063108228,
+  "binding_unit": "issue",
+  "binding_pct": 55.73416806710454,
+  "inst_per_step": {
+   "total": 1358,
+   "fma": 256,
+   "alu": 60,
+   "xu": 260,
+   "src": "static estimate",
+   "cvt": 512
+  },
+  "units": [
+   {
+    "unit": "tensor",
+    "sol_clk": 272.0,
+    "util_pct": 44.65300063108228,
+    "util_active_pct": 44.65300063108228,
+    "detail": "BMM1 2048k + BMM2 2048k + rowsum 256k MAC / 16384"
+   },
+   {
+    "unit": "mufu",
+    "sol_clk": 256.0,
+    "util_pct": 42.026353535136266,
+    "util_active_pct": 42.026353535136266,
+    "detail": "16384 exp as f16x2 pairs / 32 lanes"
+   },
+   {
+    "unit": "issue",
+    "sol_clk": 339.5,
+    "util_pct": 55.73416806710454,
+    "util_active_pct": 55.73416806710454,
+    "detail": "1358 warp-instr / 4 (static estimate)"
+   },
+   {
+    "unit": "fma",
+    "sol_clk": 128.0,
+    "util_pct": 21.013176767568133,
+    "util_active_pct": 21.013176767568133,
+    "detail": "256 FMA-pipe warp-instr (FFMA2/FHADD2/HFMA2) / 2 (static estimate)"
+   },
+   {
+    "unit": "alu",
+    "sol_clk": 30.0,
+    "util_pct": 4.924963304898781,
+    "util_active_pct": 4.924963304898781,
+    "detail": "60 integer/logic ALU warp-instr / 2 (static estimate)"
+   },
+   {
+    "unit": "cvt",
+    "sol_clk": 256.0,
+    "util_pct": 42.026353535136266,
+    "util_active_pct": 42.026353535136266,
+    "detail": "512 F2FP/I2F convert+pack warp-instr / 2 (static estimate; ncu pipe attribution of F2FP differs)"
+   },
+   {
+    "unit": "xu_inst",
+    "sol_clk": 260.0,
+    "util_pct": 42.683015309122766,
+    "util_active_pct": 42.683015309122766,
+    "detail": "260 MUFU warp-instr x 32 lanes / 32 (static estimate)"
+   },
+   {
+    "unit": "smem",
+    "sol_clk": 338.0,
+    "util_pct": 55.4879199018596,
+    "util_active_pct": 55.4879199018596,
+    "detail": "reads 34 KiB (Q 16 + K/2 8 + V/2 8 + ones 2) + TMA writes 8.2 KiB / 128 B"
+   },
+   {
+    "unit": "tmem",
+    "sol_clk": 162.0,
+    "util_pct": 26.594801846453418,
+    "util_active_pct": 26.594801846453418,
+    "detail": "81 KiB tcgen05.ld/st / 512 B (assumed)"
+   },
+   {
+    "unit": "l2",
+    "sol_clk": 72.06540665570924,
+    "util_pct": 11.830649444399214,
+    "util_active_pct": 11.830649444399214,
+    "detail": "8.2 KiB K/V(+SF) per step per SM / 117 B/clk/SM"
+   },
+   {
+    "unit": "dram",
+    "sol_clk": 28.61083891050583,
+    "util_pct": 4.696911058553716,
+    "util_active_pct": 4.696911058553716,
+    "detail": "472 MB whole kernel / 8.0 TB/s"
+   }
+  ],
+  "ncu": {},
+  "peak_notes": {},
+  "constants": {
+   "tc_mac_per_clk": 16384,
+   "xu_lanes_per_clk": 32,
+   "issue_per_clk": 4,
+   "fma_winst_per_clk": 2,
+   "alu_winst_per_clk": 2,
+   "smem_bytes_per_clk": 128,
+   "tmem_bytes_per_clk": 512,
+   "l2_bytes_per_clk_sm": 117.22684144918682,
+   "dram_bytes_per_s": 8000000000000.0
+  }
+ },
+ {
+  "name": "corrdefault_p0_half_pf_prod",
+  "d": 128,
+  "S": 8192,
+  "mask": "none",
+  "sched": "natural",
+  "cta_mma": 2,
+  "tiles_q": 2,
+  "f16": true,
+  "rowsum_mma": true,
+  "corr": "default",
+  "paged": 0,
+  "time_us": 172.71,
+  "clock_mhz": 2364.0,
+  "sm_count": 216,
+  "steps_total": 131072,
+  "steps_per_sm": 606.8148148148148,
+  "step_clk": 672.8353198242187,
+  "mma_util_pct": 40.42593960005863,
+  "binding_unit": "issue",
+  "binding_pct": 50.4581121111026,
+  "inst_per_step": {
+   "total": 1358,
+   "fma": 256,
+   "alu": 60,
+   "xu": 260,
+   "src": "static estimate",
+   "cvt": 512
+  },
+  "units": [
+   {
+    "unit": "tensor",
+    "sol_clk": 272.0,
+    "util_pct": 40.42593960005863,
+    "util_active_pct": 40.42593960005863,
+    "detail": "BMM1 2048k + BMM2 2048k + rowsum 256k MAC / 16384"
+   },
+   {
+    "unit": "mufu",
+    "sol_clk": 256.0,
+    "util_pct": 38.04794315299636,
+    "util_active_pct": 38.04794315299636,
+    "detail": "16384 exp as f16x2 pairs / 32 lanes"
+   },
+   {
+    "unit": "issue",
+    "sol_clk": 339.5,
+    "util_pct": 50.4581121111026,
+    "util_active_pct": 50.4581121111026,
+    "detail": "1358 warp-instr / 4 (static estimate)"
+   },
+   {
+    "unit": "fma",
+    "sol_clk": 128.0,
+    "util_pct": 19.02397157649818,
+    "util_active_pct": 19.02397157649818,
+    "detail": "256 FMA-pipe warp-instr (FFMA2/FHADD2/HFMA2) / 2 (static estimate)"
+   },
+   {
+    "unit": "alu",
+    "sol_clk": 30.0,
+    "util_pct": 4.458743338241761,
+    "util_active_pct": 4.458743338241761,
+    "detail": "60 integer/logic ALU warp-instr / 2 (static estimate)"
+   },
+   {
+    "unit": "cvt",
+    "sol_clk": 256.0,
+    "util_pct": 38.04794315299636,
+    "util_active_pct": 38.04794315299636,
+    "detail": "512 F2FP/I2F convert+pack warp-instr / 2 (static estimate; ncu pipe attribution of F2FP differs)"
+   },
+   {
+    "unit": "xu_inst",
+    "sol_clk": 260.0,
+    "util_pct": 38.64244226476193,
+    "util_active_pct": 38.64244226476193,
+    "detail": "260 MUFU warp-instr x 32 lanes / 32 (static estimate)"
+   },
+   {
+    "unit": "smem",
+    "sol_clk": 338.0,
+    "util_pct": 50.23517494419051,
+    "util_active_pct": 50.23517494419051,
+    "detail": "reads 34 KiB (Q 16 + K/2 8 + V/2 8 + ones 2) + TMA writes 8.2 KiB / 128 B"
+   },
+   {
+    "unit": "tmem",
+    "sol_clk": 162.0,
+    "util_pct": 24.077214026505512,
+    "util_active_pct": 24.077214026505512,
+    "detail": "81 KiB tcgen05.ld/st / 512 B (assumed)"
+   },
+   {
+    "unit": "l2",
+    "sol_clk": 72.06540665570924,
+    "util_pct": 10.710705061460903,
+    "util_active_pct": 10.710705061460903,
+    "detail": "8.2 KiB K/V(+SF) per step per SM / 117 B/clk/SM"
+   },
+   {
+    "unit": "dram",
+    "sol_clk": 57.44519999999999,
+    "util_pct": 8.537780093798853,
+    "util_active_pct": 8.537780093798853,
+    "detail": "118 MB whole kernel / 8.0 TB/s"
+   }
+  ],
+  "ncu": {},
+  "peak_notes": {},
+  "constants": {
+   "tc_mac_per_clk": 16384,
+   "xu_lanes_per_clk": 32,
+   "issue_per_clk": 4,
+   "fma_winst_per_clk": 2,
+   "alu_winst_per_clk": 2,
+   "smem_bytes_per_clk": 128,
+   "tmem_bytes_per_clk": 512,
+   "l2_bytes_per_clk_sm": 117.22684144918682,
+   "dram_bytes_per_s": 8000000000000.0
+  }
+ },
+ {
+  "name": "corrdefault_p0_half_pf_prod",
+  "d": 128,
+  "S": 16384,
+  "mask": "none",
+  "sched": "natural",
+  "cta_mma": 2,
+  "tiles_q": 2,
+  "f16": true,
+  "rowsum_mma": true,
+  "corr": "default",
+  "paged": 0,
+  "time_us": 641.34,
+  "clock_mhz": 2364.0,
+  "sm_count": 216,
+  "steps_total": 524288,
+  "steps_per_sm": 2427.259259259259,
+  "step_clk": 624.6253894042969,
+  "mma_util_pct": 43.54610052905558,
+  "binding_unit": "issue",
+  "binding_pct": 58.02645475321996,
+  "inst_per_step": {
+   "total": 1449.7918758392334,
+   "fma": 302.26255798339844,
+   "alu": 257.60619735717773,
+   "cvt": 258.0086364746094,
+   "xu": 260.0355682373047,
+   "ctrl": 317.701379776001,
+   "tmem": 24.28125,
+   "lsu": 24.88312530517578,
+   "src": "ncu SASS executed",
+   "by_class": {
+    "alu_int": 257.60619735717773,
+    "fma": 302.26255798339844,
+    "ctrl_sync": 317.701379776001,
+    "lsu_mem": 24.88312530517578,
+    "tmem": 24.28125,
+    "xu": 260.0355682373047,
+    "alu_cvt": 258.0086364746094,
+    "other": 0.0051422119140625,
+    "tensor": 5.008018493652344
+   }
+  },
+  "units": [
+   {
+    "unit": "tensor",
+    "sol_clk": 272.0,
+    "util_pct": 43.54610052905558,
+    "util_active_pct": 45.874314705558426,
+    "detail": "BMM1 2048k + BMM2 2048k + rowsum 256k MAC / 16384"
+   },
+   {
+    "unit": "mufu",
+    "sol_clk": 256.0,
+    "util_pct": 40.98456520381701,
+    "util_active_pct": 43.17582560523146,
+    "detail": "16384 exp as f16x2 pairs / 32 lanes"
+   },
+   {
+    "unit": "issue",
+    "sol_clk": 362.44796895980835,
+    "util_pct": 58.02645475321996,
+    "util_active_pct": 61.128868354605586,
+    "detail": "1450 warp-instr / 4 (ncu SASS executed); of which sync/branch 318"
+   },
+   {
+    "unit": "fma",
+    "sol_clk": 151.13127899169922,
+    "util_pct": 24.195506867857645,
+    "util_active_pct": 25.489131817348387,
+    "detail": "302 FMA-pipe warp-instr (FFMA2/FHADD2/HFMA2) / 2 (ncu SASS executed)"
+   },
+   {
+    "unit": "alu",
+    "sol_clk": 128.80309867858887,
+    "util_pct": 20.62085545408712,
+    "util_active_pct": 21.72335986703192,
+    "detail": "258 integer/logic ALU warp-instr / 2 (ncu SASS executed)"
+   },
+   {
+    "unit": "cvt",
+    "sol_clk": 129.0043182373047,
+    "util_pct": 20.653069892073336,
+    "util_active_pct": 21.757296666154872,
+    "detail": "258 F2FP/I2F convert+pack warp-instr / 2 (ncu SASS executed; ncu pipe attribution of F2FP differs)"
+   },
+   {
+    "unit": "xu_inst",
+    "sol_clk": 260.0355682373047,
+    "util_pct": 41.63064336614618,
+    "util_active_pct": 43.856446661605986,
+    "detail": "260 MUFU warp-instr x 32 lanes / 32 (ncu SASS executed)"
+   },
+   {
+    "unit": "smem",
+    "sol_clk": 338.0,
+    "util_pct": 54.11243374566465,
+    "util_active_pct": 57.005582244407165,
+    "detail": "reads 34 KiB (Q 16 + K/2 8 + V/2 8 + ones 2) + TMA writes 8.2 KiB / 128 B"
+   },
+   {
+    "unit": "tmem",
+    "sol_clk": 162.0,
+    "util_pct": 25.935545168040452,
+    "util_active_pct": 27.322202140810532,
+    "detail": "81 KiB tcgen05.ld/st / 512 B (assumed)"
+   },
+   {
+    "unit": "l2",
+    "sol_clk": 72.39839698654873,
+    "util_pct": 11.590690710730609,
+    "util_active_pct": 12.210392821834153,
+    "detail": "8.2 KiB K/V(+SF) per step per SM / 117 B/clk/SM"
+   },
+   {
+    "unit": "dram",
+    "sol_clk": 28.722599999999996,
+    "util_pct": 4.598372158293572,
+    "util_active_pct": 4.844226439565707,
+    "detail": "236 MB whole kernel / 8.0 TB/s"
+   }
+  ],
+  "ncu": {
+   "tensor": 47.064907,
+   "mufu": 44.991802,
+   "xu_inst": 44.991802,
+   "issue": 47.132328,
+   "fma": 22.723303,
+   "alu": 14.42865,
+   "tmem": 1.742325,
+   "smem": 44.026896,
+   "l2": 14.572464,
+   "dram": null,
+   "ncu_us": 641.728,
+   "ncu_clk_ghz": 2.303028,
+   "sm_active_pct": 94.9247979148106,
+   "smem_wavefronts_per_step": 12.185541152954102
+  },
+  "peak_notes": {
+   "l2": "ncu-derived L2 sector peak 58.0 TB/s = 117 B/clk/SM (lts__t_sectors / pct_of_peak)",
+   "issue": "ncu smsp__inst_executed.sum 572 M vs SASS-page executed 760 M (the SASS page counts every pipe of a multi-pipe instruction; issue SOL uses the SASS count = upper bound)"
+  },
+  "constants": {
+   "tc_mac_per_clk": 16384,
+   "xu_lanes_per_clk": 32,
+   "issue_per_clk": 4,
+   "fma_winst_per_clk": 2,
+   "alu_winst_per_clk": 2,
+   "smem_bytes_per_clk": 128,
+   "tmem_bytes_per_clk": 512,
+   "l2_bytes_per_clk_sm": 116.6876664626925,
+   "dram_bytes_per_s": 8000000000000.0
+  }
+ },
+ {
+  "name": "corrdefault_p0_half_pf_prod",
+  "d": 128,
+  "S": 32768,
+  "mask": "none",
+  "sched": "natural",
+  "cta_mma": 2,
+  "tiles_q": 2,
+  "f16": true,
+  "rowsum_mma": true,
+  "corr": "default",
+  "paged": 0,
+  "time_us": 2417.34,
+  "clock_mhz": 2364.0,
+  "sm_count": 216,
+  "steps_total": 2097152,
+  "steps_per_sm": 9709.037037037036,
+  "step_clk": 588.5848141479494,
+  "mma_util_pct": 46.21254124501228,
+  "binding_unit": "issue",
+  "binding_pct": 57.680727031917904,
+  "inst_per_step": {
+   "total": 1358,
+   "fma": 256,
+   "alu": 60,
+   "xu": 260,
+   "src": "static estimate",
+   "cvt": 512
+  },
+  "units": [
+   {
+    "unit": "tensor",
+    "sol_clk": 272.0,
+    "util_pct": 46.21254124501228,
+    "util_active_pct": 46.21254124501228,
+    "detail": "BMM1 2048k + BMM2 2048k + rowsum 256k MAC / 16384"
+   },
+   {
+    "unit": "mufu",
+    "sol_clk": 256.0,
+    "util_pct": 43.494156465893916,
+    "util_active_pct": 43.494156465893916,
+    "detail": "16384 exp as f16x2 pairs / 32 lanes"
+   },
+   {
+    "unit": "issue",
+    "sol_clk": 339.5,
+    "util_pct": 57.680727031917904,
+    "util_active_pct": 57.680727031917904,
+    "detail": "1358 warp-instr / 4 (static estimate)"
+   },
+   {
+    "unit": "fma",
+    "sol_clk": 128.0,
+    "util_pct": 21.747078232946958,
+    "util_active_pct": 21.747078232946958,
+    "detail": "256 FMA-pipe warp-instr (FFMA2/FHADD2/HFMA2) / 2 (static estimate)"
+   },
+   {
+    "unit": "alu",
+    "sol_clk": 30.0,
+    "util_pct": 5.096971460846943,
+    "util_active_pct": 5.096971460846943,
+    "detail": "60 integer/logic ALU warp-instr / 2 (static estimate)"
+   },
+   {
+    "unit": "cvt",
+    "sol_clk": 256.0,
+    "util_pct": 43.494156465893916,
+    "util_active_pct": 43.494156465893916,
+    "detail": "512 F2FP/I2F convert+pack warp-instr / 2 (static estimate; ncu pipe attribution of F2FP differs)"
+   },
+   {
+    "unit": "xu_inst",
+    "sol_clk": 260.0,
+    "util_pct": 44.17375266067351,
+    "util_active_pct": 44.17375266067351,
+    "detail": "260 MUFU warp-instr x 32 lanes / 32 (static estimate)"
+   },
+   {
+    "unit": "smem",
+    "sol_clk": 338.0,
+    "util_pct": 57.42587845887556,
+    "util_active_pct": 57.42587845887556,
+    "detail": "reads 34 KiB (Q 16 + K/2 8 + V/2 8 + ones 2) + TMA writes 8.2 KiB / 128 B"
+   },
+   {
+    "unit": "tmem",
+    "sol_clk": 162.0,
+    "util_pct": 27.523645888573494,
+    "util_active_pct": 27.523645888573494,
+    "detail": "81 KiB tcgen05.ld/st / 512 B (assumed)"
+   },
+   {
+    "unit": "l2",
+    "sol_clk": 72.06540665570924,
+    "util_pct": 12.243844034615979,
+    "util_active_pct": 12.243844034615979,
+    "detail": "8.2 KiB K/V(+SF) per step per SM / 117 B/clk/SM"
+   },
+   {
+    "unit": "dram",
+    "sol_clk": 14.361299999999998,
+    "util_pct": 2.4399712080220404,
+    "util_active_pct": 2.4399712080220404,
+    "detail": "472 MB whole kernel / 8.0 TB/s"
+   }
+  ],
+  "ncu": {},
+  "peak_notes": {},
+  "constants": {
+   "tc_mac_per_clk": 16384,
+   "xu_lanes_per_clk": 32,
+   "issue_per_clk": 4,
+   "fma_winst_per_clk": 2,
+   "alu_winst_per_clk": 2,
+   "smem_bytes_per_clk": 128,
+   "tmem_bytes_per_clk": 512,
+   "l2_bytes_per_clk_sm": 117.22684144918682,
+   "dram_bytes_per_s": 8000000000000.0
+  }
+ },
+ {
+  "name": "corrdefault_p64_half_pf_benc_cf1h1",
+  "d": 128,
+  "S": 8192,
+  "mask": "causal",
+  "sched": "lpt",
+  "cta_mma": 2,
+  "tiles_q": 2,
+  "f16": true,
+  "rowsum_mma": true,
+  "corr": "default",
+  "paged": 64,
+  "time_us": 103.85,
+  "clock_mhz": 2364.0,
+  "sm_count": 216,
+  "steps_total": 66560,
+  "steps_per_sm": 308.14814814814815,
+  "step_clk": 796.6992548076922,
+  "mma_util_pct": 34.140862861187884,
+  "binding_unit": "issue",
+  "binding_pct": 42.61331963740179,
+  "inst_per_step": {
+   "total": 1358,
+   "fma": 256,
+   "alu": 60,
+   "xu": 260,
+   "src": "static estimate",
+   "cvt": 512
+  },
+  "units": [
+   {
+    "unit": "tensor",
+    "sol_clk": 272.0,
+    "util_pct": 34.140862861187884,
+    "util_active_pct": 34.140862861187884,
+    "detail": "BMM1 2048k + BMM2 2048k + rowsum 256k MAC / 16384"
+   },
+   {
+    "unit": "mufu",
+    "sol_clk": 256.0,
+    "util_pct": 32.13257681052977,
+    "util_active_pct": 32.13257681052977,
+    "detail": "16384 exp as f16x2 pairs / 32 lanes"
+   },
+   {
+    "unit": "issue",
+    "sol_clk": 339.5,
+    "util_pct": 42.61331963740179,
+    "util_active_pct": 42.61331963740179,
+    "detail": "1358 warp-instr / 4 (static estimate)"
+   },
+   {
+    "unit": "fma",
+    "sol_clk": 128.0,
+    "util_pct": 16.066288405264885,
+    "util_active_pct": 16.066288405264885,
+    "detail": "256 FMA-pipe warp-instr (FFMA2/FHADD2/HFMA2) / 2 (static estimate)"
+   },
+   {
+    "unit": "alu",
+    "sol_clk": 30.0,
+    "util_pct": 3.7655363449839574,
+    "util_active_pct": 3.7655363449839574,
+    "detail": "60 integer/logic ALU warp-instr / 2 (static estimate)"
+   },
+   {
+    "unit": "cvt",
+    "sol_clk": 256.0,
+    "util_pct": 32.13257681052977,
+    "util_active_pct": 32.13257681052977,
+    "detail": "512 F2FP/I2F convert+pack warp-instr / 2 (static estimate; ncu pipe attribution of F2FP differs)"
+   },
+   {
+    "unit": "xu_inst",
+    "sol_clk": 260.0,
+    "util_pct": 32.6346483231943,
+    "util_active_pct": 32.6346483231943,
+    "detail": "260 MUFU warp-instr x 32 lanes / 32 (static estimate)"
+   },
+   {
+    "unit": "smem",
+    "sol_clk": 338.0,
+    "util_pct": 42.42504282015259,
+    "util_active_pct": 42.42504282015259,
+    "detail": "reads 34 KiB (Q 16 + K/2 8 + V/2 8 + ones 2) + TMA writes 8.2 KiB / 128 B"
+   },
+   {
+    "unit": "tmem",
+    "sol_clk": 162.0,
+    "util_pct": 20.33389626291337,
+    "util_active_pct": 20.33389626291337,
+    "detail": "81 KiB tcgen05.ld/st / 512 B (assumed)"
+   },
+   {
+    "unit": "l2",
+    "sol_clk": 72.06540665570924,
+    "util_pct": 9.045496932604065,
+    "util_active_pct": 9.045496932604065,
+    "detail": "8.2 KiB K/V(+SF) per step per SM / 117 B/clk/SM"
+   },
+   {
+    "unit": "dram",
+    "sol_clk": 113.12285538461536,
+    "util_pct": 14.198940779971112,
+    "util_active_pct": 14.198940779971112,
+    "detail": "118 MB whole kernel / 8.0 TB/s"
+   }
+  ],
+  "ncu": {},
+  "peak_notes": {},
+  "constants": {
+   "tc_mac_per_clk": 16384,
+   "xu_lanes_per_clk": 32,
+   "issue_per_clk": 4,
+   "fma_winst_per_clk": 2,
+   "alu_winst_per_clk": 2,
+   "smem_bytes_per_clk": 128,
+   "tmem_bytes_per_clk": 512,
+   "l2_bytes_per_clk_sm": 117.22684144918682,
+   "dram_bytes_per_s": 8000000000000.0
+  }
+ },
+ {
+  "name": "corrdefault_p64_half_pf_benc_cf1h1",
+  "d": 128,
+  "S": 16384,
+  "mask": "causal",
+  "sched": "lpt",
+  "cta_mma": 2,
+  "tiles_q": 2,
+  "f16": true,
+  "rowsum_mma": true,
+  "corr": "default",
+  "paged": 64,
+  "time_us": 332.84,
+  "clock_mhz": 2364.0,
+  "sm_count": 216,
+  "steps_total": 264192,
+  "steps_per_sm": 1223.111111111111,
+  "step_clk": 643.3052180232556,
+  "mma_util_pct": 42.28164056181605,
+  "binding_unit": "issue",
+  "binding_pct": 59.74486819478542,
+  "inst_per_step": {
+   "total": 1537.3674183926842,
+   "fma": 354.810546875,
+   "alu": 227.4183624031008,
+   "cvt": 266.4089147286822,
+   "xu": 266.3517441860465,
+   "ctrl": 373.7256124333818,
+   "tmem": 16.992248062015506,
+   "lsu": 26.517593265503876,
+   "src": "ncu SASS executed",
+   "by_class": {
+    "alu_int": 227.4183624031008,
+    "fma": 354.810546875,
+    "ctrl_sync": 373.7256124333818,
+    "lsu_mem": 26.517593265503876,
+    "alu_cvt": 266.4089147286822,
+    "xu": 266.3517441860465,
+    "tmem": 16.992248062015506,
+    "other": 0.010204699612403102,
+    "tensor": 5.132191739341085
+   }
+  },
+  "units": [
+   {
+    "unit": "tensor",
+    "sol_clk": 272.0,
+    "util_pct": 42.28164056181605,
+    "util_active_pct": 43.16793069909736,
+    "detail": "BMM1 2048k + BMM2 2048k + rowsum 256k MAC / 16384"
+   },
+   {
+    "unit": "mufu",
+    "sol_clk": 256.0,
+    "util_pct": 39.794485234650395,
+    "util_active_pct": 40.62864065797399,
+    "detail": "16384 exp as f16x2 pairs / 32 lanes"
+   },
+   {
+    "unit": "issue",
+    "sol_clk": 384.34185459817104,
+    "util_pct": 59.74486819478542,
+    "util_active_pct": 60.99721523550148,
+    "detail": "1537 warp-instr / 4 (ncu SASS executed); of which sync/branch 374"
+   },
+   {
+    "unit": "fma",
+    "sol_clk": 177.4052734375,
+    "util_pct": 27.577154431084804,
+    "util_active_pct": 28.155215255163302,
+    "detail": "355 FMA-pipe warp-instr (FFMA2/FHADD2/HFMA2) / 2 (ncu SASS executed)"
+   },
+   {
+    "unit": "alu",
+    "sol_clk": 113.7091812015504,
+    "util_pct": 17.675774735817516,
+    "util_active_pct": 18.046286963086885,
+    "detail": "227 integer/logic ALU warp-instr / 2 (ncu SASS executed)"
+   },
+   {
+    "unit": "cvt",
+    "sol_clk": 133.2044573643411,
+    "util_pct": 20.706260983495664,
+    "util_active_pct": 21.140297001157155,
+    "detail": "266 F2FP/I2F convert+pack warp-instr / 2 (ncu SASS executed; ncu pipe attribution of F2FP differs)"
+   },
+   {
+    "unit": "xu_inst",
+    "sol_clk": 266.3517441860465,
+    "util_pct": 41.403634965761746,
+    "util_active_pct": 42.27152071546678,
+    "detail": "266 MUFU warp-instr x 32 lanes / 32 (ncu SASS executed)"
+   },
+   {
+    "unit": "smem",
+    "sol_clk": 338.0,
+    "util_pct": 52.54115628637435,
+    "util_active_pct": 53.64250211873129,
+    "detail": "reads 34 KiB (Q 16 + K/2 8 + V/2 8 + ones 2) + TMA writes 8.2 KiB / 128 B"
+   },
+   {
+    "unit": "tmem",
+    "sol_clk": 162.0,
+    "util_pct": 25.182447687552205,
+    "util_active_pct": 25.710311666374167,
+    "detail": "81 KiB tcgen05.ld/st / 512 B (assumed)"
+   },
+   {
+    "unit": "l2",
+    "sol_clk": 71.6873807687776,
+    "util_pct": 11.143603185601098,
+    "util_active_pct": 11.377190753773517,
+    "detail": "8.2 KiB K/V(+SF) per step per SM / 118 B/clk/SM"
+   },
+   {
+    "unit": "dram",
+    "sol_clk": 56.99988837209302,
+    "util_pct": 8.860473500781156,
+    "util_active_pct": 9.046203055524987,
+    "detail": "236 MB whole kernel / 8.0 TB/s"
+   }
+  ],
+  "ncu": {
+   "tensor": 45.452318,
+   "mufu": 43.565508,
+   "xu_inst": 43.565508,
+   "issue": 49.363207,
+   "fma": 22.54484,
+   "alu": 17.998078,
+   "tmem": 1.19475,
+   "smem": 43.878407,
+   "l2": 16.818147,
+   "dram": null,
+   "ncu_us": 336.736,
+   "ncu_clk_ghz": 2.271386,
+   "sm_active_pct": 97.94687833554215,
+   "smem_wavefronts_per_step": 17.65121578246124
+  },
+  "peak_notes": {
+   "l2": "ncu-derived L2 sector peak 57.8 TB/s = 118 B/clk/SM (lts__t_sectors / pct_of_peak)",
+   "issue": "ncu smsp__inst_executed.sum 319 M vs SASS-page executed 406 M (the SASS page counts every pipe of a multi-pipe instruction; issue SOL uses the SASS count = upper bound)"
+  },
+  "constants": {
+   "tc_mac_per_clk": 16384,
+   "xu_lanes_per_clk": 32,
+   "issue_per_clk": 4,
+   "fma_winst_per_clk": 2,
+   "alu_winst_per_clk": 2,
+   "smem_bytes_per_clk": 128,
+   "tmem_bytes_per_clk": 512,
+   "l2_bytes_per_clk_sm": 117.84500855524915,
+   "dram_bytes_per_s": 8000000000000.0
+  }
+ },
+ {
+  "name": "corrdefault_p64_half_pf_benc_cf1h1",
+  "d": 128,
+  "S": 32768,
+  "mask": "causal",
+  "sched": "lpt",
+  "cta_mma": 2,
+  "tiles_q": 2,
+  "f16": true,
+  "rowsum_mma": true,
+  "corr": "default",
+  "paged": 64,
+  "time_us": 1219.59,
+  "clock_mhz": 2364.0,
+  "sm_count": 216,
+  "steps_total": 1052672,
+  "steps_per_sm": 4873.481481481482,
+  "step_clk": 591.5916108341439,
+  "mma_util_pct": 45.977663479115286,
+  "binding_unit": "issue",
+  "binding_pct": 57.38756158514573,
+  "inst_per_step": {
+   "total": 1358,
+   "fma": 256,
+   "alu": 60,
+   "xu": 260,
+   "src": "static estimate",
+   "cvt": 512
+  },
+  "units": [
+   {
+    "unit": "tensor",
+    "sol_clk": 272.0,
+    "util_pct": 45.977663479115286,
+    "util_active_pct": 45.977663479115286,
+    "detail": "BMM1 2048k + BMM2 2048k + rowsum 256k MAC / 16384"
+   },
+   {
+    "unit": "mufu",
+    "sol_clk": 256.0,
+    "util_pct": 43.27309503916732,
+    "util_active_pct": 43.27309503916732,
+    "detail": "16384 exp as f16x2 pairs / 32 lanes"
+   },
+   {
+    "unit": "issue",
+    "sol_clk": 339.5,
+    "util_pct": 57.38756158514573,
+    "util_active_pct": 57.38756158514573,
+    "detail": "1358 warp-instr / 4 (static estimate)"
+   },
+   {
+    "unit": "fma",
+    "sol_clk": 128.0,
+    "util_pct": 21.63654751958366,
+    "util_active_pct": 21.63654751958366,
+    "detail": "256 FMA-pipe warp-instr (FFMA2/FHADD2/HFMA2) / 2 (static estimate)"
+   },
+   {
+    "unit": "alu",
+    "sol_clk": 30.0,
+    "util_pct": 5.071065824902421,
+    "util_active_pct": 5.071065824902421,
+    "detail": "60 integer/logic ALU warp-instr / 2 (static estimate)"
+   },
+   {
+    "unit": "cvt",
+    "sol_clk": 256.0,
+    "util_pct": 43.27309503916732,
+    "util_active_pct": 43.27309503916732,
+    "detail": "512 F2FP/I2F convert+pack warp-instr / 2 (static estimate; ncu pipe attribution of F2FP differs)"
+   },
+   {
+    "unit": "xu_inst",
+    "sol_clk": 260.0,
+    "util_pct": 43.949237149154314,
+    "util_active_pct": 43.949237149154314,
+    "detail": "260 MUFU warp-instr x 32 lanes / 32 (static estimate)"
+   },
+   {
+    "unit": "smem",
+    "sol_clk": 338.0,
+    "util_pct": 57.13400829390061,
+    "util_active_pct": 57.13400829390061,
+    "detail": "reads 34 KiB (Q 16 + K/2 8 + V/2 8 + ones 2) + TMA writes 8.2 KiB / 128 B"
+   },
+   {
+    "unit": "tmem",
+    "sol_clk": 162.0,
+    "util_pct": 27.38375545447307,
+    "util_active_pct": 27.38375545447307,
+    "detail": "81 KiB tcgen05.ld/st / 512 B (assumed)"
+   },
+   {
+    "unit": "l2",
+    "sol_clk": 72.06540665570924,
+    "util_pct": 12.181614028315419,
+    "util_active_pct": 12.181614028315419,
+    "detail": "8.2 KiB K/V(+SF) per step per SM / 117 B/clk/SM"
+   },
+   {
+    "unit": "dram",
+    "sol_clk": 28.61083891050583,
+    "util_pct": 4.8362482473618185,
+    "util_active_pct": 4.8362482473618185,
+    "detail": "472 MB whole kernel / 8.0 TB/s"
+   }
+  ],
+  "ncu": {},
+  "peak_notes": {},
+  "constants": {
+   "tc_mac_per_clk": 16384,
+   "xu_lanes_per_clk": 32,
+   "issue_per_clk": 4,
+   "fma_winst_per_clk": 2,
+   "alu_winst_per_clk": 2,
+   "smem_bytes_per_clk": 128,
+   "tmem_bytes_per_clk": 512,
+   "l2_bytes_per_clk_sm": 117.22684144918682,
+   "dram_bytes_per_s": 8000000000000.0
+  }
+ },
+ {
+  "name": "corrdefault_p64_half_pf_benc_cf1h1",
+  "d": 128,
+  "S": 8192,
+  "mask": "none",
+  "sched": "natural",
+  "cta_mma": 2,
+  "tiles_q": 2,
+  "f16": true,
+  "rowsum_mma": true,
+  "corr": "default",
+  "paged": 64,
+  "time_us": 181.37,
+  "clock_mhz": 2364.0,
+  "sm_count": 216,
+  "steps_total": 131072,
+  "steps_per_sm": 606.8148148148148,
+  "step_clk": 706.5725317382813,
+  "mma_util_pct": 38.49569404160625,
+  "binding_unit": "issue",
+  "binding_pct": 48.04885340854898,
+  "inst_per_step": {
+   "total": 1358,
+   "fma": 256,
+   "alu": 60,
+   "xu": 260,
+   "src": "static estimate",
+   "cvt": 512
+  },
+  "units": [
+   {
+    "unit": "tensor",
+    "sol_clk": 272.0,
+    "util_pct": 38.49569404160625,
+    "util_active_pct": 38.49569404160625,
+    "detail": "BMM1 2048k + BMM2 2048k + rowsum 256k MAC / 16384"
+   },
+   {
+    "unit": "mufu",
+    "sol_clk": 256.0,
+    "util_pct": 36.23124145092353,
+    "util_active_pct": 36.23124145092353,
+    "detail": "16384 exp as f16x2 pairs / 32 lanes"
+   },
+   {
+    "unit": "issue",
+    "sol_clk": 339.5,
+    "util_pct": 48.04885340854898,
+    "util_active_pct": 48.04885340854898,
+    "detail": "1358 warp-instr / 4 (static estimate)"
+   },
+   {
+    "unit": "fma",
+    "sol_clk": 128.0,
+    "util_pct": 18.115620725461763,
+    "util_active_pct": 18.115620725461763,
+    "detail": "256 FMA-pipe warp-instr (FFMA2/FHADD2/HFMA2) / 2 (static estimate)"
+   },
+   {
+    "unit": "alu",
+    "sol_clk": 30.0,
+    "util_pct": 4.245848607530101,
+    "util_active_pct": 4.245848607530101,
+    "detail": "60 integer/logic ALU warp-instr / 2 (static estimate)"
+   },
+   {
+    "unit": "cvt",
+    "sol_clk": 256.0,
+    "util_pct": 36.23124145092353,
+    "util_active_pct": 36.23124145092353,
+    "detail": "512 F2FP/I2F convert+pack warp-instr / 2 (static estimate; ncu pipe attribution of F2FP differs)"
+   },
+   {
+    "unit": "xu_inst",
+    "sol_clk": 260.0,
+    "util_pct": 36.79735459859421,
+    "util_active_pct": 36.79735459859421,
+    "detail": "260 MUFU warp-instr x 32 lanes / 32 (static estimate)"
+   },
+   {
+    "unit": "smem",
+    "sol_clk": 338.0,
+    "util_pct": 47.83656097817247,
+    "util_active_pct": 47.83656097817247,
+    "detail": "reads 34 KiB (Q 16 + K/2 8 + V/2 8 + ones 2) + TMA writes 8.2 KiB / 128 B"
+   },
+   {
+    "unit": "tmem",
+    "sol_clk": 162.0,
+    "util_pct": 22.927582480662547,
+    "util_active_pct": 22.927582480662547,
+    "detail": "81 KiB tcgen05.ld/st / 512 B (assumed)"
+   },
+   {
+    "unit": "l2",
+    "sol_clk": 72.06540665570924,
+    "util_pct": 10.199293550007786,
+    "util_active_pct": 10.199293550007786,
+    "detail": "8.2 KiB K/V(+SF) per step per SM / 117 B/clk/SM"
+   },
+   {
+    "unit": "dram",
+    "sol_clk": 57.44519999999999,
+    "util_pct": 8.13012074764294,
+    "util_active_pct": 8.13012074764294,
+    "detail": "118 MB whole kernel / 8.0 TB/s"
+   }
+  ],
+  "ncu": {},
+  "peak_notes": {},
+  "constants": {
+   "tc_mac_per_clk": 16384,
+   "xu_lanes_per_clk": 32,
+   "issue_per_clk": 4,
+   "fma_winst_per_clk": 2,
+   "alu_winst_per_clk": 2,
+   "smem_bytes_per_clk": 128,
+   "tmem_bytes_per_clk": 512,
+   "l2_bytes_per_clk_sm": 117.22684144918682,
+   "dram_bytes_per_s": 8000000000000.0
+  }
+ },
+ {
+  "name": "corrdefault_p64_half_pf_benc_cf1h1",
+  "d": 128,
+  "S": 16384,
+  "mask": "none",
+  "sched": "natural",
+  "cta_mma": 2,
+  "tiles_q": 2,
+  "f16": true,
+  "rowsum_mma": true,
+  "corr": "default",
+  "paged": 64,
+  "time_us": 673.07,
+  "clock_mhz": 2364.0,
+  "sm_count": 216,
+  "steps_total": 524288,
+  "steps_per_sm": 2427.259259259259,
+  "step_clk": 655.528441772461,
+  "mma_util_pct": 41.49324158453728,
+  "binding_unit": "issue",
+  "binding_pct": 55.37678332042242,
+  "inst_per_step": {
+   "total": 1452.0422592163086,
+   "fma": 294.2629699707031,
+   "alu": 254.7377643585205,
+   "cvt": 258.0086364746094,
+   "xu": 260.0355682373047,
+   "ctrl": 338.6920909881592,
+   "tmem": 16.3125,
+   "lsu": 24.979568481445312,
+   "src": "ncu SASS executed",
+   "by_class": {
+    "alu_int": 254.7377643585205,
+    "fma": 294.2629699707031,
+    "ctrl_sync": 338.6920909881592,
+    "lsu_mem": 24.979568481445312,
+    "tmem": 16.3125,
+    "xu": 260.0355682373047,
+    "alu_cvt": 258.0086364746094,
+    "other": 0.0051422119140625,
+    "tensor": 5.008018493652344
+   }
+  },
+  "units": [
+   {
+    "unit": "tensor",
+    "sol_clk": 272.0,
+    "util_pct": 41.49324158453728,
+    "util_active_pct": 43.87242547141285,
+    "detail": "BMM1 2048k + BMM2 2048k + rowsum 256k MAC / 16384"
+   },
+   {
+    "unit": "mufu",
+    "sol_clk": 256.0,
+    "util_pct": 39.05246266779979,
+    "util_active_pct": 41.291694561329734,
+    "detail": "16384 exp as f16x2 pairs / 32 lanes"
+   },
+   {
+    "unit": "issue",
+    "sol_clk": 363.01056480407715,
+    "util_pct": 55.37678332042242,
+    "util_active_pct": 58.55203657978808,
+    "detail": "1452 warp-instr / 4 (ncu SASS executed); of which sync/branch 339"
+   },
+   {
+    "unit": "fma",
+    "sol_clk": 147.13148498535156,
+    "util_pct": 22.444714158782762,
+    "util_active_pct": 23.731673196757846,
+    "detail": "294 FMA-pipe warp-instr (FFMA2/FHADD2/HFMA2) / 2 (ncu SASS executed)"
+   },
+   {
+    "unit": "alu",
+    "sol_clk": 127.36888217926025,
+    "util_pct": 19.429955141972464,
+    "util_active_pct": 20.54405070142191,
+    "detail": "255 integer/logic ALU warp-instr / 2 (ncu SASS executed)"
+   },
+   {
+    "unit": "cvt",
+    "sol_clk": 129.0043182373047,
+    "util_pct": 19.67943875760666,
+    "util_active_pct": 20.807839475575644,
+    "detail": "258 F2FP/I2F convert+pack warp-instr / 2 (ncu SASS executed; ncu pipe attribution of F2FP differs)"
+   },
+   {
+    "unit": "xu_inst",
+    "sol_clk": 260.0355682373047,
+    "util_pct": 39.66808328471659,
+    "util_active_pct": 41.942614291939854,
+    "detail": "260 MUFU warp-instr x 32 lanes / 32 (ncu SASS executed)"
+   },
+   {
+    "unit": "smem",
+    "sol_clk": 338.0,
+    "util_pct": 51.56145461607941,
+    "util_active_pct": 54.51794047550567,
+    "detail": "reads 34 KiB (Q 16 + K/2 8 + V/2 8 + ones 2) + TMA writes 8.2 KiB / 128 B"
+   },
+   {
+    "unit": "tmem",
+    "sol_clk": 162.0,
+    "util_pct": 24.712886531967055,
+    "util_active_pct": 26.129900464591476,
+    "detail": "81 KiB tcgen05.ld/st / 512 B (assumed)"
+   },
+   {
+    "unit": "l2",
+    "sol_clk": 71.91923062703907,
+    "util_pct": 10.971183863903619,
+    "util_active_pct": 11.600261344287219,
+    "detail": "8.2 KiB K/V(+SF) per step per SM / 117 B/clk/SM"
+   },
+   {
+    "unit": "dram",
+    "sol_clk": 28.722599999999996,
+    "util_pct": 4.381594782117759,
+    "util_active_pct": 4.632831352372069,
+    "detail": "236 MB whole kernel / 8.0 TB/s"
+   }
+  ],
+  "ncu": {
+   "tensor": 45.187664,
+   "mufu": 43.197247,
+   "xu_inst": 43.197247,
+   "issue": 45.616468,
+   "fma": 22.234264,
+   "alu": 14.773014,
+   "tmem": 1.175783,
+   "smem": 42.115968,
+   "l2": 14.285428,
+   "dram": null,
+   "ncu_us": 673.568,
+   "ncu_clk_ghz": 2.293718,
+   "sm_active_pct": 94.57704045009811,
+   "smem_wavefronts_per_step": 15.386184692382812
+  },
+  "peak_notes": {
+   "l2": "ncu-derived L2 sector peak 58.2 TB/s = 117 B/clk/SM (lts__t_sectors / pct_of_peak)",
+   "issue": "ncu smsp__inst_executed.sum 575 M vs SASS-page executed 761 M (the SASS page counts every pipe of a multi-pipe instruction; issue SOL uses the SASS count = upper bound)"
+  },
+  "constants": {
+   "tc_mac_per_clk": 16384,
+   "xu_lanes_per_clk": 32,
+   "issue_per_clk": 4,
+   "fma_winst_per_clk": 2,
+   "alu_winst_per_clk": 2,
+   "smem_bytes_per_clk": 128,
+   "tmem_bytes_per_clk": 512,
+   "l2_bytes_per_clk_sm": 117.46510531807404,
+   "dram_bytes_per_s": 8000000000000.0
+  }
+ },
+ {
+  "name": "corrdefault_p64_half_pf_benc_cf1h1",
+  "d": 128,
+  "S": 32768,
+  "mask": "none",
+  "sched": "natural",
+  "cta_mma": 2,
+  "tiles_q": 2,
+  "f16": true,
+  "rowsum_mma": true,
+  "corr": "default",
+  "paged": 64,
+  "time_us": 2516.22,
+  "clock_mhz": 2364.0,
+  "sm_count": 216,
+  "steps_total": 2097152,
+  "steps_per_sm": 9709.037037037036,
+  "step_clk": 612.6605612182617,
+  "mma_util_pct": 44.39652512626798,
+  "binding_unit": "issue",
+  "binding_pct": 55.414045148411695,
+  "inst_per_step": {
+   "total": 1358,
+   "fma": 256,
+   "alu": 60,
+   "xu": 260,
+   "src": "static estimate",
+   "cvt": 512
+  },
+  "units": [
+   {
+    "unit": "tensor",
+    "sol_clk": 272.0,
+    "util_pct": 44.39652512626798,
+    "util_active_pct": 44.39652512626798,
+    "detail": "BMM1 2048k + BMM2 2048k + rowsum 256k MAC / 16384"
+   },
+   {
+    "unit": "mufu",
+    "sol_clk": 256.0,
+    "util_pct": 41.784964824722806,
+    "util_active_pct": 41.784964824722806,
+    "detail": "16384 exp as f16x2 pairs / 32 lanes"
+   },
+   {
+    "unit": "issue",
+    "sol_clk": 339.5,
+    "util_pct": 55.414045148411695,
+    "util_active_pct": 55.414045148411695,
+    "detail": "1358 warp-instr / 4 (static estimate)"
+   },
+   {
+    "unit": "fma",
+    "sol_clk": 128.0,
+    "util_pct": 20.892482412361403,
+    "util_active_pct": 20.892482412361403,
+    "detail": "256 FMA-pipe warp-instr (FFMA2/FHADD2/HFMA2) / 2 (static estimate)"
+   },
+   {
+    "unit": "alu",
+    "sol_clk": 30.0,
+    "util_pct": 4.896675565397204,
+    "util_active_pct": 4.896675565397204,
+    "detail": "60 integer/logic ALU warp-instr / 2 (static estimate)"
+   },
+   {
+    "unit": "cvt",
+    "sol_clk": 256.0,
+    "util_pct": 41.784964824722806,
+    "util_active_pct": 41.784964824722806,
+    "detail": "512 F2FP/I2F convert+pack warp-instr / 2 (static estimate; ncu pipe attribution of F2FP differs)"
+   },
+   {
+    "unit": "xu_inst",
+    "sol_clk": 260.0,
+    "util_pct": 42.4378549001091,
+    "util_active_pct": 42.4378549001091,
+    "detail": "260 MUFU warp-instr x 32 lanes / 32 (static estimate)"
+   },
+   {
+    "unit": "smem",
+    "sol_clk": 338.0,
+    "util_pct": 55.16921137014183,
+    "util_active_pct": 55.16921137014183,
+    "detail": "reads 34 KiB (Q 16 + K/2 8 + V/2 8 + ones 2) + TMA writes 8.2 KiB / 128 B"
+   },
+   {
+    "unit": "tmem",
+    "sol_clk": 162.0,
+    "util_pct": 26.4420480531449,
+    "util_active_pct": 26.4420480531449,
+    "detail": "81 KiB tcgen05.ld/st / 512 B (assumed)"
+   },
+   {
+    "unit": "l2",
+    "sol_clk": 72.06540665570924,
+    "util_pct": 11.762697196047483,
+    "util_active_pct": 11.762697196047483,
+    "detail": "8.2 KiB K/V(+SF) per step per SM / 117 B/clk/SM"
+   },
+   {
+    "unit": "dram",
+    "sol_clk": 14.361299999999998,
+    "util_pct": 2.3440875599112956,
+    "util_active_pct": 2.3440875599112956,
+    "detail": "472 MB whole kernel / 8.0 TB/s"
+   }
+  ],
+  "ncu": {},
+  "peak_notes": {},
+  "constants": {
+   "tc_mac_per_clk": 16384,
+   "xu_lanes_per_clk": 32,
+   "issue_per_clk": 4,
+   "fma_winst_per_clk": 2,
+   "alu_winst_per_clk": 2,
+   "smem_bytes_per_clk": 128,
+   "tmem_bytes_per_clk": 512,
+   "l2_bytes_per_clk_sm": 117.22684144918682,
+   "dram_bytes_per_s": 8000000000000.0
+  }
+ },
+ {
+  "name": "corrnever_p64_half_pf_benc_cf1h1",
+  "d": 128,
+  "S": 8192,
+  "mask": "causal",
+  "sched": "lpt",
+  "cta_mma": 2,
+  "tiles_q": 2,
+  "f16": true,
+  "rowsum_mma": true,
+  "corr": "never",
+  "paged": 64,
+  "time_us": 103.39,
+  "clock_mhz": 2364.0,
+  "sm_count": 216,
+  "steps_total": 66560,
+  "steps_per_sm": 308.14814814814815,
+  "step_clk": 793.1703028846154,
+  "mma_util_pct": 34.292761467592236,
+  "binding_unit": "issue",
+  "binding_pct": 42.802913670027806,
+  "inst_per_step": {
+   "total": 1358,
+   "fma": 256,
+   "alu": 60,
+   "xu": 260,
+   "src": "static estimate",
+   "cvt": 512
+  },
+  "units": [
+   {
+    "unit": "tensor",
+    "sol_clk": 272.0,
+    "util_pct": 34.292761467592236,
+    "util_active_pct": 34.292761467592236,
+    "detail": "BMM1 2048k + BMM2 2048k + rowsum 256k MAC / 16384"
+   },
+   {
+    "unit": "mufu",
+    "sol_clk": 256.0,
+    "util_pct": 32.27554020479269,
+    "util_active_pct": 32.27554020479269,
+    "detail": "16384 exp as f16x2 pairs / 32 lanes"
+   },
+   {
+    "unit": "issue",
+    "sol_clk": 339.5,
+    "util_pct": 42.802913670027806,
+    "util_active_pct": 42.802913670027806,
+    "detail": "1358 warp-instr / 4 (static estimate)"
+   },
+   {
+    "unit": "fma",
+    "sol_clk": 128.0,
+    "util_pct": 16.137770102396345,
+    "util_active_pct": 16.137770102396345,
+    "detail": "256 FMA-pipe warp-instr (FFMA2/FHADD2/HFMA2) / 2 (static estimate)"
+   },
+   {
+    "unit": "alu",
+    "sol_clk": 30.0,
+    "util_pct": 3.7822898677491437,
+    "util_active_pct": 3.7822898677491437,
+    "detail": "60 integer/logic ALU warp-instr / 2 (static estimate)"
+   },
+   {
+    "unit": "cvt",
+    "sol_clk": 256.0,
+    "util_pct": 32.27554020479269,
+    "util_active_pct": 32.27554020479269,
+    "detail": "512 F2FP/I2F convert+pack warp-instr / 2 (static estimate; ncu pipe attribution of F2FP differs)"
+   },
+   {
+    "unit": "xu_inst",
+    "sol_clk": 260.0,
+    "util_pct": 32.77984552049258,
+    "util_active_pct": 32.77984552049258,
+    "detail": "260 MUFU warp-instr x 32 lanes / 32 (static estimate)"
+   },
+   {
+    "unit": "smem",
+    "sol_clk": 338.0,
+    "util_pct": 42.61379917664035,
+    "util_active_pct": 42.61379917664035,
+    "detail": "reads 34 KiB (Q 16 + K/2 8 + V/2 8 + ones 2) + TMA writes 8.2 KiB / 128 B"
+   },
+   {
+    "unit": "tmem",
+    "sol_clk": 162.0,
+    "util_pct": 20.424365285845376,
+    "util_active_pct": 20.424365285845376,
+    "detail": "81 KiB tcgen05.ld/st / 512 B (assumed)"
+   },
+   {
+    "unit": "l2",
+    "sol_clk": 72.06540665570924,
+    "util_pct": 9.085741913637024,
+    "util_active_pct": 9.085741913637024,
+    "detail": "8.2 KiB K/V(+SF) per step per SM / 117 B/clk/SM"
+   },
+   {
+    "unit": "dram",
+    "sol_clk": 113.12285538461536,
+    "util_pct": 14.262114324402747,
+    "util_active_pct": 14.262114324402747,
+    "detail": "118 MB whole kernel / 8.0 TB/s"
+   }
+  ],
+  "ncu": {},
+  "peak_notes": {},
+  "constants": {
+   "tc_mac_per_clk": 16384,
+   "xu_lanes_per_clk": 32,
+   "issue_per_clk": 4,
+   "fma_winst_per_clk": 2,
+   "alu_winst_per_clk": 2,
+   "smem_bytes_per_clk": 128,
+   "tmem_bytes_per_clk": 512,
+   "l2_bytes_per_clk_sm": 117.22684144918682,
+   "dram_bytes_per_s": 8000000000000.0
+  }
+ },
+ {
+  "name": "corrnever_p64_half_pf_benc_cf1h1",
+  "d": 128,
+  "S": 16384,
+  "mask": "causal",
+  "sched": "lpt",
+  "cta_mma": 2,
+  "tiles_q": 2,
+  "f16": true,
+  "rowsum_mma": true,
+  "corr": "never",
+  "paged": 64,
+  "time_us": 332.72,
+  "clock_mhz": 2364.0,
+  "sm_count": 216,
+  "steps_total": 264192,
+  "steps_per_sm": 1223.111111111111,
+  "step_clk": 643.073284883721,
+  "mma_util_pct": 42.29689001140552,
+  "binding_unit": "issue",
+  "binding_pct": 60.7017725149526,
+  "inst_per_step": {
+   "total": 1561.4275299781978,
+   "fma": 350.7787215358527,
+   "alu": 278.9017835513566,
+   "cvt": 266.4089147286822,
+   "xu": 266.3517441860465,
+   "ctrl": 358.3994140625,
+   "tmem": 16.992248062015506,
+   "lsu": 18.4523074127907,
+   "src": "ncu SASS executed",
+   "by_class": {
+    "alu_int": 278.9017835513566,
+    "fma": 350.7787215358527,
+    "ctrl_sync": 358.3994140625,
+    "lsu_mem": 18.4523074127907,
+    "alu_cvt": 266.4089147286822,
+    "xu": 266.3517441860465,
+    "tmem": 16.992248062015506,
+    "other": 0.010204699612403102,
+    "tensor": 5.132191739341085
+   }
+  },
+  "units": [
+   {
+    "unit": "tensor",
+    "sol_clk": 272.0,
+    "util_pct": 42.29689001140552,
+    "util_active_pct": 43.24680820510914,
+    "detail": "BMM1 2048k + BMM2 2048k + rowsum 256k MAC / 16384"
+   },
+   {
+    "unit": "mufu",
+    "sol_clk": 256.0,
+    "util_pct": 39.80883765779343,
+    "util_active_pct": 40.702878310690956,
+    "detail": "16384 exp as f16x2 pairs / 32 lanes"
+   },
+   {
+    "unit": "issue",
+    "sol_clk": 390.35688249454944,
+    "util_pct": 60.7017725149526,
+    "util_active_pct": 62.06503392936068,
+    "detail": "1561 warp-instr / 4 (ncu SASS executed); of which sync/branch 358"
+   },
+   {
+    "unit": "fma",
+    "sol_clk": 175.38936076792635,
+    "util_pct": 27.273619491072438,
+    "util_active_pct": 27.886139876276484,
+    "detail": "351 FMA-pipe warp-instr (FFMA2/FHADD2/HFMA2) / 2 (ncu SASS executed)"
+   },
+   {
+    "unit": "alu",
+    "sol_clk": 139.4508917756783,
+    "util_pct": 21.68506996848632,
+    "util_active_pct": 22.172080774463936,
+    "detail": "279 integer/logic ALU warp-instr / 2 (ncu SASS executed)"
+   },
+   {
+    "unit": "cvt",
+    "sol_clk": 133.2044573643411,
+    "util_pct": 20.71372897856063,
+    "util_active_pct": 21.17892507243124,
+    "detail": "266 F2FP/I2F convert+pack warp-instr / 2 (ncu SASS executed; ncu pipe attribution of F2FP differs)"
+   },
+   {
+    "unit": "xu_inst",
+    "sol_clk": 266.3517441860465,
+    "util_pct": 41.418567750673645,
+    "util_active_pct": 42.3487602790818,
+    "detail": "266 MUFU warp-instr x 32 lanes / 32 (ncu SASS executed)"
+   },
+   {
+    "unit": "smem",
+    "sol_clk": 338.0,
+    "util_pct": 52.560105970055396,
+    "util_active_pct": 53.740519019584156,
+    "detail": "reads 34 KiB (Q 16 + K/2 8 + V/2 8 + ones 2) + TMA writes 8.2 KiB / 128 B"
+   },
+   {
+    "unit": "tmem",
+    "sol_clk": 162.0,
+    "util_pct": 25.19153008032241,
+    "util_active_pct": 25.75729018098412,
+    "detail": "81 KiB tcgen05.ld/st / 512 B (assumed)"
+   },
+   {
+    "unit": "l2",
+    "sol_clk": 71.75418597686112,
+    "util_pct": 11.158010706328058,
+    "util_active_pct": 11.408601172261196,
+    "detail": "8.2 KiB K/V(+SF) per step per SM / 118 B/clk/SM"
+   },
+   {
+    "unit": "dram",
+    "sol_clk": 56.99988837209302,
+    "util_pct": 8.863669151238277,
+    "util_active_pct": 9.062732500516683,
+    "detail": "236 MB whole kernel / 8.0 TB/s"
+   }
+  ],
+  "ncu": {
+   "tensor": 45.469315,
+   "mufu": 43.57816,
+   "xu_inst": 43.57816,
+   "issue": 47.725171,
+   "fma": 22.618124,
+   "alu": 17.55333,
+   "tmem": 1.030518,
+   "smem": 43.827246,
+   "l2": 16.787468,
+   "dram": null,
+   "ncu_us": 336.864,
+   "ncu_clk_ghz": 2.273191,
+   "sm_active_pct": 97.80349525634728,
+   "smem_wavefronts_per_step": 12.74680535368217
+  },
+  "peak_notes": {
+   "l2": "ncu-derived L2 sector peak 57.8 TB/s = 118 B/clk/SM (lts__t_sectors / pct_of_peak)",
+   "issue": "ncu smsp__inst_executed.sum 309 M vs SASS-page executed 413 M (the SASS page counts every pipe of a multi-pipe instruction; issue SOL uses the SASS count = upper bound)"
+  },
+  "constants": {
+   "tc_mac_per_clk": 16384,
+   "xu_lanes_per_clk": 32,
+   "issue_per_clk": 4,
+   "fma_winst_per_clk": 2,
+   "alu_winst_per_clk": 2,
+   "smem_bytes_per_clk": 128,
+   "tmem_bytes_per_clk": 512,
+   "l2_bytes_per_clk_sm": 117.73529146751468,
+   "dram_bytes_per_s": 8000000000000.0
+  }
+ },
+ {
+  "name": "corrnever_p64_half_pf_benc_cf1h1",
+  "d": 128,
+  "S": 32768,
+  "mask": "causal",
+  "sched": "lpt",
+  "cta_mma": 2,
+  "tiles_q": 2,
+  "f16": true,
+  "rowsum_mma": true,
+  "corr": "never",
+  "paged": 64,
+  "time_us": 1221.06,
+  "clock_mhz": 2364.0,
+  "sm_count": 216,
+  "steps_total": 1052672,
+  "steps_per_sm": 4873.481481481482,
+  "step_clk": 592.304669868677,
+  "mma_util_pct": 45.92231225533078,
+  "binding_unit": "issue",
+  "binding_pct": 57.31847430398824,
+  "inst_per_step": {
+   "total": 1358,
+   "fma": 256,
+   "alu": 60,
+   "xu": 260,
+   "src": "static estimate",
+   "cvt": 512
+  },
+  "units": [
+   {
+    "unit": "tensor",
+    "sol_clk": 272.0,
+    "util_pct": 45.92231225533078,
+    "util_active_pct": 45.92231225533078,
+    "detail": "BMM1 2048k + BMM2 2048k + rowsum 256k MAC / 16384"
+   },
+   {
+    "unit": "mufu",
+    "sol_clk": 256.0,
+    "util_pct": 43.220999769723086,
+    "util_active_pct": 43.220999769723086,
+    "detail": "16384 exp as f16x2 pairs / 32 lanes"
+   },
+   {
+    "unit": "issue",
+    "sol_clk": 339.5,
+    "util_pct": 57.31847430398824,
+    "util_active_pct": 57.31847430398824,
+    "detail": "1358 warp-instr / 4 (static estimate)"
+   },
+   {
+    "unit": "fma",
+    "sol_clk": 128.0,
+    "util_pct": 21.610499884861543,
+    "util_active_pct": 21.610499884861543,
+    "detail": "256 FMA-pipe warp-instr (FFMA2/FHADD2/HFMA2) / 2 (static estimate)"
+   },
+   {
+    "unit": "alu",
+    "sol_clk": 30.0,
+    "util_pct": 5.064960910514425,
+    "util_active_pct": 5.064960910514425,
+    "detail": "60 integer/logic ALU warp-instr / 2 (static estimate)"
+   },
+   {
+    "unit": "cvt",
+    "sol_clk": 256.0,
+    "util_pct": 43.220999769723086,
+    "util_active_pct": 43.220999769723086,
+    "detail": "512 F2FP/I2F convert+pack warp-instr / 2 (static estimate; ncu pipe attribution of F2FP differs)"
+   },
+   {
+    "unit": "xu_inst",
+    "sol_clk": 260.0,
+    "util_pct": 43.89632789112501,
+    "util_active_pct": 43.89632789112501,
+    "detail": "260 MUFU warp-instr x 32 lanes / 32 (static estimate)"
+   },
+   {
+    "unit": "smem",
+    "sol_clk": 338.0,
+    "util_pct": 57.065226258462516,
+    "util_active_pct": 57.065226258462516,
+    "detail": "reads 34 KiB (Q 16 + K/2 8 + V/2 8 + ones 2) + TMA writes 8.2 KiB / 128 B"
+   },
+   {
+    "unit": "tmem",
+    "sol_clk": 162.0,
+    "util_pct": 27.35078891677789,
+    "util_active_pct": 27.35078891677789,
+    "detail": "81 KiB tcgen05.ld/st / 512 B (assumed)"
+   },
+   {
+    "unit": "l2",
+    "sol_clk": 72.06540665570924,
+    "util_pct": 12.166948923716445,
+    "util_active_pct": 12.166948923716445,
+    "detail": "8.2 KiB K/V(+SF) per step per SM / 117 B/clk/SM"
+   },
+   {
+    "unit": "dram",
+    "sol_clk": 28.61083891050583,
+    "util_pct": 4.830426023291238,
+    "util_active_pct": 4.830426023291238,
+    "detail": "472 MB whole kernel / 8.0 TB/s"
+   }
+  ],
+  "ncu": {},
+  "peak_notes": {},
+  "constants": {
+   "tc_mac_per_clk": 16384,
+   "xu_lanes_per_clk": 32,
+   "issue_per_clk": 4,
+   "fma_winst_per_clk": 2,
+   "alu_winst_per_clk": 2,
+   "smem_bytes_per_clk": 128,
+   "tmem_bytes_per_clk": 512,
+   "l2_bytes_per_clk_sm": 117.22684144918682,
+   "dram_bytes_per_s": 8000000000000.0
+  }
+ },
+ {
+  "name": "corrnever_p64_half_pf_benc_cf1h1",
+  "d": 128,
+  "S": 8192,
+  "mask": "none",
+  "sched": "natural",
+  "cta_mma": 2,
+  "tiles_q": 2,
+  "f16": true,
+  "rowsum_mma": true,
+  "corr": "never",
+  "paged": 64,
+  "time_us": 169.31,
+  "clock_mhz": 2364.0,
+  "sm_count": 216,
+  "steps_total": 131072,
+  "steps_per_sm": 606.8148148148148,
+  "step_clk": 659.5897631835937,
+  "mma_util_pct": 41.23775340101663,
+  "binding_unit": "issue",
+  "binding_pct": 51.471387057518925,
+  "inst_per_step": {
+   "total": 1358,
+   "fma": 256,
+   "alu": 60,
+   "xu": 260,
+   "src": "static estimate",
+   "cvt": 512
+  },
+  "units": [
+   {
+    "unit": "tensor",
+    "sol_clk": 272.0,
+    "util_pct": 41.23775340101663,
+    "util_active_pct": 41.23775340101663,
+    "detail": "BMM1 2048k + BMM2 2048k + rowsum 256k MAC / 16384"
+   },
+   {
+    "unit": "mufu",
+    "sol_clk": 256.0,
+    "util_pct": 38.81200320095683,
+    "util_active_pct": 38.81200320095683,
+    "detail": "16384 exp as f16x2 pairs / 32 lanes"
+   },
+   {
+    "unit": "issue",
+    "sol_clk": 339.5,
+    "util_pct": 51.471387057518925,
+    "util_active_pct": 51.471387057518925,
+    "detail": "1358 warp-instr / 4 (static estimate)"
+   },
+   {
+    "unit": "fma",
+    "sol_clk": 128.0,
+    "util_pct": 19.406001600478415,
+    "util_active_pct": 19.406001600478415,
+    "detail": "256 FMA-pipe warp-instr (FFMA2/FHADD2/HFMA2) / 2 (static estimate)"
+   },
+   {
+    "unit": "alu",
+    "sol_clk": 30.0,
+    "util_pct": 4.548281625112129,
+    "util_active_pct": 4.548281625112129,
+    "detail": "60 integer/logic ALU warp-instr / 2 (static estimate)"
+   },
+   {
+    "unit": "cvt",
+    "sol_clk": 256.0,
+    "util_pct": 38.81200320095683,
+    "util_active_pct": 38.81200320095683,
+    "detail": "512 F2FP/I2F convert+pack warp-instr / 2 (static estimate; ncu pipe attribution of F2FP differs)"
+   },
+   {
+    "unit": "xu_inst",
+    "sol_clk": 260.0,
+    "util_pct": 39.41844075097178,
+    "util_active_pct": 39.41844075097178,
+    "detail": "260 MUFU warp-instr x 32 lanes / 32 (static estimate)"
+   },
+   {
+    "unit": "smem",
+    "sol_clk": 338.0,
+    "util_pct": 51.24397297626332,
+    "util_active_pct": 51.24397297626332,
+    "detail": "reads 34 KiB (Q 16 + K/2 8 + V/2 8 + ones 2) + TMA writes 8.2 KiB / 128 B"
+   },
+   {
+    "unit": "tmem",
+    "sol_clk": 162.0,
+    "util_pct": 24.560720775605496,
+    "util_active_pct": 24.560720775605496,
+    "detail": "81 KiB tcgen05.ld/st / 512 B (assumed)"
+   },
+   {
+    "unit": "l2",
+    "sol_clk": 72.06540665570924,
+    "util_pct": 10.925792163279855,
+    "util_active_pct": 10.925792163279855,
+    "detail": "8.2 KiB K/V(+SF) per step per SM / 117 B/clk/SM"
+   },
+   {
+    "unit": "dram",
+    "sol_clk": 57.44519999999999,
+    "util_pct": 8.70923158702971,
+    "util_active_pct": 8.70923158702971,
+    "detail": "118 MB whole kernel / 8.0 TB/s"
+   }
+  ],
+  "ncu": {},
+  "peak_notes": {},
+  "constants": {
+   "tc_mac_per_clk": 16384,
+   "xu_lanes_per_clk": 32,
+   "issue_per_clk": 4,
+   "fma_winst_per_clk": 2,
+   "alu_winst_per_clk": 2,
+   "smem_bytes_per_clk": 128,
+   "tmem_bytes_per_clk": 512,
+   "l2_bytes_per_clk_sm": 117.22684144918682,
+   "dram_bytes_per_s": 8000000000000.0
+  }
+ },
+ {
+  "name": "corrnever_p64_half_pf_benc_cf1h1",
+  "d": 128,
+  "S": 16384,
+  "mask": "none",
+  "sched": "natural",
+  "cta_mma": 2,
+  "tiles_q": 2,
+  "f16": true,
+  "rowsum_mma": true,
+  "corr": "never",
+  "paged": 64,
+  "time_us": 625.43,
+  "clock_mhz": 2364.0,
+  "sm_count": 216,
+  "steps_total": 524288,
+  "steps_per_sm": 2427.259259259259,
+  "step_clk": 609.1300360107422,
+  "mma_util_pct": 44.65384793390868,
+  "binding_unit": "issue",
+  "binding_pct": 57.86005519485417,
+  "inst_per_step": {
+   "total": 1409.771900177002,
+   "fma": 290.2942199707031,
+   "alu": 238.33364486694336,
+   "cvt": 258.0086364746094,
+   "xu": 260.0355682373047,
+   "ctrl": 324.73374938964844,
+   "tmem": 16.3125,
+   "lsu": 17.040420532226562,
+   "src": "ncu SASS executed",
+   "by_class": {
+    "alu_int": 238.33364486694336,
+    "fma": 290.2942199707031,
+    "ctrl_sync": 324.73374938964844,
+    "lsu_mem": 17.040420532226562,
+    "tmem": 16.3125,
+    "xu": 260.0355682373047,
+    "alu_cvt": 258.0086364746094,
+    "other": 0.0051422119140625,
+    "tensor": 5.008018493652344
+   }
+  },
+  "units": [
+   {
+    "unit": "tensor",
+    "sol_clk": 272.0,
+    "util_pct": 44.65384793390868,
+    "util_active_pct": 47.280670280894235,
+    "detail": "BMM1 2048k + BMM2 2048k + rowsum 256k MAC / 16384"
+   },
+   {
+    "unit": "mufu",
+    "sol_clk": 256.0,
+    "util_pct": 42.02715099661994,
+    "util_active_pct": 44.49945438201811,
+    "detail": "16384 exp as f16x2 pairs / 32 lanes"
+   },
+   {
+    "unit": "issue",
+    "sol_clk": 352.4429750442505,
+    "util_pct": 57.86005519485417,
+    "util_active_pct": 61.26375035251707,
+    "detail": "1410 warp-instr / 4 (ncu SASS executed); of which sync/branch 325"
+   },
+   {
+    "unit": "fma",
+    "sol_clk": 145.14710998535156,
+    "util_pct": 23.828591828427232,
+    "util_active_pct": 25.23034062294889,
+    "detail": "290 FMA-pipe warp-instr (FFMA2/FHADD2/HFMA2) / 2 (ncu SASS executed)"
+   },
+   {
+    "unit": "alu",
+    "sol_clk": 119.16682243347168,
+    "util_pct": 19.563445469526993,
+    "util_active_pct": 20.714291323157518,
+    "detail": "238 integer/logic ALU warp-instr / 2 (ncu SASS executed)"
+   },
+   {
+    "unit": "cvt",
+    "sol_clk": 129.0043182373047,
+    "util_pct": 21.178452975684433,
+    "util_active_pct": 22.424303806579243,
+    "detail": "258 F2FP/I2F convert+pack warp-instr / 2 (ncu SASS executed; ncu pipe attribution of F2FP differs)"
+   },
+   {
+    "unit": "xu_inst",
+    "sol_clk": 260.0355682373047,
+    "util_pct": 42.689664417191686,
+    "util_active_pct": 45.20094104093006,
+    "detail": "260 MUFU warp-instr x 32 lanes / 32 (ncu SASS executed)"
+   },
+   {
+    "unit": "smem",
+    "sol_clk": 338.0,
+    "util_pct": 55.48897280022476,
+    "util_active_pct": 58.753185863758276,
+    "detail": "reads 34 KiB (Q 16 + K/2 8 + V/2 8 + ones 2) + TMA writes 8.2 KiB / 128 B"
+   },
+   {
+    "unit": "tmem",
+    "sol_clk": 162.0,
+    "util_pct": 26.595306490048554,
+    "util_active_pct": 28.15981097612083,
+    "detail": "81 KiB tcgen05.ld/st / 512 B (assumed)"
+   },
+   {
+    "unit": "l2",
+    "sol_clk": 71.99994549718399,
+    "util_pct": 11.820127270150614,
+    "util_active_pct": 12.51546207093644,
+    "detail": "8.2 KiB K/V(+SF) per step per SM / 117 B/clk/SM"
+   },
+   {
+    "unit": "dram",
+    "sol_clk": 28.722599999999996,
+    "util_pct": 4.715347840685609,
+    "util_active_pct": 4.992734486066223,
+    "detail": "236 MB whole kernel / 8.0 TB/s"
+   }
+  ],
+  "ncu": {
+   "tensor": 48.658664,
+   "mufu": 46.515357,
+   "xu_inst": 46.515357,
+   "issue": 47.29895,
+   "fma": 23.856598,
+   "alu": 15.513325,
+   "tmem": 1.088621,
+   "smem": 45.28732,
+   "l2": 15.960274,
+   "dram": null,
+   "ncu_us": 627.328,
+   "ncu_clk_ghz": 2.290325,
+   "sm_active_pct": 94.44419393511214,
+   "smem_wavefronts_per_step": 10.34770393371582
+  },
+  "peak_notes": {
+   "l2": "ncu-derived L2 sector peak 58.0 TB/s = 117 B/clk/SM (lts__t_sectors / pct_of_peak)",
+   "issue": "ncu smsp__inst_executed.sum 554 M vs SASS-page executed 739 M (the SASS page counts every pipe of a multi-pipe instruction; issue SOL uses the SASS count = upper bound)"
+  },
+  "constants": {
+   "tc_mac_per_clk": 16384,
+   "xu_lanes_per_clk": 32,
+   "issue_per_clk": 4,
+   "fma_winst_per_clk": 2,
+   "alu_winst_per_clk": 2,
+   "smem_bytes_per_clk": 128,
+   "tmem_bytes_per_clk": 512,
+   "l2_bytes_per_clk_sm": 117.33342215280445,
+   "dram_bytes_per_s": 8000000000000.0
+  }
+ },
+ {
+  "name": "corrnever_p64_half_pf_benc_cf1h1",
+  "d": 128,
+  "S": 32768,
+  "mask": "none",
+  "sched": "natural",
+  "cta_mma": 2,
+  "tiles_q": 2,
+  "f16": true,
+  "rowsum_mma": true,
+  "corr": "never",
+  "paged": 64,
+  "time_us": 2364.61,
+  "clock_mhz": 2364.0,
+  "sm_count": 216,
+  "steps_total": 2097152,
+  "steps_per_sm": 9709.037037037036,
+  "step_clk": 575.7458766174317,
+  "mma_util_pct": 47.243065221418334,
+  "binding_unit": "issue",
+  "binding_pct": 58.966987656880605,
+  "inst_per_step": {
+   "total": 1358,
+   "fma": 256,
+   "alu": 60,
+   "xu": 260,
+   "src": "static estimate",
+   "cvt": 512
+  },
+  "units": [
+   {
+    "unit": "tensor",
+    "sol_clk": 272.0,
+    "util_pct": 47.243065221418334,
+    "util_active_pct": 47.243065221418334,
+    "detail": "BMM1 2048k + BMM2 2048k + rowsum 256k MAC / 16384"
+   },
+   {
+    "unit": "mufu",
+    "sol_clk": 256.0,
+    "util_pct": 44.464061384864316,
+    "util_active_pct": 44.464061384864316,
+    "detail": "16384 exp as f16x2 pairs / 32 lanes"
+   },
+   {
+    "unit": "issue",
+    "sol_clk": 339.5,
+    "util_pct": 58.966987656880605,
+    "util_active_pct": 58.966987656880605,
+    "detail": "1358 warp-instr / 4 (static estimate)"
+   },
+   {
+    "unit": "fma",
+    "sol_clk": 128.0,
+    "util_pct": 22.232030692432158,
+    "util_active_pct": 22.232030692432158,
+    "detail": "256 FMA-pipe warp-instr (FFMA2/FHADD2/HFMA2) / 2 (static estimate)"
+   },
+   {
+    "unit": "alu",
+    "sol_clk": 30.0,
+    "util_pct": 5.210632193538787,
+    "util_active_pct": 5.210632193538787,
+    "detail": "60 integer/logic ALU warp-instr / 2 (static estimate)"
+   },
+   {
+    "unit": "cvt",
+    "sol_clk": 256.0,
+    "util_pct": 44.464061384864316,
+    "util_active_pct": 44.464061384864316,
+    "detail": "512 F2FP/I2F convert+pack warp-instr / 2 (static estimate; ncu pipe attribution of F2FP differs)"
+   },
+   {
+    "unit": "xu_inst",
+    "sol_clk": 260.0,
+    "util_pct": 45.158812344002826,
+    "util_active_pct": 45.158812344002826,
+    "detail": "260 MUFU warp-instr x 32 lanes / 32 (static estimate)"
+   },
+   {
+    "unit": "smem",
+    "sol_clk": 338.0,
+    "util_pct": 58.706456047203666,
+    "util_active_pct": 58.706456047203666,
+    "detail": "reads 34 KiB (Q 16 + K/2 8 + V/2 8 + ones 2) + TMA writes 8.2 KiB / 128 B"
+   },
+   {
+    "unit": "tmem",
+    "sol_clk": 162.0,
+    "util_pct": 28.13741384510945,
+    "util_active_pct": 28.13741384510945,
+    "detail": "81 KiB tcgen05.ld/st / 512 B (assumed)"
+   },
+   {
+    "unit": "l2",
+    "sol_clk": 72.06540665570924,
+    "util_pct": 12.516877598690098,
+    "util_active_pct": 12.516877598690098,
+    "detail": "8.2 KiB K/V(+SF) per step per SM / 117 B/clk/SM"
+   },
+   {
+    "unit": "dram",
+    "sol_clk": 14.361299999999998,
+    "util_pct": 2.4943817373689527,
+    "util_active_pct": 2.4943817373689527,
+    "detail": "472 MB whole kernel / 8.0 TB/s"
+   }
+  ],
+  "ncu": {},
+  "peak_notes": {},
+  "constants": {
+   "tc_mac_per_clk": 16384,
+   "xu_lanes_per_clk": 32,
+   "issue_per_clk": 4,
+   "fma_winst_per_clk": 2,
+   "alu_winst_per_clk": 2,
+   "smem_bytes_per_clk": 128,
+   "tmem_bytes_per_clk": 512,
+   "l2_bytes_per_clk_sm": 117.22684144918682,
+   "dram_bytes_per_s": 8000000000000.0
+  }
+ }
+]
