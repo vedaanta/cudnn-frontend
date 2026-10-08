@@ -256,7 +256,21 @@ Units: tensor (UTCQMMA MACs), mufu (exp2 lanes), issue (warp-instr/4), fma / alu
 
 ## PerfSim (GR100, B=1 H=1 S=4096 no mask, SSAF route)
 
-_pending: traces captured with perfsim/capture.sh, submitted with perfsim/submit.sh; run perfsim/summarize.py --out results/perfsim_RESULTS.md and pass the JSON to --perfsim._
+| run | sim cycles | sim µs | top-3 SOL | mainloop MMA util | issue % | XU % | LST % | TMEM rd/wr % | RF rd ports % (mainloop) | RF wr ports % (mainloop) | rd-dispatch stall % | TMEM→RF wb stall % |
+|---|---|---|---|---|---|---|---|---|---|---|---|---|
+| ladder E: d128 p64 default, f16 exp + 1/ln2 outside, no fused cvt (before) | 55030 | 23.42 | TPC 48.6%, SM 41.1%, LST 29.1% | 41.5% | 41.1 | 28.2 | 29.1 | 17.2/16.1 | 38.6 | 37.5 | 0.58 | 1.50 |
+| d128 product dense cga2 | 46744 | 19.89 | TPC 46.5%, SM 37.8%, LST 33.7% | 46.8% | 37.8 | 32.7 | 33.7 | 19.9/18.7 | 32.4 | 30.6 | 0.59 | 2.11 |
+| d128 p64 default | 49264 | 20.96 | TPC 44.7%, SM 36.9%, LST 32.1% | 46.6% | 36.9 | 31.2 | 32.1 | 18.9/17.7 | 33.2 | 31.1 | 1.12 | 0.79 |
+| d128 p64 correction ALWAYS | 64090 | 27.27 | TPC 40.6%, SM 36.3%, LST 25.1% | 33.7% | 36.3 | 24.4 | 25.1 | 18.1/17.1 | 41.9 | 39.8 | 2.83 | 2.54 |
+| d128 p64 correction NEVER | 46798 | 19.91 | TPC 42.9%, SM 37.4%, LST 33.6% | 50.0% | 37.4 | 32.7 | 33.6 | 19.8/18.6 | 35.4 | 33.2 | 0.78 | 1.19 |
+| d256 product dense cga1 | 53084 | 22.59 | LST 43.8%, SMEMUX 32.4%, TPC 30.6% | 38.0% | 24.9 | 14.5 | 43.8 | 15.9/15.7 | 20.8 | 17.3 | 1.20 | 0.17 |
+| d256 p64 default cga2 | 59139 | 25.17 | TPC 29.4%, LST 26.8%, SM 25.9% | 35.1% | 24.7 | 13.2 | 26.8 | 14.0/14.2 | 21.1 | 17.4 | 1.31 | 0.17 |
+| d256 p64 correction ALWAYS | 64076 | 27.27 | TPC 33.9%, SM 29.9%, LST 24.7% | 32.1% | 29.9 | 12.2 | 24.7 | 15.8/16.0 | 35.9 | 31.4 | 1.87 | 1.37 |
+| d256 p64 correction NEVER | 56826 | 24.18 | TPC 28.3%, LST 27.7%, SM 26.8% | 37.1% | 24.2 | 13.6 | 27.7 | 14.4/14.7 | 21.9 | 18.0 | 1.29 | 0.15 |
+| d256 p64 ALWAYS + rowsum MMA | 62482 | 26.59 | TPC 30.0%, SM 27.0%, LST 25.8% | 33.6% | 27.0 | 12.6 | 25.8 | 17.2/17.1 | 32.1 | 29.9 | 0.92 | 0.82 |
+| d256 p64 NEVER + rowsum MMA | 57328 | 24.39 | LST 27.8%, SM 27.4%, TPC 23.1% | 37.2% | 19.5 | 13.5 | 27.8 | 15.1/15.0 | 15.3 | 14.2 | 0.17 | 0.16 |
+
+Full per-unit SOL and register-file tables: `results/perfsim_RESULTS.md` (perfsim/summarize.py).
 
 ## Files
 

@@ -36,6 +36,7 @@ window first-MMA-issue..last-MMA-retire for the "mainloop" columns):
   * TMEM -> RF: `tmem_rf_wb_stall_q{0..3}` (+ `_for_mufu_bank*`) summed, as % of SMSP-clocks; TMEM traffic
     `tmem_reads_q` / `tmem_writes_q` split by op (ldtm, utcmma_c accumulator reads, sttm, utcmma writes, utccp SF).
 """
+
 import argparse
 import csv
 import glob
@@ -134,32 +135,59 @@ def rf_metrics(st, elapsed, mainloop=None):
     writes = g("register_writes_bank0_hw0_q", "register_writes_bank1_hw0_q")  # hw0 == hw1: every 32-lane write hits both half-warp ports
     writes_hw_all = g(*[f"register_writes_bank{b}_hw{h}_q" for b in (0, 1) for h in (0, 1)])
     out = dict(
-        rf_reads=reads, rf_reads_hw=reads_hw, rf_reads_sim=reads_sim,
+        rf_reads=reads,
+        rf_reads_hw=reads_hw,
+        rf_reads_sim=reads_sim,
         rf_reads_bank_split=(st.get("register_reads_bank0_q", 0.0), st.get("register_reads_bank1_q", 0.0)),
         rf_reads_avoided_reuse=st.get("register_reads_avoided_collector_reuse_f_pipe_q", 0.0),
-        rf_reads_coupled_f345=(st.get("register_reads_coupled_f3_q", 0.0), st.get("register_reads_coupled_f4_q", 0.0), st.get("register_reads_coupled_f5_q", 0.0)),
+        rf_reads_coupled_f345=(
+            st.get("register_reads_coupled_f3_q", 0.0),
+            st.get("register_reads_coupled_f4_q", 0.0),
+            st.get("register_reads_coupled_f5_q", 0.0),
+        ),
         rf_reads_decoupled=st.get("register_reads_decoupled_q", 0.0),
-        rf_reads_by_consumer=dict(mio=g("register_reads_mio_bank0_q", "register_reads_mio_bank1_q"), mufu=g("register_reads_mufu_bank0_q", "register_reads_mufu_bank1_q"), agu=g("register_reads_agu_bank0_q", "register_reads_agu_bank1_q"), other_mio=g("register_reads_other_mio_bank0_q", "register_reads_other_mio_bank1_q")),
-        rf_writes=writes, rf_writes_halfwarp_ports_total=writes_hw_all,
+        rf_reads_by_consumer=dict(
+            mio=g("register_reads_mio_bank0_q", "register_reads_mio_bank1_q"),
+            mufu=g("register_reads_mufu_bank0_q", "register_reads_mufu_bank1_q"),
+            agu=g("register_reads_agu_bank0_q", "register_reads_agu_bank1_q"),
+            other_mio=g("register_reads_other_mio_bank0_q", "register_reads_other_mio_bank1_q"),
+        ),
+        rf_writes=writes,
+        rf_writes_halfwarp_ports_total=writes_hw_all,
         rf_writes_bank_split=(st.get("register_writes_bank0_hw0_q", 0.0), st.get("register_writes_bank1_hw0_q", 0.0)),
-        rf_writes_coupled=st.get("register_writes_coupled_q", 0.0), rf_writes_decoupled=st.get("register_writes_decoupled_q", 0.0),
-        rf_writes_by_source=dict(math=g("register_writes_math_bank0_q", "register_writes_math_bank1_q"), mio=g("register_writes_mio_bank0_q", "register_writes_mio_bank1_q"), mufu=g("register_writes_mufu_bank0_q", "register_writes_mufu_bank1_q")),
+        rf_writes_coupled=st.get("register_writes_coupled_q", 0.0),
+        rf_writes_decoupled=st.get("register_writes_decoupled_q", 0.0),
+        rf_writes_by_source=dict(
+            math=g("register_writes_math_bank0_q", "register_writes_math_bank1_q"),
+            mio=g("register_writes_mio_bank0_q", "register_writes_mio_bank1_q"),
+            mufu=g("register_writes_mufu_bank0_q", "register_writes_mufu_bank1_q"),
+        ),
         rf_read_port_util_elapsed_pct=100.0 * reads / 8.0 / elapsed,
         rf_write_port_util_elapsed_pct=100.0 * writes / 8.0 / elapsed,
-        rf_reads_per_clk_sm=reads / elapsed, rf_writes_per_clk_sm=writes / elapsed,
+        rf_reads_per_clk_sm=reads / elapsed,
+        rf_writes_per_clk_sm=writes / elapsed,
         rf_read_dispatch_stall_pct=100.0 * st.get("cant_dispatch_register_read_q", 0.0) / 4.0 / elapsed,
-        rf_read_dispatch_stall_split=dict(bank0=st.get("cant_dispatch_register_read_bank_0_q", 0.0), bank1=st.get("cant_dispatch_register_read_bank_1_q", 0.0), f_pipe=st.get("cant_dispatch_register_read_f_pipe_q", 0.0), m_pipe=st.get("cant_dispatch_register_read_m_pipe_q", 0.0)),
+        rf_read_dispatch_stall_split=dict(
+            bank0=st.get("cant_dispatch_register_read_bank_0_q", 0.0),
+            bank1=st.get("cant_dispatch_register_read_bank_1_q", 0.0),
+            f_pipe=st.get("cant_dispatch_register_read_f_pipe_q", 0.0),
+            m_pipe=st.get("cant_dispatch_register_read_m_pipe_q", 0.0),
+        ),
         urf_read_dispatch_stall_pct=100.0 * st.get("cant_dispatch_uniform_register_read_q", 0.0) / 4.0 / elapsed,
         rf_arb_retries=st.get("rf_arb_retries_per_grant_", 0.0),
         tmem_rf_wb_stall_pct=100.0 * g(*[f"tmem_rf_wb_stall_q{i}" for i in range(4)]) / 4.0 / elapsed,
         tmem_rf_wb_stall_for_mufu=g("tmem_rf_wb_stall_for_mufu_bank0_q", "tmem_rf_wb_stall_for_mufu_bank1_q"),
-        tmem_reads=st.get("tmem_reads_q", 0.0), tmem_writes=st.get("tmem_writes_q", 0.0),
+        tmem_reads=st.get("tmem_reads_q", 0.0),
+        tmem_writes=st.get("tmem_writes_q", 0.0),
         tmem_reads_by_op={k[len("tmem_reads_op_") : -2]: v for k, v in st.items() if k.startswith("tmem_reads_op_")},
         tmem_writes_by_op={k[len("tmem_writes_op_") : -2]: v for k, v in st.items() if k.startswith("tmem_writes_op_")},
         uniform_pipe_active_pct=100.0 * g(*[f"uniform_pipe_active_q{i}" for i in range(4)]) / 4.0 / elapsed,
         uniform_inst_per_clk=st.get("inst_issued_uniform_pipe_q", 0.0) / elapsed,
-        inst_issued=st.get("inst_issued_q", 0.0), inst_issued_per_clk=st.get("inst_issued_q", 0.0) / elapsed,
-        inst_issued_by_pipe={k[len("inst_issued_") : -len("_pipe_q")]: v for k, v in st.items() if k.startswith("inst_issued_") and k.endswith("_pipe_q") and v},
+        inst_issued=st.get("inst_issued_q", 0.0),
+        inst_issued_per_clk=st.get("inst_issued_q", 0.0) / elapsed,
+        inst_issued_by_pipe={
+            k[len("inst_issued_") : -len("_pipe_q")]: v for k, v in st.items() if k.startswith("inst_issued_") and k.endswith("_pipe_q") and v
+        },
         apdf_elapsed=elapsed,
     )
     urf = {k: v for k, v in st.items() if ("uniform" in k and "reg" in k and "cant_dispatch" not in k) or k.startswith("urf_")}
@@ -182,6 +210,9 @@ def rf_metrics(st, elapsed, mainloop=None):
 
 def summarize_run(run_dir, label, with_rf=True):
     hits = glob.glob(f"{run_dir}/perfsim/pic_analysis/run.A.dir.0/*/pic-analysis/pi")
+    # the pi directory appears before PIC analysis has written its tables: treat a run as finished only once the
+    # grid info, the summary csv and the full.pfm webview are all there
+    hits = [h for h in hits if all(os.path.exists(f"{h}/{f}") for f in ("grid_info.csv", "sumry_file.csv", "web/full.pfm"))]
     if not hits:
         return None
     pi = hits[0]
@@ -195,12 +226,21 @@ def summarize_run(run_dir, label, with_rf=True):
     sm0 = sm_rows[0] if sm_rows else None
     clk = float(s["nvclk"])
     rec = dict(
-        run=os.path.basename(run_dir.rstrip("/")), label=label, web=f"{pi}/web", pi_url=PI_URL.format(web=f"{pi}/web"),
-        dur_cyc=int(g["duration_cycle"]), dur_us=int(g["duration_cycle"]) / clk, clk_mhz=clk,
-        ctas=int(g["cta_num"]), sms=int(g["sm_num"]), start=int(g["start_cycle"]), end=int(g["end_cycle"]),
+        run=os.path.basename(run_dir.rstrip("/")),
+        label=label,
+        web=f"{pi}/web",
+        pi_url=PI_URL.format(web=f"{pi}/web"),
+        dur_cyc=int(g["duration_cycle"]),
+        dur_us=int(g["duration_cycle"]) / clk,
+        clk_mhz=clk,
+        ctas=int(g["cta_num"]),
+        sms=int(g["sm_num"]),
+        start=int(g["start_cycle"]),
+        end=int(g["end_cycle"]),
         sol=[(a.get(f"sol_{i}_id"), float(a.get(f"sol_{i}_pct", 0) or 0)) for i in range(3)],
         bneck=[(a.get(f"btl_{i}_id"), float(a.get(f"btl_{i}_pct", 0) or 0)) for i in range(3) if a.get(f"btl_{i}_id")],
-        gpu_sol_full=gpu_sol.get("GPU SOL Ratio (%) - Full Chip"), gpu_sol_mma_sms=gpu_sol.get("GPU SOL Ratio (%) - Excl Non-MMA SMs"),
+        gpu_sol_full=gpu_sol.get("GPU SOL Ratio (%) - Full Chip"),
+        gpu_sol_mma_sms=gpu_sol.get("GPU SOL Ratio (%) - Excl Non-MMA SMs"),
         util={lab: unit_busiest(pi, unit, m) for lab, unit, m in UTIL},
     )
     if sm0:
@@ -259,8 +299,10 @@ def main():
                 if r.get("B", 1) == 1 and r.get("h_q") == 1 and r.get("S") == 4096:
                     sil[f"d{r['d']}_{r['name']}"] = r
     L = [f"# {args.title}", ""]
-    L.append(f"Simulated at nvclk {recs[0]['clk_mhz']:.0f} MHz, {recs[0]['ctas']} CTAs on {recs[0]['sms']} SMs. Durations are the kernel's grid start-to-end in SM clocks; "
-             "MMA numbers are the instrumented cluster's (SM0_0_0/1). Trace = 4th launch (3 warm-ups) captured with cuda_apic on w2u1g-lc-0614; ACE via SSAF, SMART + PIC via flow.perfsim latest.")
+    L.append(
+        f"Simulated at nvclk {recs[0]['clk_mhz']:.0f} MHz, {recs[0]['ctas']} CTAs on {recs[0]['sms']} SMs. Durations are the kernel's grid start-to-end in SM clocks; "
+        "MMA numbers are the instrumented cluster's (SM0_0_0/1). Trace = 4th launch (3 warm-ups) captured with cuda_apic on w2u1g-lc-0614; ACE via SSAF, SMART + PIC via flow.perfsim latest."
+    )
     L += ["", "## Timing and top-level SOL", ""]
     base = recs[0]
     hdr = "| run | sim cycles | sim µs | Δ first | SOL top-3 | mainloop MMA util | MMA cycles (SOL→actual) | pre-MMA | post-MMA | bottlenecks | GPU SOL full chip | silicon µs |"
@@ -268,8 +310,10 @@ def main():
     for r in recs:
         key = next((k for k in sil if k in r["run"]), None)
         s_us = f"{sil[key]['time_us_graph']:.1f}" if key else "–"
-        L.append(f"| {r['label']} | {r['dur_cyc']} | {r['dur_us']:.2f} | {100 * (r['dur_cyc'] / base['dur_cyc'] - 1):+.1f}% | {', '.join(f'{n} {p:.1f}%' for n, p in r['sol'])} | {f(r.get('mma_sol_pct'))}% | "
-                 f"{r.get('mma_sol_cyc', '–')}→{r.get('mma_actual_cyc', '–')} | {r.get('pre_mma_cyc', '–')} | {r.get('post_mma_cyc', '–')} | {', '.join(f'{n} {p:.1f}%' for n, p in r['bneck'])} | {f(r.get('gpu_sol_full'), 2)} | {s_us} |")
+        L.append(
+            f"| {r['label']} | {r['dur_cyc']} | {r['dur_us']:.2f} | {100 * (r['dur_cyc'] / base['dur_cyc'] - 1):+.1f}% | {', '.join(f'{n} {p:.1f}%' for n, p in r['sol'])} | {f(r.get('mma_sol_pct'))}% | "
+            f"{r.get('mma_sol_cyc', '–')}→{r.get('mma_actual_cyc', '–')} | {r.get('pre_mma_cyc', '–')} | {r.get('post_mma_cyc', '–')} | {', '.join(f'{n} {p:.1f}%' for n, p in r['bneck'])} | {f(r.get('gpu_sol_full'), 2)} | {s_us} |"
+        )
     L += ["", "## Per-unit SOL table (busiest / instrumented instance; % of each unit's peak over its elapsed clocks)", ""]
     cols = [lab for lab, _, _ in UTIL]
     L += ["| run | " + " | ".join(cols) + " |", "|---|" + "---|" * len(cols)]
@@ -277,8 +321,28 @@ def main():
         L.append(f"| {r['label']} | " + " | ".join(f(r["util"].get(lab)) for lab in cols) + " |")
     if any("rf" in r for r in recs):
         L += ["", "## Register-file bandwidth (instrumented SM, raw SMART counters)", ""]
-        cols = ["RF rd ports % (elapsed)", "RF rd ports % (mainloop)", "RF wr ports % (elapsed)", "RF wr ports % (mainloop)", "LRF reads/clk", "LRF writes/clk", "writes coupled / decoupled", "reads avoided by reuse cache", "rd dispatch stall % (bank0/bank1/f-pipe)",
-                "URF rd port % (elapsed / mainloop)", "URF wr port %", "URF reads / writes", "URF rd dispatch stall %", "uniform pipe active %", "UR instr/clk", "TMEM→RF wb stall %", "TMEM reads (ldtm / utcmma_c / sf)", "TMEM writes (sttm / utcmma / utccp)", "issued instr/clk/SM", "issued by pipe"]
+        cols = [
+            "RF rd ports % (elapsed)",
+            "RF rd ports % (mainloop)",
+            "RF wr ports % (elapsed)",
+            "RF wr ports % (mainloop)",
+            "LRF reads/clk",
+            "LRF writes/clk",
+            "writes coupled / decoupled",
+            "reads avoided by reuse cache",
+            "rd dispatch stall % (bank0/bank1/f-pipe)",
+            "URF rd port % (elapsed / mainloop)",
+            "URF wr port %",
+            "URF reads / writes",
+            "URF rd dispatch stall %",
+            "uniform pipe active %",
+            "UR instr/clk",
+            "TMEM→RF wb stall %",
+            "TMEM reads (ldtm / utcmma_c / sf)",
+            "TMEM writes (sttm / utcmma / utccp)",
+            "issued instr/clk/SM",
+            "issued by pipe",
+        ]
         L += ["| run | " + " | ".join(cols) + " |", "|---|" + "---|" * len(cols)]
         for r in recs:
             rf = r.get("rf")
@@ -294,17 +358,22 @@ def main():
                 urf_n = f"{sum(v for k, v in uc.items() if 'read' in k):.0f} / {sum(v for k, v in uc.items() if 'write' in k):.0f}"
             else:
                 urf_rd = urf_wr = urf_n = "n/a (no URF counters)"
-            L.append(f"| {r['label']} | {f(rf['rf_read_port_util_elapsed_pct'])} | {f(rf.get('rf_read_port_util_mainloop_pct'))} | {f(rf['rf_write_port_util_elapsed_pct'])} | {f(rf.get('rf_write_port_util_mainloop_pct'))} | "
-                     f"{f(rf['rf_reads_per_clk_sm'], 2)} | {f(rf['rf_writes_per_clk_sm'], 2)} | {rf['rf_writes_coupled']:.0f} / {rf['rf_writes_decoupled']:.0f} | {rf['rf_reads_avoided_reuse']:.0f} | "
-                     f"{f(rf['rf_read_dispatch_stall_pct'], 2)} ({ds['bank0']:.0f}/{ds['bank1']:.0f}/{ds['f_pipe']:.0f}) | {urf_rd} | {urf_wr} | {urf_n} | {f(rf['urf_read_dispatch_stall_pct'], 2)} | {f(rf['uniform_pipe_active_pct'])} | {f(rf['uniform_inst_per_clk'], 3)} | "
-                     f"{f(rf['tmem_rf_wb_stall_pct'], 2)} | {rf['tmem_reads']:.0f} ({tr.get('ldtm', 0):.0f} / {tr.get('utcmma_c', 0):.0f} / {tr.get('utcmma_a_sp_sf', 0):.0f}) | {rf['tmem_writes']:.0f} ({tw.get('sttm', 0):.0f} / {tw.get('utcmma', 0):.0f} / {tw.get('utccp', 0):.0f}) | "
-                     f"{f(rf['inst_issued_per_clk'], 2)} | {', '.join(f'{k} {v:.0f}' for k, v in sorted(rf['inst_issued_by_pipe'].items(), key=lambda kv: -kv[1])[:6])} |")
-        L += ["", "Normalisation: read ports = LRF operand reads (`register_reads_bank{0,1}_q`, hardware count; the simulator-only count differs by a few %) / (4 SMSP x 2 banks x 1 read/clk) / clocks; "
-              "write ports = `register_writes_bank{b}_hw0_q` summed over banks / (8/clk) / clocks -- hw0 and hw1 are the two half-warp ports and a 32-lane write is counted once on each (hw0 == hw1 in every run), so this equals the sum over all four hw counters / 16; "
-              "mainloop = first-MMA-issue..last-MMA-retire window of the math SOL table (same numerator). Coupled writes come from fixed-latency math pipes, decoupled from MIO/MUFU/TMEM/LSU write-backs. "
-              "Dispatch stalls = cycles an SMSP could not dispatch because of a register-read port/bank conflict, per SMSP-clock. TMEM→RF wb stall = tcgen05.ld write-back stalled against the RF write ports, per SMSP-clock. "
-              "Uniform RF: `uniform_register_reads_q` / `uniform_register_writes_q` (per-SM sums) / (4 SMSP x 1 uniform read or write per clock) / clocks -- the uniform datapath is one scalar register access per SMSP per clock; "
-              "`uniform_pipe_active_q*` and `inst_issued_uniform_pipe_q` give the UR pipe's activity for comparison."]
+            L.append(
+                f"| {r['label']} | {f(rf['rf_read_port_util_elapsed_pct'])} | {f(rf.get('rf_read_port_util_mainloop_pct'))} | {f(rf['rf_write_port_util_elapsed_pct'])} | {f(rf.get('rf_write_port_util_mainloop_pct'))} | "
+                f"{f(rf['rf_reads_per_clk_sm'], 2)} | {f(rf['rf_writes_per_clk_sm'], 2)} | {rf['rf_writes_coupled']:.0f} / {rf['rf_writes_decoupled']:.0f} | {rf['rf_reads_avoided_reuse']:.0f} | "
+                f"{f(rf['rf_read_dispatch_stall_pct'], 2)} ({ds['bank0']:.0f}/{ds['bank1']:.0f}/{ds['f_pipe']:.0f}) | {urf_rd} | {urf_wr} | {urf_n} | {f(rf['urf_read_dispatch_stall_pct'], 2)} | {f(rf['uniform_pipe_active_pct'])} | {f(rf['uniform_inst_per_clk'], 3)} | "
+                f"{f(rf['tmem_rf_wb_stall_pct'], 2)} | {rf['tmem_reads']:.0f} ({tr.get('ldtm', 0):.0f} / {tr.get('utcmma_c', 0):.0f} / {tr.get('utcmma_a_sp_sf', 0):.0f}) | {rf['tmem_writes']:.0f} ({tw.get('sttm', 0):.0f} / {tw.get('utcmma', 0):.0f} / {tw.get('utccp', 0):.0f}) | "
+                f"{f(rf['inst_issued_per_clk'], 2)} | {', '.join(f'{k} {v:.0f}' for k, v in sorted(rf['inst_issued_by_pipe'].items(), key=lambda kv: -kv[1])[:6])} |"
+            )
+        L += [
+            "",
+            "Normalisation: read ports = LRF operand reads (`register_reads_bank{0,1}_q`, hardware count; the simulator-only count differs by a few %) / (4 SMSP x 2 banks x 1 read/clk) / clocks; "
+            "write ports = `register_writes_bank{b}_hw0_q` summed over banks / (8/clk) / clocks -- hw0 and hw1 are the two half-warp ports and a 32-lane write is counted once on each (hw0 == hw1 in every run), so this equals the sum over all four hw counters / 16; "
+            "mainloop = first-MMA-issue..last-MMA-retire window of the math SOL table (same numerator). Coupled writes come from fixed-latency math pipes, decoupled from MIO/MUFU/TMEM/LSU write-backs. "
+            "Dispatch stalls = cycles an SMSP could not dispatch because of a register-read port/bank conflict, per SMSP-clock. TMEM→RF wb stall = tcgen05.ld write-back stalled against the RF write ports, per SMSP-clock. "
+            "Uniform RF: `uniform_register_reads_q` / `uniform_register_writes_q` (per-SM sums) / (4 SMSP x 1 uniform read or write per clock) / clocks -- the uniform datapath is one scalar register access per SMSP per clock; "
+            "`uniform_pipe_active_q*` and `inst_issued_uniform_pipe_q` give the UR pipe's activity for comparison.",
+        ]
     L += ["", "## PIC-Smart webviews (perf-inspector)", ""]
     for r in recs:
         L.append(f"- {r['label']}: {r['pi_url']}")

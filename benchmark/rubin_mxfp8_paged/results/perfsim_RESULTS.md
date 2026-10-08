@@ -1,0 +1,67 @@
+# Rubin GR100 PerfSim: MXFP8 GQA prefill, paged KV page 64, correction ON / OFF (B=1, H_q=H_kv=1, S=4096, no mask)
+
+Simulated at nvclk 2350 MHz, 16 CTAs on 16 SMs. Durations are the kernel's grid start-to-end in SM clocks; MMA numbers are the instrumented cluster's (SM0_0_0/1). Trace = 4th launch (3 warm-ups) captured with cuda_apic on w2u1g-lc-0614; ACE via SSAF, SMART + PIC via flow.perfsim latest.
+
+## Timing and top-level SOL
+
+| run | sim cycles | sim µs | Δ first | SOL top-3 | mainloop MMA util | MMA cycles (SOL→actual) | pre-MMA | post-MMA | bottlenecks | GPU SOL full chip | silicon µs |
+|---|---|---|---|---|---|---|---|---|---|---|---|
+| ladder E: d128 p64 default, f16 exp + 1/ln2 outside, no fused cvt (before) | 55030 | 23.42 | +0.0% | TPC 48.6%, SM 41.1%, LST 29.1% | 41.5% | 17408→41983 | 9445 | 3602 | GPCMMU 6.5%, MMU 6.5%, FB 3.9% | 2.76 | – |
+| d128 product dense cga2 | 46744 | 19.89 | -15.1% | TPC 46.5%, SM 37.8%, LST 33.7% | 46.8% | 17408→37200 | 5775 | 3769 | GPCMMU 7.5%, MMU 7.5%, FB 4.2% | 3.06 | 20.8 |
+| d128 p64 default | 49264 | 20.96 | -10.5% | TPC 44.7%, SM 36.9%, LST 32.1% | 46.6% | 17408→37329 | 8060 | 3875 | GPCMMU 7.2%, MMU 7.2%, FB 4.2% | 3.08 | 22.0 |
+| d128 p64 correction ALWAYS | 64090 | 27.27 | +16.5% | TPC 40.6%, SM 36.3%, LST 25.1% | 33.7% | 17408→51656 | 8002 | 4432 | GPCMMU 5.6%, MMU 5.6%, FB 3.5% | 2.20 | 28.6 |
+| d128 p64 correction NEVER | 46798 | 19.91 | -15.0% | TPC 42.9%, SM 37.4%, LST 33.6% | 50.0% | 17408→34811 | 7770 | 4217 | GPCMMU 7.6%, MMU 7.6%, FB 4.0% | 3.25 | 20.7 |
+| d256 product dense cga1 | 53084 | 22.59 | -3.5% | LST 43.8%, SMEMUX 32.4%, TPC 30.6% | 38.0% | 16384→43094 | 5380 | 4610 | GPCMMU 15.9%, MMU 15.9%, FB 8.1% | 5.04 | 18.7 |
+| d256 p64 default cga2 | 59139 | 25.17 | +7.5% | TPC 29.4%, LST 26.8%, SM 25.9% | 35.1% | 16384→46626 | 7952 | 4561 | GPCMMU 7.9%, MMU 7.9%, FB 6.3% | 4.66 | 20.0 |
+| d256 p64 correction ALWAYS | 64076 | 27.27 | +16.4% | TPC 33.9%, SM 29.9%, LST 24.7% | 32.1% | 16384→51025 | 7992 | 5059 | GPCMMU 7.3%, MMU 7.3%, FB 5.5% | 4.22 | 27.7 |
+| d256 p64 correction NEVER | 56826 | 24.18 | +3.3% | TPC 28.3%, LST 27.7%, SM 26.8% | 37.1% | 16384→44178 | 7867 | 4781 | GPCMMU 8.2%, MMU 8.2%, FB 6.1% | 4.89 | 19.6 |
+| d256 p64 ALWAYS + rowsum MMA | 62482 | 26.59 | +13.5% | TPC 30.0%, SM 27.0%, LST 25.8% | 33.6% | 16896→50317 | 7538 | 4627 | GPCMMU 7.5%, MMU 7.5%, FB 6.5% | 4.47 | 27.9 |
+| d256 p64 NEVER + rowsum MMA | 57328 | 24.39 | +4.2% | LST 27.8%, SM 27.4%, TPC 23.1% | 37.2% | 16896→45415 | 7200 | 4713 | GPCMMU 8.1%, MMU 8.1%, FB 6.1% | 4.92 | 19.9 |
+
+## Per-unit SOL table (busiest / instrumented instance; % of each unit's peak over its elapsed clocks)
+
+| run | issue % | MMA pipe % (whole kernel) | XU (MUFU) % | FMA-heavy % | FMA-lite % | ALU % | ADU % | uniform pipe % | LSU % | TMEM rd % | TMEM wr % | SMEM wavefronts (LST) % | LST TC-MMA wavefronts % | ICC instr fetch (TPC) % | L2 data-bank accesses % | L2 xbar read bytes % | L2 tag lookups % | DRAM (FB) bytes % | GPCMMU ltp requests % |
+|---|---|---|---|---|---|---|---|---|---|---|---|---|---|---|---|---|---|---|---|
+| ladder E: d128 p64 default, f16 exp + 1/ln2 outside, no fused cvt (before) | 41.1 | 29.5 | 28.2 | 18.9 | 14.8 | 31.1 | 14.3 | 3.1 | 1.5 | 17.2 | 16.1 | 29.1 | 29.1 | 48.6 | 0.5 | 0.5 | 0.4 | 0.6 | 0.4 |
+| d128 product dense cga2 | 37.8 | 34.2 | 32.7 | 19.8 | 17.1 | 19.6 | 14.1 | 4.0 | 1.5 | 19.9 | 18.7 | 33.7 | 33.7 | 46.5 | 0.6 | 0.7 | 0.6 | 0.7 | 0.5 |
+| d128 p64 default | 36.9 | 32.6 | 31.2 | 20.3 | 16.3 | 19.4 | 14.9 | 3.4 | 1.9 | 18.9 | 17.7 | 32.1 | 32.1 | 44.7 | 0.6 | 0.6 | 0.6 | 0.7 | 0.5 |
+| d128 p64 correction ALWAYS | 36.3 | 25.5 | 24.4 | 28.8 | 25.7 | 15.3 | 11.7 | 2.4 | 1.5 | 18.1 | 17.1 | 25.1 | 25.1 | 40.6 | 0.5 | 0.6 | 0.5 | 0.5 | 0.4 |
+| d128 p64 correction NEVER | 37.4 | 34.1 | 32.7 | 20.7 | 17.1 | 20.3 | 14.6 | 3.4 | 1.5 | 19.8 | 18.6 | 33.6 | 33.6 | 42.9 | 0.7 | 0.8 | 0.7 | 0.7 | 0.5 |
+| d256 product dense cga1 | 24.9 | 28.6 | 14.5 | 17.4 | 15.5 | 10.3 | 6.0 | 4.0 | 1.0 | 15.9 | 15.7 | 43.8 | 43.8 | 30.6 | 1.1 | 1.2 | 1.0 | 1.1 | 2.1 |
+| d256 p64 default cga2 | 24.7 | 25.9 | 13.2 | 17.8 | 14.1 | 12.8 | 5.8 | 2.9 | 1.1 | 14.0 | 14.2 | 26.8 | 26.8 | 29.4 | 0.9 | 1.0 | 0.9 | 1.0 | 1.1 |
+| d256 p64 correction ALWAYS | 29.9 | 24.0 | 12.2 | 27.7 | 24.6 | 12.1 | 5.4 | 2.7 | 1.0 | 15.8 | 16.0 | 24.7 | 24.7 | 33.9 | 0.8 | 0.9 | 0.8 | 0.9 | 1.0 |
+| d256 p64 correction NEVER | 24.2 | 26.8 | 13.6 | 17.9 | 14.6 | 12.2 | 5.6 | 2.8 | 0.9 | 14.4 | 14.7 | 27.7 | 27.7 | 28.3 | 0.9 | 1.0 | 0.9 | 1.0 | 1.1 |
+| d256 p64 ALWAYS + rowsum MMA | 27.0 | 25.4 | 12.6 | 22.1 | 19.5 | 11.9 | 5.5 | 2.9 | 1.0 | 17.2 | 17.1 | 25.8 | 25.8 | 30.0 | 0.9 | 0.9 | 0.8 | 1.0 | 1.0 |
+| d256 p64 NEVER + rowsum MMA | 19.5 | 27.4 | 13.5 | 10.0 | 7.4 | 11.7 | 5.5 | 2.9 | 0.9 | 15.1 | 15.0 | 27.8 | 27.8 | 23.1 | 0.9 | 1.0 | 0.9 | 1.0 | 1.1 |
+
+## Register-file bandwidth (instrumented SM, raw SMART counters)
+
+| run | RF rd ports % (elapsed) | RF rd ports % (mainloop) | RF wr ports % (elapsed) | RF wr ports % (mainloop) | LRF reads/clk | LRF writes/clk | writes coupled / decoupled | reads avoided by reuse cache | rd dispatch stall % (bank0/bank1/f-pipe) | URF rd port % (elapsed / mainloop) | URF wr port % | URF reads / writes | URF rd dispatch stall % | uniform pipe active % | UR instr/clk | TMEM→RF wb stall % | TMEM reads (ldtm / utcmma_c / sf) | TMEM writes (sttm / utcmma / utccp) | issued instr/clk/SM | issued by pipe |
+|---|---|---|---|---|---|---|---|---|---|---|---|---|---|---|---|---|---|---|---|---|
+| ladder E: d128 p64 default, f16 exp + 1/ln2 outside, no fused cvt (before) | 27.4 | 38.6 | 26.7 | 37.5 | 2.19 | 2.13 | 73633 / 52248 | 16548 | 0.58 (1154/1203/1359) | 6.7 / 9.5 | 3.2 | 15883 / 7632 | 0.07 | 3.1 | 0.125 | 1.50 | 81088 (17152 / 52672 / 11264) | 76136 (4360 / 69632 / 2144) | 1.64 | alu 36670, mio 25100, fmaheavy 22364, fmalite 17464, uniform 7372, fe 4448 |
+| d128 product dense cga2 | 23.6 | 32.4 | 22.3 | 30.6 | 1.89 | 1.79 | 39054 / 51961 | 14048 | 0.59 (155/1071/1195) | 7.9 / 10.8 | 3.9 | 16132 / 7985 | 0.10 | 4.0 | 0.158 | 2.11 | 81088 (17152 / 52672 / 11264) | 76136 (4360 / 69632 / 2144) | 1.51 | mio 24378, fmaheavy 20191, alu 20013, fmalite 17463, uniform 8079, fe 3530 |
+| d128 p64 default | 23.2 | 33.2 | 21.7 | 31.1 | 1.86 | 1.74 | 41212 / 51640 | 13917 | 1.12 (814/2637/2376) | 7.1 / 10.1 | 3.4 | 15155 / 7330 | 0.14 | 3.4 | 0.137 | 0.79 | 80840 (16904 / 52672 / 11264) | 75880 (4104 / 69632 / 2144) | 1.47 | mio 24366, fmaheavy 21687, alu 20688, fmalite 17464, uniform 7343, fe 3964 |
+| d128 p64 correction ALWAYS | 31.7 | 41.9 | 30.0 | 39.8 | 2.53 | 2.40 | 76915 / 87352 | 29103 | 2.83 (5387/5833/7716) | 6.9 / 9.2 | 2.3 | 18979 / 6423 | 0.10 | 2.3 | 0.094 | 2.54 | 98696 (34760 / 52672 / 11264) | 93736 (21960 / 69632 / 2144) | 1.45 | fmaheavy 39167, fmalite 35064, mio 28800, alu 20815, uniform 6436, fe 3404 |
+| d128 p64 correction NEVER | 24.2 | 35.4 | 22.7 | 33.2 | 1.93 | 1.81 | 41204 / 51380 | 13995 | 0.78 (280/1437/1572) | 7.1 / 10.4 | 3.4 | 14422 / 6859 | 0.14 | 3.3 | 0.135 | 1.19 | 80840 (16904 / 52672 / 11264) | 75880 (4104 / 69632 / 2144) | 1.49 | mio 23553, fmaheavy 21134, alu 20730, fmalite 17464, uniform 6879, fe 3106 |
+| d256 product dense cga1 | 15.6 | 20.8 | 13.0 | 17.3 | 1.25 | 1.04 | 33084 / 26586 | 7389 | 1.20 (2643/157/2742) | 6.9 / 9.2 | 3.8 | 15859 / 8805 | 0.33 | 4.0 | 0.158 | 0.17 | 72832 (8832 / 56832 / 7168) | 71908 (2180 / 65536 / 4192) | 1.00 | fmaheavy 19916, fmalite 17823, mio 12685, alu 11856, uniform 9089, fe 1804 |
+| d256 p64 default cga2 | 15.6 | 21.1 | 12.8 | 17.4 | 1.25 | 1.03 | 38033 / 26865 | 8091 | 1.31 (1253/3034/3211) | 5.7 / 7.7 | 3.3 | 14403 / 8333 | 0.35 | 2.9 | 0.115 | 0.17 | 70528 (8832 / 56832 / 4864) | 71908 (2180 / 65536 / 4192) | 0.99 | fmaheavy 22379, fmalite 17845, alu 16176, mio 12999, uniform 7280, fe 1871 |
+| d256 p64 correction ALWAYS | 26.8 | 35.9 | 23.4 | 31.4 | 2.14 | 1.88 | 69662 / 58609 | 19858 | 1.87 (3558/3434/5015) | 6.7 / 9.0 | 3.0 | 18372 / 8333 | 0.33 | 2.6 | 0.106 | 1.37 | 86400 (24704 / 56832 / 4864) | 87780 (18052 / 65536 / 4192) | 1.20 | fmaheavy 37824, fmalite 33589, mio 16969, alu 16492, uniform 7280, fe 1748 |
+| d256 p64 correction NEVER | 15.8 | 21.9 | 13.0 | 18.0 | 1.27 | 1.04 | 37045 / 26493 | 8030 | 1.29 (1512/2569/3050) | 5.4 / 7.5 | 3.0 | 13293 / 7322 | 0.33 | 2.7 | 0.111 | 0.15 | 70404 (8708 / 56832 / 4864) | 71908 (2180 / 65536 / 4192) | 0.97 | fmaheavy 21900, fmalite 17845, alu 14923, mio 12511, uniform 6765, fe 1515 |
+| d256 p64 ALWAYS + rowsum MMA | 24.3 | 32.1 | 22.6 | 29.9 | 1.94 | 1.81 | 59608 / 60589 | 20882 | 0.92 (2205/1142/2347) | 7.2 / 9.6 | 3.3 | 19223 / 8752 | 0.19 | 2.8 | 0.115 | 0.82 | 91456 (25696 / 58848 / 6912) | 90820 (19044 / 67584 / 4192) | 1.08 | fmaheavy 29384, fmalite 25879, mio 17246, alu 15687, uniform 7631, fe 1756 |
+| d256 p64 NEVER + rowsum MMA | 11.3 | 15.3 | 10.5 | 14.2 | 0.90 | 0.84 | 25135 / 26489 | 8672 | 0.17 (313/107/313) | 5.5 / 7.5 | 3.1 | 13622 / 7744 | 0.18 | 2.9 | 0.115 | 0.16 | 74468 (8708 / 58848 / 6912) | 73956 (2180 / 67584 / 4192) | 0.78 | alu 14393, mio 12533, fmaheavy 12321, fmalite 9143, uniform 7119, fe 1509 |
+
+Normalisation: read ports = LRF operand reads (`register_reads_bank{0,1}_q`, hardware count; the simulator-only count differs by a few %) / (4 SMSP x 2 banks x 1 read/clk) / clocks; write ports = `register_writes_bank{b}_hw0_q` summed over banks / (8/clk) / clocks -- hw0 and hw1 are the two half-warp ports and a 32-lane write is counted once on each (hw0 == hw1 in every run), so this equals the sum over all four hw counters / 16; mainloop = first-MMA-issue..last-MMA-retire window of the math SOL table (same numerator). Coupled writes come from fixed-latency math pipes, decoupled from MIO/MUFU/TMEM/LSU write-backs. Dispatch stalls = cycles an SMSP could not dispatch because of a register-read port/bank conflict, per SMSP-clock. TMEM→RF wb stall = tcgen05.ld write-back stalled against the RF write ports, per SMSP-clock. Uniform RF: `uniform_register_reads_q` / `uniform_register_writes_q` (per-SM sums) / (4 SMSP x 1 uniform read or write per clock) / clocks -- the uniform datapath is one scalar register access per SMSP per clock; `uniform_pipe_active_q*` and `inst_issued_uniform_pipe_q` give the UR pipe's activity for comparison.
+
+## PIC-Smart webviews (perf-inspector)
+
+- ladder E: d128 p64 default, f16 exp + 1/ln2 outside, no fused cvt (before): https://perf-inspector/server/?infoWin=On&panels=%5B%5D&path=/home/scratch.vagarwalla_gpu/perfsim_ladder/perfsim_output/gr100_ladder_E_b1h1s4k_none_r1/perfsim/pic_analysis/run.A.dir.0/861746.861743/pic-analysis/pi/web/full
+- d128 product dense cga2: https://perf-inspector/server/?infoWin=On&panels=%5B%5D&path=/home/scratch.vagarwalla_gpu/perfsim_mxb/perfsim_output/gr100_mxb_d128_corrdefault_p0_half_pf_prod_b1h1s4k_none_r1/perfsim/pic_analysis/run.A.dir.0/863512.861743/pic-analysis/pi/web/full
+- d128 p64 default: https://perf-inspector/server/?infoWin=On&panels=%5B%5D&path=/home/scratch.vagarwalla_gpu/perfsim_mxb/perfsim_output/gr100_mxb_d128_corrdefault_p64_half_pf_benc_cf1h1_b1h1s4k_none_r2/perfsim/pic_analysis/run.A.dir.0/863515.861743/pic-analysis/pi/web/full
+- d128 p64 correction ALWAYS: https://perf-inspector/server/?infoWin=On&panels=%5B%5D&path=/home/scratch.vagarwalla_gpu/perfsim_mxb/perfsim_output/gr100_mxb_d128_corralways_p64_half_pf_benc_cf1h1_b1h1s4k_none_r2/perfsim/pic_analysis/run.A.dir.0/863510.861743/pic-analysis/pi/web/full
+- d128 p64 correction NEVER: https://perf-inspector/server/?infoWin=On&panels=%5B%5D&path=/home/scratch.vagarwalla_gpu/perfsim_mxb/perfsim_output/gr100_mxb_d128_corrnever_p64_half_pf_benc_cf1h1_b1h1s4k_none_r1/perfsim/pic_analysis/run.A.dir.0/863516.861743/pic-analysis/pi/web/full
+- d256 product dense cga1: https://perf-inspector/server/?infoWin=On&panels=%5B%5D&path=/home/scratch.vagarwalla_gpu/perfsim_mxb/perfsim_output/gr100_mxb_d256_corrdefault_p0_half_pf_prod_b1h1s4k_none_r1/perfsim/pic_analysis/run.A.dir.0/863535.861743/pic-analysis/pi/web/full
+- d256 p64 default cga2: https://perf-inspector/server/?infoWin=On&panels=%5B%5D&path=/home/scratch.vagarwalla_gpu/perfsim_mxb/perfsim_output/gr100_mxb_d256_corrdefault_p64_half_pf_benc_cf0h0_cga2_b1h1s4k_none_r2/perfsim/pic_analysis/run.A.dir.0/863536.861743/pic-analysis/pi/web/full
+- d256 p64 correction ALWAYS: https://perf-inspector/server/?infoWin=On&panels=%5B%5D&path=/home/scratch.vagarwalla_gpu/perfsim_mxb/perfsim_output/gr100_mxb_d256_corralways_p64_half_pf_benc_cf0h0_cga2_b1h1s4k_none_r2/perfsim/pic_analysis/run.A.dir.0/863549.861743/pic-analysis/pi/web/full
+- d256 p64 correction NEVER: https://perf-inspector/server/?infoWin=On&panels=%5B%5D&path=/home/scratch.vagarwalla_gpu/perfsim_mxb/perfsim_output/gr100_mxb_d256_corrnever_p64_half_pf_benc_cf0h0_cga2_b1h1s4k_none_r1/perfsim/pic_analysis/run.A.dir.0/863542.861743/pic-analysis/pi/web/full
+- d256 p64 ALWAYS + rowsum MMA: https://perf-inspector/server/?infoWin=On&panels=%5B%5D&path=/home/scratch.vagarwalla_gpu/perfsim_mxb/perfsim_output/gr100_mxb_d256_corralways_p64_half_pf_benc_cf0h0rs1_cga2_b1h1s4k_none_r1/perfsim/pic_analysis/run.A.dir.0/863543.861743/pic-analysis/pi/web/full
+- d256 p64 NEVER + rowsum MMA: https://perf-inspector/server/?infoWin=On&panels=%5B%5D&path=/home/scratch.vagarwalla_gpu/perfsim_mxb/perfsim_output/gr100_mxb_d256_corrnever_p64_half_pf_benc_cf0h0rs1_cga2_b1h1s4k_none_r1/perfsim/pic_analysis/run.A.dir.0/863537.861743/pic-analysis/pi/web/full

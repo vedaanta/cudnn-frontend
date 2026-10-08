@@ -1,0 +1,1762 @@
+[
+ {
+  "run": "gr100_ladder_E_b1h1s4k_none_r1",
+  "label": "ladder E: d128 p64 default, f16 exp + 1/ln2 outside, no fused cvt (before)",
+  "web": "/home/scratch.vagarwalla_gpu/perfsim_ladder/perfsim_output/gr100_ladder_E_b1h1s4k_none_r1/perfsim/pic_analysis/run.A.dir.0/861746.861743/pic-analysis/pi/web",
+  "pi_url": "https://perf-inspector/server/?infoWin=On&panels=%5B%5D&path=/home/scratch.vagarwalla_gpu/perfsim_ladder/perfsim_output/gr100_ladder_E_b1h1s4k_none_r1/perfsim/pic_analysis/run.A.dir.0/861746.861743/pic-analysis/pi/web/full",
+  "dur_cyc": 55030,
+  "dur_us": 23.417021276595744,
+  "clk_mhz": 2350.0,
+  "ctas": 16,
+  "sms": 16,
+  "start": 80678,
+  "end": 135708,
+  "sol": [
+   [
+    "TPC",
+    48.615181
+   ],
+   [
+    "SM",
+    41.092694
+   ],
+   [
+    "LST",
+    29.075263
+   ]
+  ],
+  "bneck": [
+   [
+    "GPCMMU",
+    6.530246
+   ],
+   [
+    "MMU",
+    6.530246
+   ],
+   [
+    "FB",
+    3.934184
+   ]
+  ],
+  "gpu_sol_full": 2.76,
+  "gpu_sol_mma_sms": 41.35,
+  "util": {
+   "issue %": 41.092694,
+   "MMA pipe % (whole kernel)": 29.488591,
+   "XU (MUFU) %": 28.235055,
+   "FMA-heavy %": 18.94703,
+   "FMA-lite %": 14.791727,
+   "ALU %": 31.084309,
+   "ADU %": 14.263209,
+   "uniform pipe %": 3.121983,
+   "LSU %": 1.511019,
+   "TMEM rd %": 17.170057,
+   "TMEM wr %": 16.121491,
+   "SMEM wavefronts (LST) %": 29.075263,
+   "LST TC-MMA wavefronts %": 29.075263,
+   "ICC instr fetch (TPC) %": 48.615181,
+   "L2 data-bank accesses %": 0.487863,
+   "L2 xbar read bytes %": 0.511578,
+   "L2 tag lookups %": 0.448901,
+   "DRAM (FB) bytes %": 0.567931,
+   "GPCMMU ltp requests %": 0.435124
+  },
+  "mma_sol_pct": 41.46,
+  "mma_sol_cyc": 17408,
+  "mma_actual_cyc": 41983,
+  "first_mma": 90123,
+  "last_mma": 132106,
+  "pre_mma_cyc": 9445,
+  "post_mma_cyc": 3602,
+  "rf": {
+   "rf_reads": 129522.0,
+   "rf_reads_hw": 129522.0,
+   "rf_reads_sim": 124741.0,
+   "rf_reads_bank_split": [
+    74661.0,
+    54861.0
+   ],
+   "rf_reads_avoided_reuse": 16548.0,
+   "rf_reads_coupled_f345": [
+    17045.0,
+    35825.0,
+    50369.0
+   ],
+   "rf_reads_decoupled": 26283.0,
+   "rf_reads_by_consumer": {
+    "mio": 26283.0,
+    "mufu": 16650.0,
+    "agu": 444.0,
+    "other_mio": 9185.0
+   },
+   "rf_writes": 125881.0,
+   "rf_writes_halfwarp_ports_total": 251684.0,
+   "rf_writes_bank_split": [
+    72627.0,
+    53254.0
+   ],
+   "rf_writes_coupled": 73633.0,
+   "rf_writes_decoupled": 52248.0,
+   "rf_writes_by_source": {
+    "math": 73633.0,
+    "mio": 35594.0,
+    "mufu": 16650.0
+   },
+   "rf_read_port_util_elapsed_pct": 27.425761862009384,
+   "rf_write_port_util_elapsed_pct": 26.654794775803364,
+   "rf_reads_per_clk_sm": 2.1940609489607508,
+   "rf_writes_per_clk_sm": 2.132383582064269,
+   "rf_read_dispatch_stall_pct": 0.5818779326817204,
+   "rf_read_dispatch_stall_split": {
+    "bank0": 1154.0,
+    "bank1": 1203.0,
+    "f_pipe": 1359.0,
+    "m_pipe": 0.0
+   },
+   "urf_read_dispatch_stall_pct": 0.07453458235224367,
+   "rf_arb_retries": 18350.0,
+   "tmem_rf_wb_stall_pct": 1.5017024376196364,
+   "tmem_rf_wb_stall_for_mufu": 631.0,
+   "tmem_reads": 81088.0,
+   "tmem_writes": 76136.0,
+   "tmem_reads_by_op": {
+    "ldtm": 17152.0,
+    "utcmma_a_metadata": 11264.0,
+    "utcmma_a_sp_sf": 11264.0,
+    "utcmma_c": 52672.0
+   },
+   "tmem_writes_by_op": {
+    "sttm": 4360.0,
+    "utccp_32dp": 2144.0,
+    "utccp": 2144.0,
+    "utcmma": 69632.0
+   },
+   "uniform_pipe_active_pct": 3.0910677078921958,
+   "uniform_inst_per_clk": 0.12487930479562279,
+   "inst_issued": 96547.0,
+   "inst_issued_per_clk": 1.6354750732641066,
+   "inst_issued_by_pipe": {
+    "alu": 36670.0,
+    "cbu": 149.0,
+    "fe": 4448.0,
+    "fmaheavy": 22364.0,
+    "fmalite": 17464.0,
+    "mio": 25100.0,
+    "uniform": 7372.0
+   },
+   "apdf_elapsed": 59033.0,
+   "uniform_rf_counters": {
+    "uniform_register_reads_q": 15883.0,
+    "uniform_register_writes_q": 7632.0
+   },
+   "urf_reads_per_clk": 0.2690529026137923,
+   "urf_writes_per_clk": 0.1292836210255281,
+   "urf_read_port_util_pct": 6.726322565344807,
+   "urf_write_port_util_pct": 3.232090525638202,
+   "urf_read_port_util_mainloop_pct": 9.457994902698712,
+   "rf_read_port_util_mainloop_pct": 38.56382345234976,
+   "rf_write_port_util_mainloop_pct": 37.47975370983493
+  }
+ },
+ {
+  "run": "gr100_mxb_d128_corrdefault_p0_half_pf_prod_b1h1s4k_none_r1",
+  "label": "d128 product dense cga2",
+  "web": "/home/scratch.vagarwalla_gpu/perfsim_mxb/perfsim_output/gr100_mxb_d128_corrdefault_p0_half_pf_prod_b1h1s4k_none_r1/perfsim/pic_analysis/run.A.dir.0/863512.861743/pic-analysis/pi/web",
+  "pi_url": "https://perf-inspector/server/?infoWin=On&panels=%5B%5D&path=/home/scratch.vagarwalla_gpu/perfsim_mxb/perfsim_output/gr100_mxb_d128_corrdefault_p0_half_pf_prod_b1h1s4k_none_r1/perfsim/pic_analysis/run.A.dir.0/863512.861743/pic-analysis/pi/web/full",
+  "dur_cyc": 46744,
+  "dur_us": 19.891063829787235,
+  "clk_mhz": 2350.0,
+  "ctas": 16,
+  "sms": 16,
+  "start": 94000,
+  "end": 140744,
+  "sol": [
+   [
+    "TPC",
+    46.484344
+   ],
+   [
+    "SM",
+    37.800655
+   ],
+   [
+    "LST",
+    33.673389
+   ]
+  ],
+  "bneck": [
+   [
+    "GPCMMU",
+    7.545319
+   ],
+   [
+    "MMU",
+    7.545319
+   ],
+   [
+    "FB",
+    4.167909
+   ]
+  ],
+  "gpu_sol_full": 3.06,
+  "gpu_sol_mma_sms": 45.89,
+  "util": {
+   "issue %": 37.800655,
+   "MMA pipe % (whole kernel)": 34.152083,
+   "XU (MUFU) %": 32.700306,
+   "FMA-heavy %": 19.831476,
+   "FMA-lite %": 17.129993,
+   "ALU %": 19.631366,
+   "ADU %": 14.090089,
+   "uniform pipe %": 3.96247,
+   "LSU %": 1.481205,
+   "TMEM rd %": 19.885427,
+   "TMEM wr %": 18.671035,
+   "SMEM wavefronts (LST) %": 33.673389,
+   "LST TC-MMA wavefronts %": 33.673389,
+   "ICC instr fetch (TPC) %": 46.484344,
+   "L2 data-bank accesses %": 0.608177,
+   "L2 xbar read bytes %": 0.714118,
+   "L2 tag lookups %": 0.580711,
+   "DRAM (FB) bytes %": 0.6516,
+   "GPCMMU ltp requests %": 0.50276
+  },
+  "mma_sol_pct": 46.8,
+  "mma_sol_cyc": 17408,
+  "mma_actual_cyc": 37200,
+  "first_mma": 99775,
+  "last_mma": 136975,
+  "pre_mma_cyc": 5775,
+  "post_mma_cyc": 3769,
+  "rf": {
+   "rf_reads": 96287.0,
+   "rf_reads_hw": 96287.0,
+   "rf_reads_sim": 94217.0,
+   "rf_reads_bank_split": [
+    56544.0,
+    39743.0
+   ],
+   "rf_reads_avoided_reuse": 14048.0,
+   "rf_reads_coupled_f345": [
+    15659.0,
+    26921.0,
+    27676.0
+   ],
+   "rf_reads_decoupled": 26031.0,
+   "rf_reads_by_consumer": {
+    "mio": 26031.0,
+    "mufu": 16650.0,
+    "agu": 196.0,
+    "other_mio": 9181.0
+   },
+   "rf_writes": 91015.0,
+   "rf_writes_halfwarp_ports_total": 182014.0,
+   "rf_writes_bank_split": [
+    54878.0,
+    36137.0
+   ],
+   "rf_writes_coupled": 39054.0,
+   "rf_writes_decoupled": 51961.0,
+   "rf_writes_by_source": {
+    "math": 39054.0,
+    "mio": 35307.0,
+    "mufu": 16650.0
+   },
+   "rf_read_port_util_elapsed_pct": 23.612718747547675,
+   "rf_write_port_util_elapsed_pct": 22.319852075649376,
+   "rf_reads_per_clk_sm": 1.8890174998038138,
+   "rf_writes_per_clk_sm": 1.7855881660519501,
+   "rf_read_dispatch_stall_pct": 0.5870870281723299,
+   "rf_read_dispatch_stall_split": {
+    "bank0": 155.0,
+    "bank1": 1071.0,
+    "f_pipe": 1195.0,
+    "m_pipe": 0.0
+   },
+   "urf_read_dispatch_stall_pct": 0.09809307070548537,
+   "rf_arb_retries": 17984.0,
+   "tmem_rf_wb_stall_pct": 2.1090010201679354,
+   "tmem_rf_wb_stall_for_mufu": 1181.0,
+   "tmem_reads": 81088.0,
+   "tmem_writes": 76136.0,
+   "tmem_reads_by_op": {
+    "ldtm": 17152.0,
+    "utcmma_a_metadata": 11264.0,
+    "utcmma_a_sp_sf": 11264.0,
+    "utcmma_c": 52672.0
+   },
+   "tmem_writes_by_op": {
+    "sttm": 4360.0,
+    "utccp_32dp": 2144.0,
+    "utccp": 2144.0,
+    "utcmma": 69632.0
+   },
+   "uniform_pipe_active_pct": 3.959036333673389,
+   "uniform_inst_per_clk": 0.15849878364592326,
+   "inst_issued": 76861.0,
+   "inst_issued_per_clk": 1.507906301498862,
+   "inst_issued_by_pipe": {
+    "alu": 20013.0,
+    "cbu": 146.0,
+    "fe": 3530.0,
+    "fmaheavy": 20191.0,
+    "fmalite": 17463.0,
+    "mio": 24378.0,
+    "uniform": 8079.0
+   },
+   "apdf_elapsed": 50972.0,
+   "uniform_rf_counters": {
+    "uniform_register_reads_q": 16132.0,
+    "uniform_register_writes_q": 7985.0
+   },
+   "urf_reads_per_clk": 0.316487483324178,
+   "urf_writes_per_clk": 0.15665463391666012,
+   "urf_read_port_util_pct": 7.91218708310445,
+   "urf_write_port_util_pct": 3.916365847916503,
+   "urf_read_port_util_mainloop_pct": 10.841397849462366,
+   "rf_read_port_util_mainloop_pct": 32.35450268817204,
+   "rf_write_port_util_mainloop_pct": 30.582997311827956
+  }
+ },
+ {
+  "run": "gr100_mxb_d128_corrdefault_p64_half_pf_benc_cf1h1_b1h1s4k_none_r2",
+  "label": "d128 p64 default",
+  "web": "/home/scratch.vagarwalla_gpu/perfsim_mxb/perfsim_output/gr100_mxb_d128_corrdefault_p64_half_pf_benc_cf1h1_b1h1s4k_none_r2/perfsim/pic_analysis/run.A.dir.0/863515.861743/pic-analysis/pi/web",
+  "pi_url": "https://perf-inspector/server/?infoWin=On&panels=%5B%5D&path=/home/scratch.vagarwalla_gpu/perfsim_mxb/perfsim_output/gr100_mxb_d128_corrdefault_p64_half_pf_benc_cf1h1_b1h1s4k_none_r2/perfsim/pic_analysis/run.A.dir.0/863515.861743/pic-analysis/pi/web/full",
+  "dur_cyc": 49264,
+  "dur_us": 20.963404255319148,
+  "clk_mhz": 2350.0,
+  "ctas": 16,
+  "sms": 16,
+  "start": 80678,
+  "end": 129942,
+  "sol": [
+   [
+    "TPC",
+    44.744031
+   ],
+   [
+    "SM",
+    36.852593
+   ],
+   [
+    "LST",
+    32.11586
+   ]
+  ],
+  "bneck": [
+   [
+    "GPCMMU",
+    7.213158
+   ],
+   [
+    "MMU",
+    7.213158
+   ],
+   [
+    "FB",
+    4.204307
+   ]
+  ],
+  "gpu_sol_full": 3.08,
+  "gpu_sol_mma_sms": 46.14,
+  "util": {
+   "issue %": 36.852593,
+   "MMA pipe % (whole kernel)": 32.572412,
+   "XU (MUFU) %": 31.187785,
+   "FMA-heavy %": 20.323142,
+   "FMA-lite %": 16.338597,
+   "ALU %": 19.367937,
+   "ADU %": 14.882868,
+   "uniform pipe %": 3.434904,
+   "LSU %": 1.938478,
+   "TMEM rd %": 18.907642,
+   "TMEM wr %": 17.747549,
+   "SMEM wavefronts (LST) %": 32.11586,
+   "LST TC-MMA wavefronts %": 32.11586,
+   "ICC instr fetch (TPC) %": 44.744031,
+   "L2 data-bank accesses %": 0.606242,
+   "L2 xbar read bytes %": 0.628695,
+   "L2 tag lookups %": 0.553851,
+   "DRAM (FB) bytes %": 0.6625,
+   "GPCMMU ltp requests %": 0.480628
+  },
+  "mma_sol_pct": 46.63,
+  "mma_sol_cyc": 17408,
+  "mma_actual_cyc": 37329,
+  "first_mma": 88738,
+  "last_mma": 126067,
+  "pre_mma_cyc": 8060,
+  "post_mma_cyc": 3875,
+  "rf": {
+   "rf_reads": 99228.0,
+   "rf_reads_hw": 99228.0,
+   "rf_reads_sim": 96186.0,
+   "rf_reads_bank_split": [
+    58521.0,
+    40707.0
+   ],
+   "rf_reads_avoided_reuse": 13917.0,
+   "rf_reads_coupled_f345": [
+    13000.0,
+    27866.0,
+    31579.0
+   ],
+   "rf_reads_decoupled": 26783.0,
+   "rf_reads_by_consumer": {
+    "mio": 26783.0,
+    "mufu": 16650.0,
+    "agu": 948.0,
+    "other_mio": 9181.0
+   },
+   "rf_writes": 92852.0,
+   "rf_writes_halfwarp_ports_total": 185149.0,
+   "rf_writes_bank_split": [
+    56230.0,
+    36622.0
+   ],
+   "rf_writes_coupled": 41212.0,
+   "rf_writes_decoupled": 51640.0,
+   "rf_writes_by_source": {
+    "math": 41212.0,
+    "mio": 34986.0,
+    "mufu": 16650.0
+   },
+   "rf_read_port_util_elapsed_pct": 23.208405059501533,
+   "rf_write_port_util_elapsed_pct": 21.717124466731534,
+   "rf_reads_per_clk_sm": 1.8566724047601229,
+   "rf_writes_per_clk_sm": 1.7373699573385226,
+   "rf_read_dispatch_stall_pct": 1.1184604445775017,
+   "rf_read_dispatch_stall_split": {
+    "bank0": 814.0,
+    "bank1": 2637.0,
+    "f_pipe": 2376.0,
+    "m_pipe": 0.0
+   },
+   "urf_read_dispatch_stall_pct": 0.1370593518449218,
+   "rf_arb_retries": 19628.0,
+   "tmem_rf_wb_stall_pct": 0.7854015418007634,
+   "tmem_rf_wb_stall_for_mufu": 677.0,
+   "tmem_reads": 80840.0,
+   "tmem_writes": 75880.0,
+   "tmem_reads_by_op": {
+    "ldtm": 16904.0,
+    "utcmma_a_metadata": 11264.0,
+    "utcmma_a_sp_sf": 11264.0,
+    "utcmma_c": 52672.0
+   },
+   "tmem_writes_by_op": {
+    "sttm": 4104.0,
+    "utccp_32dp": 2144.0,
+    "utccp": 2144.0,
+    "utcmma": 69632.0
+   },
+   "uniform_pipe_active_pct": 3.3998203727265923,
+   "uniform_inst_per_clk": 0.1373961529825612,
+   "inst_issued": 78638.0,
+   "inst_issued_per_clk": 1.4714093256492777,
+   "inst_issued_by_pipe": {
+    "alu": 20688.0,
+    "cbu": 148.0,
+    "fe": 3964.0,
+    "fmaheavy": 21687.0,
+    "fmalite": 17464.0,
+    "mio": 24366.0,
+    "uniform": 7343.0
+   },
+   "apdf_elapsed": 53444.0,
+   "uniform_rf_counters": {
+    "uniform_register_reads_q": 15155.0,
+    "uniform_register_writes_q": 7330.0
+   },
+   "urf_reads_per_clk": 0.28356784671806,
+   "urf_writes_per_clk": 0.13715290771648828,
+   "urf_read_port_util_pct": 7.089196167951501,
+   "urf_write_port_util_pct": 3.428822692912207,
+   "urf_read_port_util_mainloop_pct": 10.149615580379866,
+   "rf_read_port_util_mainloop_pct": 33.227517479707465,
+   "rf_write_port_util_mainloop_pct": 31.092448230598194
+  }
+ },
+ {
+  "run": "gr100_mxb_d128_corralways_p64_half_pf_benc_cf1h1_b1h1s4k_none_r2",
+  "label": "d128 p64 correction ALWAYS",
+  "web": "/home/scratch.vagarwalla_gpu/perfsim_mxb/perfsim_output/gr100_mxb_d128_corralways_p64_half_pf_benc_cf1h1_b1h1s4k_none_r2/perfsim/pic_analysis/run.A.dir.0/863510.861743/pic-analysis/pi/web",
+  "pi_url": "https://perf-inspector/server/?infoWin=On&panels=%5B%5D&path=/home/scratch.vagarwalla_gpu/perfsim_mxb/perfsim_output/gr100_mxb_d128_corralways_p64_half_pf_benc_cf1h1_b1h1s4k_none_r2/perfsim/pic_analysis/run.A.dir.0/863510.861743/pic-analysis/pi/web/full",
+  "dur_cyc": 64090,
+  "dur_us": 27.272340425531915,
+  "clk_mhz": 2350.0,
+  "ctas": 16,
+  "sms": 16,
+  "start": 80678,
+  "end": 144768,
+  "sol": [
+   [
+    "TPC",
+    40.591437
+   ],
+   [
+    "SM",
+    36.319174
+   ],
+   [
+    "LST",
+    25.114863
+   ]
+  ],
+  "bneck": [
+   [
+    "GPCMMU",
+    5.640748
+   ],
+   [
+    "MMU",
+    5.640748
+   ],
+   [
+    "FB",
+    3.545331
+   ]
+  ],
+  "gpu_sol_full": 2.2,
+  "gpu_sol_mma_sms": 33.07,
+  "util": {
+   "issue %": 36.319174,
+   "MMA pipe % (whole kernel)": 25.471891,
+   "XU (MUFU) %": 24.389102,
+   "FMA-heavy %": 28.843903,
+   "FMA-lite %": 25.653332,
+   "ALU %": 15.283427,
+   "ADU %": 11.729244,
+   "uniform pipe %": 2.354336,
+   "LSU %": 1.515905,
+   "TMEM rd %": 18.051857,
+   "TMEM wr %": 17.144655,
+   "SMEM wavefronts (LST) %": 25.114863,
+   "LST TC-MMA wavefronts %": 25.114863,
+   "ICC instr fetch (TPC) %": 40.591437,
+   "L2 data-bank accesses %": 0.52091,
+   "L2 xbar read bytes %": 0.573586,
+   "L2 tag lookups %": 0.479939,
+   "DRAM (FB) bytes %": 0.518081,
+   "GPCMMU ltp requests %": 0.375855
+  },
+  "mma_sol_pct": 33.7,
+  "mma_sol_cyc": 17408,
+  "mma_actual_cyc": 51656,
+  "first_mma": 88680,
+  "last_mma": 140336,
+  "pre_mma_cyc": 8002,
+  "post_mma_cyc": 4432,
+  "rf": {
+   "rf_reads": 173198.0,
+   "rf_reads_hw": 173198.0,
+   "rf_reads_sim": 170446.0,
+   "rf_reads_bank_split": [
+    94159.0,
+    79039.0
+   ],
+   "rf_reads_avoided_reuse": 29103.0,
+   "rf_reads_coupled_f345": [
+    14276.0,
+    53133.0,
+    43286.0
+   ],
+   "rf_reads_decoupled": 62503.0,
+   "rf_reads_by_consumer": {
+    "mio": 62503.0,
+    "mufu": 16650.0,
+    "agu": 948.0,
+    "other_mio": 44901.0
+   },
+   "rf_writes": 164267.0,
+   "rf_writes_halfwarp_ports_total": 327979.0,
+   "rf_writes_bank_split": [
+    92091.0,
+    72176.0
+   ],
+   "rf_writes_coupled": 76915.0,
+   "rf_writes_decoupled": 87352.0,
+   "rf_writes_by_source": {
+    "math": 76915.0,
+    "mio": 70698.0,
+    "mufu": 16650.0
+   },
+   "rf_read_port_util_elapsed_pct": 31.67854320915396,
+   "rf_write_port_util_elapsed_pct": 30.045030874133037,
+   "rf_reads_per_clk_sm": 2.5342834567323167,
+   "rf_writes_per_clk_sm": 2.403602469930643,
+   "rf_read_dispatch_stall_pct": 2.82805595387902,
+   "rf_read_dispatch_stall_split": {
+    "bank0": 5387.0,
+    "bank1": 5833.0,
+    "f_pipe": 7716.0,
+    "m_pipe": 0.0
+   },
+   "urf_read_dispatch_stall_pct": 0.09693892481929121,
+   "rf_arb_retries": 20221.0,
+   "tmem_rf_wb_stall_pct": 2.5383366012115536,
+   "tmem_rf_wb_stall_for_mufu": 1650.0,
+   "tmem_reads": 98696.0,
+   "tmem_writes": 93736.0,
+   "tmem_reads_by_op": {
+    "ldtm": 34760.0,
+    "utcmma_a_metadata": 11264.0,
+    "utcmma_a_sp_sf": 11264.0,
+    "utcmma_c": 52672.0
+   },
+   "tmem_writes_by_op": {
+    "sttm": 21960.0,
+    "utccp_32dp": 2144.0,
+    "utccp": 2144.0,
+    "utcmma": 69632.0
+   },
+   "uniform_pipe_active_pct": 2.326900002926458,
+   "uniform_inst_per_clk": 0.09417342190746539,
+   "inst_issued": 98958.0,
+   "inst_issued_per_clk": 1.4479822071347048,
+   "inst_issued_by_pipe": {
+    "alu": 20815.0,
+    "cbu": 150.0,
+    "fe": 3404.0,
+    "fmaheavy": 39167.0,
+    "fmalite": 35064.0,
+    "mio": 28800.0,
+    "uniform": 6436.0
+   },
+   "apdf_elapsed": 68342.0,
+   "uniform_rf_counters": {
+    "uniform_register_reads_q": 18979.0,
+    "uniform_register_writes_q": 6423.0
+   },
+   "urf_reads_per_clk": 0.27770624213514383,
+   "urf_writes_per_clk": 0.0939832021304615,
+   "urf_read_port_util_pct": 6.942656053378596,
+   "urf_write_port_util_pct": 2.3495800532615374,
+   "urf_read_port_util_mainloop_pct": 9.185283413349852,
+   "rf_read_port_util_mainloop_pct": 41.91139461050023,
+   "rf_write_port_util_mainloop_pct": 39.750222626606785
+  }
+ },
+ {
+  "run": "gr100_mxb_d128_corrnever_p64_half_pf_benc_cf1h1_b1h1s4k_none_r1",
+  "label": "d128 p64 correction NEVER",
+  "web": "/home/scratch.vagarwalla_gpu/perfsim_mxb/perfsim_output/gr100_mxb_d128_corrnever_p64_half_pf_benc_cf1h1_b1h1s4k_none_r1/perfsim/pic_analysis/run.A.dir.0/863516.861743/pic-analysis/pi/web",
+  "pi_url": "https://perf-inspector/server/?infoWin=On&panels=%5B%5D&path=/home/scratch.vagarwalla_gpu/perfsim_mxb/perfsim_output/gr100_mxb_d128_corrnever_p64_half_pf_benc_cf1h1_b1h1s4k_none_r1/perfsim/pic_analysis/run.A.dir.0/863516.861743/pic-analysis/pi/web/full",
+  "dur_cyc": 46798,
+  "dur_us": 19.91404255319149,
+  "clk_mhz": 2350.0,
+  "ctas": 16,
+  "sms": 16,
+  "start": 80678,
+  "end": 127476,
+  "sol": [
+   [
+    "TPC",
+    42.894102
+   ],
+   [
+    "SM",
+    37.373336
+   ],
+   [
+    "LST",
+    33.64105
+   ]
+  ],
+  "bneck": [
+   [
+    "GPCMMU",
+    7.555712
+   ],
+   [
+    "MMU",
+    7.555712
+   ],
+   [
+    "FB",
+    3.983278
+   ]
+  ],
+  "gpu_sol_full": 3.25,
+  "gpu_sol_mma_sms": 48.75,
+  "util": {
+   "issue %": 37.373336,
+   "MMA pipe % (whole kernel)": 34.119284,
+   "XU (MUFU) %": 32.668901,
+   "FMA-heavy %": 20.71206,
+   "FMA-lite %": 17.114521,
+   "ALU %": 20.339664,
+   "ADU %": 14.570471,
+   "uniform pipe %": 3.370671,
+   "LSU %": 1.520942,
+   "TMEM rd %": 19.80557,
+   "TMEM wr %": 18.590384,
+   "SMEM wavefronts (LST) %": 33.64105,
+   "LST TC-MMA wavefronts %": 33.64105,
+   "ICC instr fetch (TPC) %": 42.894102,
+   "L2 data-bank accesses %": 0.733031,
+   "L2 xbar read bytes %": 0.83887,
+   "L2 tag lookups %": 0.678152,
+   "DRAM (FB) bytes %": 0.693963,
+   "GPCMMU ltp requests %": 0.503453
+  },
+  "mma_sol_pct": 50.01,
+  "mma_sol_cyc": 17408,
+  "mma_actual_cyc": 34811,
+  "first_mma": 88448,
+  "last_mma": 123259,
+  "pre_mma_cyc": 7770,
+  "post_mma_cyc": 4217,
+  "rf": {
+   "rf_reads": 98639.0,
+   "rf_reads_hw": 98639.0,
+   "rf_reads_sim": 95469.0,
+   "rf_reads_bank_split": [
+    57987.0,
+    40652.0
+   ],
+   "rf_reads_avoided_reuse": 13995.0,
+   "rf_reads_coupled_f345": [
+    13824.0,
+    27236.0,
+    31044.0
+   ],
+   "rf_reads_decoupled": 26535.0,
+   "rf_reads_by_consumer": {
+    "mio": 26535.0,
+    "mufu": 16650.0,
+    "agu": 700.0,
+    "other_mio": 9181.0
+   },
+   "rf_writes": 92584.0,
+   "rf_writes_halfwarp_ports_total": 184613.0,
+   "rf_writes_bank_split": [
+    56116.0,
+    36468.0
+   ],
+   "rf_writes_coupled": 41204.0,
+   "rf_writes_decoupled": 51380.0,
+   "rf_writes_by_source": {
+    "math": 41204.0,
+    "mio": 34726.0,
+    "mufu": 16650.0
+   },
+   "rf_read_port_util_elapsed_pct": 24.166274671213813,
+   "rf_write_port_util_elapsed_pct": 22.6828168793242,
+   "rf_reads_per_clk_sm": 1.933301973697105,
+   "rf_writes_per_clk_sm": 1.814625350345936,
+   "rf_read_dispatch_stall_pct": 0.7776209795966367,
+   "rf_read_dispatch_stall_split": {
+    "bank0": 280.0,
+    "bank1": 1437.0,
+    "f_pipe": 1572.0,
+    "m_pipe": 0.0
+   },
+   "urf_read_dispatch_stall_pct": 0.13768840281452735,
+   "rf_arb_retries": 19759.0,
+   "tmem_rf_wb_stall_pct": 1.1916661766723506,
+   "tmem_rf_wb_stall_for_mufu": 362.0,
+   "tmem_reads": 80840.0,
+   "tmem_writes": 75880.0,
+   "tmem_reads_by_op": {
+    "ldtm": 16904.0,
+    "utcmma_a_metadata": 11264.0,
+    "utcmma_a_sp_sf": 11264.0,
+    "utcmma_c": 52672.0
+   },
+   "tmem_writes_by_op": {
+    "sttm": 4104.0,
+    "utccp_32dp": 2144.0,
+    "utccp": 2144.0,
+    "utcmma": 69632.0
+   },
+   "uniform_pipe_active_pct": 3.3339213265126126,
+   "uniform_inst_per_clk": 0.1348268360087023,
+   "inst_issued": 75994.0,
+   "inst_issued_per_clk": 1.4894651222045825,
+   "inst_issued_by_pipe": {
+    "alu": 20730.0,
+    "cbu": 148.0,
+    "fe": 3106.0,
+    "fmaheavy": 21134.0,
+    "fmalite": 17464.0,
+    "mio": 23553.0,
+    "uniform": 6879.0
+   },
+   "apdf_elapsed": 51021.0,
+   "uniform_rf_counters": {
+    "uniform_register_reads_q": 14422.0,
+    "uniform_register_writes_q": 6859.0
+   },
+   "urf_reads_per_clk": 0.2826679210521158,
+   "urf_writes_per_clk": 0.13443484055584956,
+   "urf_read_port_util_pct": 7.066698026302895,
+   "urf_write_port_util_pct": 3.3608710138962388,
+   "urf_read_port_util_mainloop_pct": 10.357358306282498,
+   "rf_read_port_util_mainloop_pct": 35.41947947487863,
+   "rf_write_port_util_mainloop_pct": 33.24523857401396
+  }
+ },
+ {
+  "run": "gr100_mxb_d256_corrdefault_p0_half_pf_prod_b1h1s4k_none_r1",
+  "label": "d256 product dense cga1",
+  "web": "/home/scratch.vagarwalla_gpu/perfsim_mxb/perfsim_output/gr100_mxb_d256_corrdefault_p0_half_pf_prod_b1h1s4k_none_r1/perfsim/pic_analysis/run.A.dir.0/863535.861743/pic-analysis/pi/web",
+  "pi_url": "https://perf-inspector/server/?infoWin=On&panels=%5B%5D&path=/home/scratch.vagarwalla_gpu/perfsim_mxb/perfsim_output/gr100_mxb_d256_corrdefault_p0_half_pf_prod_b1h1s4k_none_r1/perfsim/pic_analysis/run.A.dir.0/863535.861743/pic-analysis/pi/web/full",
+  "dur_cyc": 53084,
+  "dur_us": 22.588936170212765,
+  "clk_mhz": 2350.0,
+  "ctas": 32,
+  "sms": 32,
+  "start": 90276,
+  "end": 143360,
+  "sol": [
+   [
+    "LST",
+    43.762532
+   ],
+   [
+    "SMEMUX",
+    32.361608
+   ],
+   [
+    "TPC",
+    30.61285
+   ]
+  ],
+  "bneck": [
+   [
+    "GPCMMU",
+    15.855636
+   ],
+   [
+    "MMU",
+    15.855636
+   ],
+   [
+    "FB",
+    8.110874
+   ]
+  ],
+  "gpu_sol_full": 5.04,
+  "gpu_sol_mma_sms": 37.82,
+  "util": {
+   "issue %": 24.900619,
+   "MMA pipe % (whole kernel)": 28.565949,
+   "XU (MUFU) %": 14.541016,
+   "FMA-heavy %": 17.369889,
+   "FMA-lite %": 15.537442,
+   "ALU %": 10.348705,
+   "ADU %": 6.011682,
+   "uniform pipe %": 3.96173,
+   "LSU %": 0.955453,
+   "TMEM rd %": 15.873071,
+   "TMEM wr %": 15.671694,
+   "SMEM wavefronts (LST) %": 43.762532,
+   "LST TC-MMA wavefronts %": 43.762532,
+   "ICC instr fetch (TPC) %": 30.61285,
+   "L2 data-bank accesses %": 1.0775,
+   "L2 xbar read bytes %": 1.241391,
+   "L2 tag lookups %": 1.028681,
+   "DRAM (FB) bytes %": 1.114463,
+   "GPCMMU ltp requests %": 2.11362
+  },
+  "mma_sol_pct": 38.02,
+  "mma_sol_cyc": 16384,
+  "mma_actual_cyc": 43094,
+  "first_mma": 95656,
+  "last_mma": 138750,
+  "pre_mma_cyc": 5380,
+  "post_mma_cyc": 4610,
+  "rf": {
+   "rf_reads": 71584.0,
+   "rf_reads_hw": 71584.0,
+   "rf_reads_sim": 68254.0,
+   "rf_reads_bank_split": [
+    42317.0,
+    29267.0
+   ],
+   "rf_reads_avoided_reuse": 7389.0,
+   "rf_reads_coupled_f345": [
+    14615.0,
+    22918.0,
+    20739.0
+   ],
+   "rf_reads_decoupled": 13312.0,
+   "rf_reads_by_consumer": {
+    "mio": 13312.0,
+    "mufu": 8326.0,
+    "agu": 144.0,
+    "other_mio": 4838.0
+   },
+   "rf_writes": 59670.0,
+   "rf_writes_halfwarp_ports_total": 119326.0,
+   "rf_writes_bank_split": [
+    34392.0,
+    25278.0
+   ],
+   "rf_writes_coupled": 33084.0,
+   "rf_writes_decoupled": 26586.0,
+   "rf_writes_by_source": {
+    "math": 33084.0,
+    "mio": 18256.0,
+    "mufu": 8326.0
+   },
+   "rf_read_port_util_elapsed_pct": 15.60108098683637,
+   "rf_write_port_util_elapsed_pct": 13.004533170604132,
+   "rf_reads_per_clk_sm": 1.2480864789469095,
+   "rf_writes_per_clk_sm": 1.0403626536483306,
+   "rf_read_dispatch_stall_pct": 1.196059628628716,
+   "rf_read_dispatch_stall_split": {
+    "bank0": 2643.0,
+    "bank1": 157.0,
+    "f_pipe": 2742.0,
+    "m_pipe": 0.0
+   },
+   "urf_read_dispatch_stall_pct": 0.33432133205474673,
+   "rf_arb_retries": 9579.0,
+   "tmem_rf_wb_stall_pct": 0.16825037049952052,
+   "tmem_rf_wb_stall_for_mufu": 0.0,
+   "tmem_reads": 72832.0,
+   "tmem_writes": 71908.0,
+   "tmem_reads_by_op": {
+    "ldtm": 8832.0,
+    "utcmma_a_metadata": 7168.0,
+    "utcmma_a_sp_sf": 7168.0,
+    "utcmma_c": 56832.0
+   },
+   "tmem_writes_by_op": {
+    "sttm": 2180.0,
+    "utccp_32dp": 4192.0,
+    "utccp": 4192.0,
+    "utcmma": 65536.0
+   },
+   "uniform_pipe_active_pct": 3.959114288205039,
+   "uniform_inst_per_clk": 0.15846918315752767,
+   "inst_issued": 57124.0,
+   "inst_issued_per_clk": 0.9959724522709441,
+   "inst_issued_by_pipe": {
+    "alu": 11856.0,
+    "cbu": 106.0,
+    "fe": 1804.0,
+    "fmaheavy": 19916.0,
+    "fmalite": 17823.0,
+    "mio": 12685.0,
+    "uniform": 9089.0
+   },
+   "apdf_elapsed": 57355.0,
+   "uniform_rf_counters": {
+    "uniform_register_reads_q": 15859.0,
+    "uniform_register_writes_q": 8805.0
+   },
+   "urf_reads_per_clk": 0.2765059715805074,
+   "urf_writes_per_clk": 0.153517566036091,
+   "urf_read_port_util_pct": 6.912649289512684,
+   "urf_write_port_util_pct": 3.837939150902275,
+   "urf_read_port_util_mainloop_pct": 9.20023669188286,
+   "rf_read_port_util_mainloop_pct": 20.763911449389706,
+   "rf_write_port_util_mainloop_pct": 17.308093934190374
+  }
+ },
+ {
+  "run": "gr100_mxb_d256_corrdefault_p64_half_pf_benc_cf0h0_cga2_b1h1s4k_none_r2",
+  "label": "d256 p64 default cga2",
+  "web": "/home/scratch.vagarwalla_gpu/perfsim_mxb/perfsim_output/gr100_mxb_d256_corrdefault_p64_half_pf_benc_cf0h0_cga2_b1h1s4k_none_r2/perfsim/pic_analysis/run.A.dir.0/863536.861743/pic-analysis/pi/web",
+  "pi_url": "https://perf-inspector/server/?infoWin=On&panels=%5B%5D&path=/home/scratch.vagarwalla_gpu/perfsim_mxb/perfsim_output/gr100_mxb_d256_corrdefault_p64_half_pf_benc_cf0h0_cga2_b1h1s4k_none_r2/perfsim/pic_analysis/run.A.dir.0/863536.861743/pic-analysis/pi/web/full",
+  "dur_cyc": 59139,
+  "dur_us": 25.165531914893617,
+  "clk_mhz": 2350.0,
+  "ctas": 32,
+  "sms": 32,
+  "start": 94937,
+  "end": 154076,
+  "sol": [
+   [
+    "TPC",
+    29.442211
+   ],
+   [
+    "LST",
+    26.762481
+   ],
+   [
+    "SM",
+    25.933078
+   ]
+  ],
+  "bneck": [
+   [
+    "GPCMMU",
+    7.92681
+   ],
+   [
+    "MMU",
+    7.92681
+   ],
+   [
+    "FB",
+    6.322995
+   ]
+  ],
+  "gpu_sol_full": 4.66,
+  "gpu_sol_mma_sms": 34.95,
+  "util": {
+   "issue %": 24.684226,
+   "MMA pipe % (whole kernel)": 25.933078,
+   "XU (MUFU) %": 13.200798,
+   "FMA-heavy %": 17.750641,
+   "FMA-lite %": 14.122796,
+   "ALU %": 12.817753,
+   "ADU %": 5.834309,
+   "uniform pipe %": 2.88075,
+   "LSU %": 1.092152,
+   "TMEM rd %": 13.954225,
+   "TMEM wr %": 14.227263,
+   "SMEM wavefronts (LST) %": 26.762481,
+   "LST TC-MMA wavefronts %": 26.762481,
+   "ICC instr fetch (TPC) %": 29.442211,
+   "L2 data-bank accesses %": 0.899047,
+   "L2 xbar read bytes %": 0.96236,
+   "L2 tag lookups %": 0.854728,
+   "DRAM (FB) bytes %": 1.011745,
+   "GPCMMU ltp requests %": 1.056486
+  },
+  "mma_sol_pct": 35.14,
+  "mma_sol_cyc": 16384,
+  "mma_actual_cyc": 46626,
+  "first_mma": 102889,
+  "last_mma": 149515,
+  "pre_mma_cyc": 7952,
+  "post_mma_cyc": 4561,
+  "rf": {
+   "rf_reads": 78882.0,
+   "rf_reads_hw": 78882.0,
+   "rf_reads_sim": 72874.0,
+   "rf_reads_bank_split": [
+    43172.0,
+    35710.0
+   ],
+   "rf_reads_avoided_reuse": 8091.0,
+   "rf_reads_coupled_f345": [
+    17900.0,
+    24659.0,
+    22738.0
+   ],
+   "rf_reads_decoupled": 13585.0,
+   "rf_reads_by_consumer": {
+    "mio": 13585.0,
+    "mufu": 8326.0,
+    "agu": 378.0,
+    "other_mio": 4877.0
+   },
+   "rf_writes": 64898.0,
+   "rf_writes_halfwarp_ports_total": 129426.0,
+   "rf_writes_bank_split": [
+    35183.0,
+    29715.0
+   ],
+   "rf_writes_coupled": 38033.0,
+   "rf_writes_decoupled": 26865.0,
+   "rf_writes_by_source": {
+    "math": 38033.0,
+    "mio": 18535.0,
+    "mufu": 8326.0
+   },
+   "rf_read_port_util_elapsed_pct": 15.607094241666402,
+   "rf_write_port_util_elapsed_pct": 12.840308335179968,
+   "rf_reads_per_clk_sm": 1.2485675393333122,
+   "rf_writes_per_clk_sm": 1.0272246668143974,
+   "rf_read_dispatch_stall_pct": 1.312957042008294,
+   "rf_read_dispatch_stall_split": {
+    "bank0": 1253.0,
+    "bank1": 3034.0,
+    "f_pipe": 3211.0,
+    "m_pipe": 0.0
+   },
+   "urf_read_dispatch_stall_pct": 0.34743106777675775,
+   "rf_arb_retries": 9751.0,
+   "tmem_rf_wb_stall_pct": 0.16975846022349553,
+   "tmem_rf_wb_stall_for_mufu": 0.0,
+   "tmem_reads": 70528.0,
+   "tmem_writes": 71908.0,
+   "tmem_reads_by_op": {
+    "ldtm": 8832.0,
+    "utcmma_a_metadata": 4864.0,
+    "utcmma_a_sp_sf": 4864.0,
+    "utcmma_c": 56832.0
+   },
+   "tmem_writes_by_op": {
+    "sttm": 2180.0,
+    "utccp_32dp": 4192.0,
+    "utccp": 4192.0,
+    "utcmma": 65536.0
+   },
+   "uniform_pipe_active_pct": 2.8522586976479154,
+   "uniform_inst_per_clk": 0.11522998512140302,
+   "inst_issued": 62344.0,
+   "inst_issued_per_clk": 0.9867992022539491,
+   "inst_issued_by_pipe": {
+    "alu": 16176.0,
+    "cbu": 111.0,
+    "fe": 1871.0,
+    "fmaheavy": 22379.0,
+    "fmalite": 17845.0,
+    "mio": 12999.0,
+    "uniform": 7280.0
+   },
+   "apdf_elapsed": 63178.0,
+   "uniform_rf_counters": {
+    "uniform_register_reads_q": 14403.0,
+    "uniform_register_writes_q": 8333.0
+   },
+   "urf_reads_per_clk": 0.2279749279812593,
+   "urf_writes_per_clk": 0.13189717939789167,
+   "urf_read_port_util_pct": 5.6993731995314825,
+   "urf_write_port_util_pct": 3.297429484947292,
+   "urf_read_port_util_mainloop_pct": 7.722622571097671,
+   "rf_read_port_util_mainloop_pct": 21.147535709689873,
+   "rf_write_port_util_mainloop_pct": 17.398554454596148
+  }
+ },
+ {
+  "run": "gr100_mxb_d256_corralways_p64_half_pf_benc_cf0h0_cga2_b1h1s4k_none_r2",
+  "label": "d256 p64 correction ALWAYS",
+  "web": "/home/scratch.vagarwalla_gpu/perfsim_mxb/perfsim_output/gr100_mxb_d256_corralways_p64_half_pf_benc_cf0h0_cga2_b1h1s4k_none_r2/perfsim/pic_analysis/run.A.dir.0/863549.861743/pic-analysis/pi/web",
+  "pi_url": "https://perf-inspector/server/?infoWin=On&panels=%5B%5D&path=/home/scratch.vagarwalla_gpu/perfsim_mxb/perfsim_output/gr100_mxb_d256_corralways_p64_half_pf_benc_cf0h0_cga2_b1h1s4k_none_r2/perfsim/pic_analysis/run.A.dir.0/863549.861743/pic-analysis/pi/web/full",
+  "dur_cyc": 64076,
+  "dur_us": 27.266382978723403,
+  "clk_mhz": 2350.0,
+  "ctas": 32,
+  "sms": 32,
+  "start": 94937,
+  "end": 159013,
+  "sol": [
+   [
+    "TPC",
+    33.89828
+   ],
+   [
+    "SM",
+    29.926957
+   ],
+   [
+    "LST",
+    24.725082
+   ]
+  ],
+  "bneck": [
+   [
+    "GPCMMU",
+    7.32335
+   ],
+   [
+    "MMU",
+    7.32335
+   ],
+   [
+    "FB",
+    5.513814
+   ]
+  ],
+  "gpu_sol_full": 4.22,
+  "gpu_sol_mma_sms": 31.64,
+  "util": {
+   "issue %": 29.926957,
+   "MMA pipe % (whole kernel)": 23.958821,
+   "XU (MUFU) %": 12.195835,
+   "FMA-heavy %": 27.695075,
+   "FMA-lite %": 24.559107,
+   "ALU %": 12.088354,
+   "ADU %": 5.395999,
+   "uniform pipe %": 2.661441,
+   "LSU %": 1.009008,
+   "TMEM rd %": 15.793168,
+   "TMEM wr %": 16.04542,
+   "SMEM wavefronts (LST) %": 24.725082,
+   "LST TC-MMA wavefronts %": 24.725082,
+   "ICC instr fetch (TPC) %": 33.89828,
+   "L2 data-bank accesses %": 0.830604,
+   "L2 xbar read bytes %": 0.889097,
+   "L2 tag lookups %": 0.789658,
+   "DRAM (FB) bytes %": 0.934722,
+   "GPCMMU ltp requests %": 0.976057
+  },
+  "mma_sol_pct": 32.11,
+  "mma_sol_cyc": 16384,
+  "mma_actual_cyc": 51025,
+  "first_mma": 102929,
+  "last_mma": 153954,
+  "pre_mma_cyc": 7992,
+  "post_mma_cyc": 5059,
+  "rf": {
+   "rf_reads": 146491.0,
+   "rf_reads_hw": 146491.0,
+   "rf_reads_sim": 140189.0,
+   "rf_reads_bank_split": [
+    80557.0,
+    65934.0
+   ],
+   "rf_reads_avoided_reuse": 19858.0,
+   "rf_reads_coupled_f345": [
+    21021.0,
+    51671.0,
+    28466.0
+   ],
+   "rf_reads_decoupled": 45333.0,
+   "rf_reads_by_consumer": {
+    "mio": 45333.0,
+    "mufu": 8326.0,
+    "agu": 378.0,
+    "other_mio": 36625.0
+   },
+   "rf_writes": 128271.0,
+   "rf_writes_halfwarp_ports_total": 256172.0,
+   "rf_writes_bank_split": [
+    67831.0,
+    60440.0
+   ],
+   "rf_writes_coupled": 69662.0,
+   "rf_writes_decoupled": 58609.0,
+   "rf_writes_by_source": {
+    "math": 69662.0,
+    "mio": 50279.0,
+    "mufu": 8326.0
+   },
+   "rf_read_port_util_elapsed_pct": 26.777279773046327,
+   "rf_write_port_util_elapsed_pct": 23.44682235610669,
+   "rf_reads_per_clk_sm": 2.142182381843706,
+   "rf_writes_per_clk_sm": 1.8757457884885353,
+   "rf_read_dispatch_stall_pct": 1.8725140383715488,
+   "rf_read_dispatch_stall_split": {
+    "bank0": 3558.0,
+    "bank1": 3434.0,
+    "f_pipe": 5015.0,
+    "m_pipe": 0.0
+   },
+   "urf_read_dispatch_stall_pct": 0.32646525503041646,
+   "rf_arb_retries": 9843.0,
+   "tmem_rf_wb_stall_pct": 1.3676444782405242,
+   "tmem_rf_wb_stall_for_mufu": 543.0,
+   "tmem_reads": 86400.0,
+   "tmem_writes": 87780.0,
+   "tmem_reads_by_op": {
+    "ldtm": 24704.0,
+    "utcmma_a_metadata": 4864.0,
+    "utcmma_a_sp_sf": 4864.0,
+    "utcmma_c": 56832.0
+   },
+   "tmem_writes_by_op": {
+    "sttm": 18052.0,
+    "utccp_32dp": 4192.0,
+    "utccp": 4192.0,
+    "utcmma": 65536.0
+   },
+   "uniform_pipe_active_pct": 2.635119326158166,
+   "uniform_inst_per_clk": 0.10645765091249415,
+   "inst_issued": 81825.0,
+   "inst_issued_per_clk": 1.1965518249883014,
+   "inst_issued_by_pipe": {
+    "alu": 16492.0,
+    "cbu": 112.0,
+    "fe": 1748.0,
+    "fmaheavy": 37824.0,
+    "fmalite": 33589.0,
+    "mio": 16969.0,
+    "uniform": 7280.0
+   },
+   "apdf_elapsed": 68384.0,
+   "uniform_rf_counters": {
+    "uniform_register_reads_q": 18372.0,
+    "uniform_register_writes_q": 8333.0
+   },
+   "urf_reads_per_clk": 0.26865933551708004,
+   "urf_writes_per_clk": 0.12185598970519419,
+   "urf_read_port_util_pct": 6.716483387927,
+   "urf_write_port_util_pct": 3.046399742629855,
+   "urf_read_port_util_mainloop_pct": 9.001469867711906,
+   "rf_read_port_util_mainloop_pct": 35.88706516413523,
+   "rf_write_port_util_mainloop_pct": 31.423566878980893
+  }
+ },
+ {
+  "run": "gr100_mxb_d256_corrnever_p64_half_pf_benc_cf0h0_cga2_b1h1s4k_none_r1",
+  "label": "d256 p64 correction NEVER",
+  "web": "/home/scratch.vagarwalla_gpu/perfsim_mxb/perfsim_output/gr100_mxb_d256_corrnever_p64_half_pf_benc_cf0h0_cga2_b1h1s4k_none_r1/perfsim/pic_analysis/run.A.dir.0/863542.861743/pic-analysis/pi/web",
+  "pi_url": "https://perf-inspector/server/?infoWin=On&panels=%5B%5D&path=/home/scratch.vagarwalla_gpu/perfsim_mxb/perfsim_output/gr100_mxb_d256_corrnever_p64_half_pf_benc_cf0h0_cga2_b1h1s4k_none_r1/perfsim/pic_analysis/run.A.dir.0/863542.861743/pic-analysis/pi/web/full",
+  "dur_cyc": 56826,
+  "dur_us": 24.18127659574468,
+  "clk_mhz": 2350.0,
+  "ctas": 32,
+  "sms": 32,
+  "start": 94159,
+  "end": 150985,
+  "sol": [
+   [
+    "TPC",
+    28.277442
+   ],
+   [
+    "LST",
+    27.659087
+   ],
+   [
+    "SM",
+    26.801898
+   ]
+  ],
+  "bneck": [
+   [
+    "GPCMMU",
+    8.192377
+   ],
+   [
+    "MMU",
+    8.192377
+   ],
+   [
+    "FB",
+    6.078303
+   ]
+  ],
+  "gpu_sol_full": 4.89,
+  "gpu_sol_mma_sms": 36.71,
+  "util": {
+   "issue %": 24.244643,
+   "MMA pipe % (whole kernel)": 26.801898,
+   "XU (MUFU) %": 13.643056,
+   "FMA-heavy %": 17.931458,
+   "FMA-lite %": 14.595943,
+   "ALU %": 12.209226,
+   "ADU %": 5.64371,
+   "uniform pipe %": 2.766645,
+   "LSU %": 0.925896,
+   "TMEM rd %": 14.396368,
+   "TMEM wr %": 14.70391,
+   "SMEM wavefronts (LST) %": 27.659087,
+   "LST TC-MMA wavefronts %": 27.659087,
+   "ICC instr fetch (TPC) %": 28.277442,
+   "L2 data-bank accesses %": 0.929167,
+   "L2 xbar read bytes %": 0.994602,
+   "L2 tag lookups %": 0.883363,
+   "DRAM (FB) bytes %": 1.04564,
+   "GPCMMU ltp requests %": 1.091881
+  },
+  "mma_sol_pct": 37.09,
+  "mma_sol_cyc": 16384,
+  "mma_actual_cyc": 44178,
+  "first_mma": 102026,
+  "last_mma": 146204,
+  "pre_mma_cyc": 7867,
+  "post_mma_cyc": 4781,
+  "rf": {
+   "rf_reads": 77331.0,
+   "rf_reads_hw": 77331.0,
+   "rf_reads_sim": 71962.0,
+   "rf_reads_bank_split": [
+    42262.0,
+    35069.0
+   ],
+   "rf_reads_avoided_reuse": 8030.0,
+   "rf_reads_coupled_f345": [
+    17534.0,
+    24839.0,
+    21373.0
+   ],
+   "rf_reads_decoupled": 13585.0,
+   "rf_reads_by_consumer": {
+    "mio": 13585.0,
+    "mufu": 8326.0,
+    "agu": 378.0,
+    "other_mio": 4877.0
+   },
+   "rf_writes": 63538.0,
+   "rf_writes_halfwarp_ports_total": 126706.0,
+   "rf_writes_bank_split": [
+    34571.0,
+    28967.0
+   ],
+   "rf_writes_coupled": 37045.0,
+   "rf_writes_decoupled": 26493.0,
+   "rf_writes_by_source": {
+    "math": 37045.0,
+    "mio": 18163.0,
+    "mufu": 8326.0
+   },
+   "rf_read_port_util_elapsed_pct": 15.812816947488958,
+   "rf_write_port_util_elapsed_pct": 12.99239326026501,
+   "rf_reads_per_clk_sm": 1.2650253557991167,
+   "rf_writes_per_clk_sm": 1.0393914608212007,
+   "rf_read_dispatch_stall_pct": 1.2911009324390643,
+   "rf_read_dispatch_stall_split": {
+    "bank0": 1512.0,
+    "bank1": 2569.0,
+    "f_pipe": 3050.0,
+    "m_pipe": 0.0
+   },
+   "urf_read_dispatch_stall_pct": 0.3349419270407329,
+   "rf_arb_retries": 9817.0,
+   "tmem_rf_wb_stall_pct": 0.15417961720922624,
+   "tmem_rf_wb_stall_for_mufu": 0.0,
+   "tmem_reads": 70404.0,
+   "tmem_writes": 71908.0,
+   "tmem_reads_by_op": {
+    "ldtm": 8708.0,
+    "utcmma_a_metadata": 4864.0,
+    "utcmma_a_sp_sf": 4864.0,
+    "utcmma_c": 56832.0
+   },
+   "tmem_writes_by_op": {
+    "sttm": 2180.0,
+    "utccp_32dp": 4192.0,
+    "utccp": 4192.0,
+    "utcmma": 65536.0
+   },
+   "uniform_pipe_active_pct": 2.737199411091117,
+   "uniform_inst_per_clk": 0.11066579420906265,
+   "inst_issued": 59253.0,
+   "inst_issued_per_clk": 0.9692949451987567,
+   "inst_issued_by_pipe": {
+    "alu": 14923.0,
+    "cbu": 111.0,
+    "fe": 1515.0,
+    "fmaheavy": 21900.0,
+    "fmalite": 17845.0,
+    "mio": 12511.0,
+    "uniform": 6765.0
+   },
+   "apdf_elapsed": 61130.0,
+   "uniform_rf_counters": {
+    "uniform_register_reads_q": 13293.0,
+    "uniform_register_writes_q": 7322.0
+   },
+   "urf_reads_per_clk": 0.21745460494029117,
+   "urf_writes_per_clk": 0.1197775233109766,
+   "urf_read_port_util_pct": 5.436365123507279,
+   "urf_write_port_util_pct": 2.994438082774415,
+   "urf_read_port_util_mainloop_pct": 7.522409344017384,
+   "rf_read_port_util_mainloop_pct": 21.880517452125492,
+   "rf_write_port_util_mainloop_pct": 17.97783964869392
+  }
+ },
+ {
+  "run": "gr100_mxb_d256_corralways_p64_half_pf_benc_cf0h0rs1_cga2_b1h1s4k_none_r1",
+  "label": "d256 p64 ALWAYS + rowsum MMA",
+  "web": "/home/scratch.vagarwalla_gpu/perfsim_mxb/perfsim_output/gr100_mxb_d256_corralways_p64_half_pf_benc_cf0h0rs1_cga2_b1h1s4k_none_r1/perfsim/pic_analysis/run.A.dir.0/863543.861743/pic-analysis/pi/web",
+  "pi_url": "https://perf-inspector/server/?infoWin=On&panels=%5B%5D&path=/home/scratch.vagarwalla_gpu/perfsim_mxb/perfsim_output/gr100_mxb_d256_corralways_p64_half_pf_benc_cf0h0rs1_cga2_b1h1s4k_none_r1/perfsim/pic_analysis/run.A.dir.0/863543.861743/pic-analysis/pi/web/full",
+  "dur_cyc": 62482,
+  "dur_us": 26.58808510638298,
+  "clk_mhz": 2350.0,
+  "ctas": 32,
+  "sms": 32,
+  "start": 94512,
+  "end": 156994,
+  "sol": [
+   [
+    "TPC",
+    30.040329
+   ],
+   [
+    "SM",
+    27.014551
+   ],
+   [
+    "LST",
+    25.828393
+   ]
+  ],
+  "bneck": [
+   [
+    "GPCMMU",
+    7.534535
+   ],
+   [
+    "MMU",
+    7.534535
+   ],
+   [
+    "FB",
+    6.504562
+   ]
+  ],
+  "gpu_sol_full": 4.47,
+  "gpu_sol_mma_sms": 33.54,
+  "util": {
+   "issue %": 27.014551,
+   "MMA pipe % (whole kernel)": 25.425106,
+   "XU (MUFU) %": 12.550035,
+   "FMA-heavy %": 22.122069,
+   "FMA-lite %": 19.471364,
+   "ALU %": 11.858579,
+   "ADU %": 5.507569,
+   "uniform pipe %": 2.870783,
+   "LSU %": 1.041322,
+   "TMEM rd %": 17.202877,
+   "TMEM wr %": 17.083246,
+   "SMEM wavefronts (LST) %": 25.828393,
+   "LST TC-MMA wavefronts %": 25.828393,
+   "ICC instr fetch (TPC) %": 30.040329,
+   "L2 data-bank accesses %": 0.854727,
+   "L2 xbar read bytes %": 0.914919,
+   "L2 tag lookups %": 0.812592,
+   "DRAM (FB) bytes %": 0.961868,
+   "GPCMMU ltp requests %": 1.004203
+  },
+  "mma_sol_pct": 33.58,
+  "mma_sol_cyc": 16896,
+  "mma_actual_cyc": 50317,
+  "first_mma": 102050,
+  "last_mma": 152367,
+  "pre_mma_cyc": 7538,
+  "post_mma_cyc": 4627,
+  "rf": {
+   "rf_reads": 129167.0,
+   "rf_reads_hw": 129167.0,
+   "rf_reads_sim": 125285.0,
+   "rf_reads_bank_split": [
+    73245.0,
+    55922.0
+   ],
+   "rf_reads_avoided_reuse": 20882.0,
+   "rf_reads_coupled_f345": [
+    15101.0,
+    46612.0,
+    20127.0
+   ],
+   "rf_reads_decoupled": 47327.0,
+   "rf_reads_by_consumer": {
+    "mio": 47327.0,
+    "mufu": 8326.0,
+    "agu": 380.0,
+    "other_mio": 38617.0
+   },
+   "rf_writes": 120197.0,
+   "rf_writes_halfwarp_ports_total": 240024.0,
+   "rf_writes_bank_split": [
+    66043.0,
+    54154.0
+   ],
+   "rf_writes_coupled": 59608.0,
+   "rf_writes_decoupled": 60589.0,
+   "rf_writes_by_source": {
+    "math": 59608.0,
+    "mio": 52259.0,
+    "mufu": 8326.0
+   },
+   "rf_read_port_util_elapsed_pct": 24.296317753634092,
+   "rf_write_port_util_elapsed_pct": 22.609060402684563,
+   "rf_reads_per_clk_sm": 1.9437054202907273,
+   "rf_writes_per_clk_sm": 1.808724832214765,
+   "rf_read_dispatch_stall_pct": 0.9231949920245583,
+   "rf_read_dispatch_stall_split": {
+    "bank0": 2205.0,
+    "bank1": 1142.0,
+    "f_pipe": 2347.0,
+    "m_pipe": 0.0
+   },
+   "urf_read_dispatch_stall_pct": 0.18584283865531043,
+   "rf_arb_retries": 9869.0,
+   "tmem_rf_wb_stall_pct": 0.818611370271165,
+   "tmem_rf_wb_stall_for_mufu": 336.0,
+   "tmem_reads": 91456.0,
+   "tmem_writes": 90820.0,
+   "tmem_reads_by_op": {
+    "ldtm": 25696.0,
+    "utcmma_a_metadata": 6912.0,
+    "utcmma_a_sp_sf": 6912.0,
+    "utcmma_c": 58848.0
+   },
+   "tmem_writes_by_op": {
+    "sttm": 19044.0,
+    "utccp_32dp": 4192.0,
+    "utccp": 4192.0,
+    "utcmma": 67584.0
+   },
+   "uniform_pipe_active_pct": 2.8436963914888493,
+   "uniform_inst_per_clk": 0.11483131188491287,
+   "inst_issued": 71806.0,
+   "inst_issued_per_clk": 1.080536912751678,
+   "inst_issued_by_pipe": {
+    "alu": 15687.0,
+    "cbu": 112.0,
+    "fe": 1756.0,
+    "fmaheavy": 29384.0,
+    "fmalite": 25879.0,
+    "mio": 17246.0,
+    "uniform": 7631.0
+   },
+   "apdf_elapsed": 66454.0,
+   "uniform_rf_counters": {
+    "uniform_register_reads_q": 19223.0,
+    "uniform_register_writes_q": 8752.0
+   },
+   "urf_reads_per_clk": 0.28926776416769495,
+   "urf_writes_per_clk": 0.13170012339362566,
+   "urf_read_port_util_pct": 7.231694104192374,
+   "urf_write_port_util_pct": 3.2925030848406416,
+   "urf_read_port_util_mainloop_pct": 9.550946996045074,
+   "rf_read_port_util_mainloop_pct": 32.088310113878016,
+   "rf_write_port_util_mainloop_pct": 29.859937993123598
+  }
+ },
+ {
+  "run": "gr100_mxb_d256_corrnever_p64_half_pf_benc_cf0h0rs1_cga2_b1h1s4k_none_r1",
+  "label": "d256 p64 NEVER + rowsum MMA",
+  "web": "/home/scratch.vagarwalla_gpu/perfsim_mxb/perfsim_output/gr100_mxb_d256_corrnever_p64_half_pf_benc_cf0h0rs1_cga2_b1h1s4k_none_r1/perfsim/pic_analysis/run.A.dir.0/863537.861743/pic-analysis/pi/web",
+  "pi_url": "https://perf-inspector/server/?infoWin=On&panels=%5B%5D&path=/home/scratch.vagarwalla_gpu/perfsim_mxb/perfsim_output/gr100_mxb_d256_corrnever_p64_half_pf_benc_cf0h0rs1_cga2_b1h1s4k_none_r1/perfsim/pic_analysis/run.A.dir.0/863537.861743/pic-analysis/pi/web/full",
+  "dur_cyc": 57328,
+  "dur_us": 24.39489361702128,
+  "clk_mhz": 2350.0,
+  "ctas": 32,
+  "sms": 32,
+  "start": 93721,
+  "end": 151049,
+  "sol": [
+   [
+    "LST",
+    27.84691
+   ],
+   [
+    "SM",
+    27.412106
+   ],
+   [
+    "TPC",
+    23.137077
+   ]
+  ],
+  "bneck": [
+   [
+    "GPCMMU",
+    8.123367
+   ],
+   [
+    "MMU",
+    8.123367
+   ],
+   [
+    "FB",
+    6.131044
+   ]
+  ],
+  "gpu_sol_full": 4.92,
+  "gpu_sol_mma_sms": 36.89,
+  "util": {
+   "issue %": 19.513442,
+   "MMA pipe % (whole kernel)": 27.412106,
+   "XU (MUFU) %": 13.530834,
+   "FMA-heavy %": 10.007788,
+   "FMA-lite %": 7.416811,
+   "ALU %": 11.680484,
+   "ADU %": 5.535636,
+   "uniform pipe %": 2.88747,
+   "LSU %": 0.921524,
+   "TMEM rd %": 15.10213,
+   "TMEM wr %": 14.998296,
+   "SMEM wavefronts (LST) %": 27.84691,
+   "LST TC-MMA wavefronts %": 27.84691,
+   "ICC instr fetch (TPC) %": 23.137077,
+   "L2 data-bank accesses %": 0.921524,
+   "L2 xbar read bytes %": 0.98642,
+   "L2 tag lookups %": 0.876097,
+   "DRAM (FB) bytes %": 1.037039,
+   "GPCMMU ltp requests %": 1.082683
+  },
+  "mma_sol_pct": 37.2,
+  "mma_sol_cyc": 16896,
+  "mma_actual_cyc": 45415,
+  "first_mma": 100921,
+  "last_mma": 146336,
+  "pre_mma_cyc": 7200,
+  "post_mma_cyc": 4713,
+  "rf": {
+   "rf_reads": 55557.0,
+   "rf_reads_hw": 55557.0,
+   "rf_reads_sim": 52220.0,
+   "rf_reads_bank_split": [
+    34029.0,
+    21528.0
+   ],
+   "rf_reads_avoided_reuse": 8672.0,
+   "rf_reads_coupled_f345": [
+    9955.0,
+    16076.0,
+    15931.0
+   ],
+   "rf_reads_decoupled": 13595.0,
+   "rf_reads_by_consumer": {
+    "mio": 13595.0,
+    "mufu": 8326.0,
+    "agu": 380.0,
+    "other_mio": 4885.0
+   },
+   "rf_writes": 51624.0,
+   "rf_writes_halfwarp_ports_total": 102878.0,
+   "rf_writes_bank_split": [
+    31827.0,
+    19797.0
+   ],
+   "rf_writes_coupled": 25135.0,
+   "rf_writes_decoupled": 26489.0,
+   "rf_writes_by_source": {
+    "math": 25135.0,
+    "mio": 18159.0,
+    "mufu": 8326.0
+   },
+   "rf_read_port_util_elapsed_pct": 11.266974382270389,
+   "rf_write_port_util_elapsed_pct": 10.469360935801548,
+   "rf_reads_per_clk_sm": 0.9013579505816312,
+   "rf_writes_per_clk_sm": 0.8375488748641238,
+   "rf_read_dispatch_stall_pct": 0.17035222350211723,
+   "rf_read_dispatch_stall_split": {
+    "bank0": 313.0,
+    "bank1": 107.0,
+    "f_pipe": 313.0,
+    "m_pipe": 0.0
+   },
+   "urf_read_dispatch_stall_pct": 0.18292583999870207,
+   "rf_arb_retries": 9823.0,
+   "tmem_rf_wb_stall_pct": 0.155345003812645,
+   "tmem_rf_wb_stall_for_mufu": 0.0,
+   "tmem_reads": 74468.0,
+   "tmem_writes": 73956.0,
+   "tmem_reads_by_op": {
+    "ldtm": 8708.0,
+    "utcmma_a_metadata": 6912.0,
+    "utcmma_a_sp_sf": 6912.0,
+    "utcmma_c": 58848.0
+   },
+   "tmem_writes_by_op": {
+    "sttm": 2180.0,
+    "utccp_32dp": 4192.0,
+    "utccp": 4192.0,
+    "utcmma": 67584.0
+   },
+   "uniform_pipe_active_pct": 2.8582669500462385,
+   "uniform_inst_per_clk": 0.11549880753443549,
+   "inst_issued": 48104.0,
+   "inst_issued_per_clk": 0.7804403199376998,
+   "inst_issued_by_pipe": {
+    "alu": 14393.0,
+    "cbu": 111.0,
+    "fe": 1509.0,
+    "fmaheavy": 12321.0,
+    "fmalite": 9143.0,
+    "mio": 12533.0,
+    "uniform": 7119.0
+   },
+   "apdf_elapsed": 61637.0,
+   "uniform_rf_counters": {
+    "uniform_register_reads_q": 13622.0,
+    "uniform_register_writes_q": 7744.0
+   },
+   "urf_reads_per_clk": 0.22100361795674675,
+   "urf_writes_per_clk": 0.12563882083813294,
+   "urf_read_port_util_pct": 5.525090448918669,
+   "urf_write_port_util_pct": 3.1409705209533234,
+   "urf_read_port_util_mainloop_pct": 7.498623802708356,
+   "rf_read_port_util_mainloop_pct": 15.291478586370141,
+   "rf_write_port_util_mainloop_pct": 14.208961796763184
+  }
+ }
+]
